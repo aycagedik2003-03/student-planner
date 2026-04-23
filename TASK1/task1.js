@@ -1,6 +1,6 @@
 const questionElement = document.getElementById("question");
 const answerButtons = document.querySelectorAll(".answer-btn");
-
+const scoreElement = document.getElementById("score");
 let currentQuestionIndex = 0;
 let score = 0;
 
@@ -53,10 +53,12 @@ answerButtons.forEach((btn, index) => {
     btn.addEventListener("click", () => {
         const correctIndex = questions[currentQuestionIndex].correct;
 
-        if (index === correctIndex) {
-            btn.style.backgroundColor = "green";
-            score++;
-        } else {
+       if (index === correctIndex) {
+    btn.style.backgroundColor = "green";
+    score++;
+    scoreElement.textContent = `Score: ${score}`;
+}
+        else {
             btn.style.backgroundColor = "red";
             answerButtons[correctIndex].style.backgroundColor = "green";
         }
