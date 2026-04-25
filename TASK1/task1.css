@@ -63,3 +63,31 @@ h1 {
         padding: 20px;
     }
 }
+#restart-btn {
+    display: block;
+    margin: 30px auto; /* üst-alt boşluk + ortalama */
+
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+
+    color: white;
+    background-color: #ff69b4; /* pembe */
+
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+/* hover */
+#restart-btn:hover {
+    background-color: #ff1493; /* daha koyu pembe */
+    transform: scale(1.05);
+}
+
+/* click */
+#restart-btn:active {
+    transform: scale(0.95);
+}
