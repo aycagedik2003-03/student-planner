@@ -21,6 +21,7 @@ import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
 import { profileService } from '../api/ProfileService';
 import { getErrorMessage } from '../api/ErrorHandler';
+import { validatePassword } from '../utils/passwordValidator';
 import { RootStackParamList } from '../../App';
 
 type Props = {
@@ -63,12 +64,18 @@ export default function AuthScreen({ navigation }: Props) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError]                 = useState('');
   const [loading, setLoading]             = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const isLogin = mode === 'login';
 
   // ── Validation ───────────────────────────────────────────────────────────────
-  const validateEmail    = useCallback((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), []);
-  const validatePassword = useCallback((v: string) => v.length >= 8, []);
+  const validateEmail = useCallback((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), []);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+    setPasswordErrors(validatePassword(text).errors);
+    setError('');
+  }, []);
 
   const validateForm = useCallback((): boolean => {
     setError('');
@@ -76,16 +83,16 @@ export default function AuthScreen({ navigation }: Props) {
     if (!email.trim())         { setError(t('errors.emptyEmail'));    return false; }
     if (!validateEmail(email)) { setError(t('errors.invalidEmail'));  return false; }
     if (!password)             { setError(t('errors.emptyPassword')); return false; }
-    if (!validatePassword(password)) {
-      setError(t('validation.minLength', { 0: '8' }));
-      return false;
-    }
+
+    const pwResult = validatePassword(password);
+    if (!pwResult.valid) { setError(pwResult.errors.join('\n')); return false; }
+
     if (!isLogin) {
-      if (!name.trim())      { setError(t('errors.emptyName'));    return false; }
-      if (!agreedToTerms)    { setError(t('auth.acceptTerms'));    return false; }
+      if (!name.trim())   { setError(t('errors.emptyName'));  return false; }
+      if (!agreedToTerms) { setError(t('auth.acceptTerms')); return false; }
     }
     return true;
-  }, [email, password, name, isLogin, agreedToTerms, validateEmail, validatePassword, t]);
+  }, [email, password, name, isLogin, agreedToTerms, validateEmail, t]);
 
   // ── Register ─────────────────────────────────────────────────────────────────
   const handleRegister = useCallback(async () => {
@@ -95,7 +102,7 @@ export default function AuthScreen({ navigation }: Props) {
       // Step 1: create account
       const data = await authService.register(email.trim(), password);
       setToken(data.access_token);
-      setUser({ id: data.user.id, name: name.trim(), email: data.user.email, quizCompleted: false });
+      setUser({ id: data.user_id, name: name.trim(), email: email.trim(), quizCompleted: false });
 
       // Step 2: persist name to profile
       await profileService.updateProfile({ name: name.trim(), age: null, city: null, university: null });
@@ -117,7 +124,7 @@ export default function AuthScreen({ navigation }: Props) {
     try {
       const data = await authService.login(email.trim(), password);
       setToken(data.access_token);
-      setUser({ id: data.user.id, name: data.user.name, email: data.user.email, quizCompleted: false });
+      setUser({ id: data.user_id, name: '', email: email.trim(), quizCompleted: false });
 
       setError('');
       Alert.alert(t('common.success'), t('auth.loginSuccess'));
@@ -132,7 +139,8 @@ export default function AuthScreen({ navigation }: Props) {
   const handleSubmit = isLogin ? handleLogin : handleRegister;
 
   const toggleMode = () => {
-    setName(''); setEmail(''); setPassword(''); setError(''); setAgreedToTerms(false);
+    setName(''); setEmail(''); setPassword(''); setError('');
+    setAgreedToTerms(false); setPasswordErrors([]);
     setMode(isLogin ? 'register' : 'login');
   };
 
@@ -230,11 +238,14 @@ export default function AuthScreen({ navigation }: Props) {
                 <Text style={st.label}>{t('auth.password')}</Text>
                 <View style={st.pwWrap}>
                   <TextInput
-                    style={[st.input, st.pwInput]}
+                    style={[
+                      st.input, st.pwInput,
+                      password && passwordErrors.length > 0 && st.inputError,
+                    ]}
                     placeholder={t('auth.passwordPlaceholder')}
                     placeholderTextColor={C.mute}
                     value={password}
-                    onChangeText={(v) => { setPassword(v); setError(''); }}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -250,6 +261,18 @@ export default function AuthScreen({ navigation }: Props) {
                     <Text style={st.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Live password feedback */}
+                {password && passwordErrors.length > 0 && (
+                  <View style={st.pwErrorBox}>
+                    {passwordErrors.map((err, i) => (
+                      <Text key={i} style={st.pwErrorTxt}>⚠ {err}</Text>
+                    ))}
+                  </View>
+                )}
+                {password && passwordErrors.length === 0 && (
+                  <Text style={st.pwOkTxt}>✓ Şifre güçlü</Text>
+                )}
               </View>
 
               {/* Terms checkbox — register only */}
@@ -365,10 +388,14 @@ const st = StyleSheet.create({
     borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: C.ink,
   },
 
-  pwWrap:  { position: 'relative' },
-  pwInput: { paddingRight: 52 },
-  eyeBtn:  { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
-  eyeIcon: { fontSize: 18 },
+  pwWrap:     { position: 'relative' },
+  pwInput:    { paddingRight: 52 },
+  inputError: { borderColor: '#D85A30' },
+  eyeBtn:     { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
+  eyeIcon:    { fontSize: 18 },
+  pwErrorBox: { marginTop: 6, padding: 8, backgroundColor: '#FAECE7', borderRadius: 8 },
+  pwErrorTxt: { fontSize: 11, color: '#D85A30', marginBottom: 2, lineHeight: 16 },
+  pwOkTxt:    { marginTop: 6, fontSize: 11, color: '#1D9E75', fontWeight: '600' },
 
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   checkbox: { width: 18, height: 18, borderRadius: 4, marginTop: 2 },
