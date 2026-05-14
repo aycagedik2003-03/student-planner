@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Checkbox from 'expo-checkbox';
 import {
   View,
   Text,
@@ -47,13 +48,14 @@ export default function AuthScreen({ navigation }: Props) {
   const setLanguage = useAppStore(s => s.setLanguage);
   const { t }       = useTranslation();
 
-  const [mode, setMode]           = useState<Mode>('login');
-  const [name, setName]           = useState('');
-  const [email, setEmail]         = useState('');
-  const [password, setPassword]   = useState('');
-  const [showPw, setShowPw]       = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [errorMsg, setErrorMsg]   = useState<string | null>(null);
+  const [mode, setMode]               = useState<Mode>('login');
+  const [name, setName]               = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [showPw, setShowPw]           = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [errorMsg, setErrorMsg]       = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const isLogin = mode === 'login';
 
@@ -75,6 +77,7 @@ export default function AuthScreen({ navigation }: Props) {
     if (!password.trim()) { setErrorMsg('Şifre gerekli.'); return; }
     if (!isLogin && !name.trim()) { setErrorMsg('Ad Soyad gerekli.'); return; }
     if (password.length < 6)      { setErrorMsg('Şifre en az 6 karakter olmalı.'); return; }
+    if (!isLogin && !agreedToTerms) { setErrorMsg(t('auth.acceptTerms')); return; }
 
     setLoading(true);
     try {
@@ -218,6 +221,34 @@ export default function AuthScreen({ navigation }: Props) {
                 </View>
               </View>
 
+              {/* Terms checkbox — sadece kayıt modunda */}
+              {!isLogin && (
+                <View style={st.termsRow}>
+                  <Checkbox
+                    value={agreedToTerms}
+                    onValueChange={setAgreedToTerms}
+                    color={agreedToTerms ? '#1D9E75' : undefined}
+                    style={st.checkbox}
+                  />
+                  <Text style={st.termsTxt}>
+                    <Text
+                      onPress={() => navigation.navigate('PrivacyPolicy')}
+                      style={st.termsLink}
+                    >
+                      {t('auth.privacyPolicy')}
+                    </Text>
+                    {' ve '}
+                    <Text
+                      onPress={() => navigation.navigate('TermsOfService')}
+                      style={st.termsLink}
+                    >
+                      {t('auth.termsOfService')}
+                    </Text>
+                    {'\'nı okudum, kabul ediyorum.'}
+                  </Text>
+                </View>
+              )}
+
               {/* Hata mesajı */}
               {errorMsg && (
                 <View style={st.errorBox}>
@@ -259,9 +290,7 @@ export default function AuthScreen({ navigation }: Props) {
           </View>
 
           {/* Alt not */}
-          <Text style={st.legalTxt}>
-            Devam ederek Kullanım Şartları ve Gizlilik Politikasını kabul etmiş olursun.
-          </Text>
+          <Text style={st.legalTxt}>{t('auth.continueText')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -514,6 +543,28 @@ const st = StyleSheet.create({
   },
 
   // Alt not
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  termsTxt: {
+    flex: 1,
+    color: C.soft,
+    fontSize: 12.5,
+    lineHeight: 19,
+  },
+  termsLink: {
+    color: '#1D9E75',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   legalTxt: {
     color: C.mute,
     fontSize: 11,

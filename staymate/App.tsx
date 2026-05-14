@@ -20,6 +20,8 @@ import CompatibilityReportScreen from './src/screens/CompatibilityReportScreen';
 import VerificationScreen     from './src/screens/VerificationScreen';
 import SettingsScreen         from './src/screens/SettingsScreen';
 import ProfileEditScreen      from './src/screens/ProfileEditScreen';
+import PrivacyPolicyScreen    from './src/screens/PrivacyPolicyScreen';
+import TermsOfServiceScreen   from './src/screens/TermsOfServiceScreen';
 
 import { authService }             from './src/api/AuthService';
 import { useAppStore }             from './src/store';
@@ -36,18 +38,20 @@ export type TabParamList = {
 
 // ── Root stack param list ──────────────────────────────────────────────────────
 export type RootStackParamList = {
-  Auth:          undefined;           // ← yeni
-  Onboarding:    undefined;
-  Quiz:          undefined;
-  Profile:       undefined;
-  MainTabs:      NavigatorScreenParams<TabParamList> | undefined;
-  Filter:        undefined;
-  Chat:          { matchId: string };
-  ChatList:      undefined;
-  ListingDetail: { listingId: string };
-  CreateListing: undefined;
-  Verification:  undefined;
-  ProfileEdit:   undefined;
+  Auth:            undefined;
+  Onboarding:      undefined;
+  Quiz:            undefined;
+  Profile:         undefined;
+  MainTabs:        NavigatorScreenParams<TabParamList> | undefined;
+  Filter:          undefined;
+  Chat:            { matchId: string };
+  ChatList:        undefined;
+  ListingDetail:   { listingId: string };
+  CreateListing:   undefined;
+  Verification:    undefined;
+  ProfileEdit:     undefined;
+  PrivacyPolicy:   undefined;
+  TermsOfService:  undefined;
   CompatibilityReport: {
     userId: string;
     userName: string;
@@ -211,6 +215,8 @@ export default function App() {
         <Stack.Screen name="CompatibilityReport" component={CompatibilityReportScreen} />
         <Stack.Screen name="Verification"        component={VerificationScreen} />
         <Stack.Screen name="ProfileEdit"         component={ProfileEditScreen} />
+        <Stack.Screen name="PrivacyPolicy"       component={PrivacyPolicyScreen} />
+        <Stack.Screen name="TermsOfService"      component={TermsOfServiceScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
