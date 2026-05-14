@@ -97,23 +97,42 @@ export default function AuthScreen({ navigation }: Props) {
   // ── Register ─────────────────────────────────────────────────────────────────
   const handleRegister = useCallback(async () => {
     if (!validateForm()) return;
+
     setLoading(true);
+    setError('');
+
+    console.log('\n========== REGISTER ATTEMPT ==========');
+    console.log('Time:', new Date().toISOString());
+    console.log('Device:', Platform.OS);
+
     try {
-      // Step 1: create account
       const data = await authService.register(email.trim(), password);
+
+      // Update in-session store (SecureStore already persisted by authService)
       setToken(data.access_token);
       setUser({ id: data.user_id, name: name.trim(), email: email.trim(), quizCompleted: false });
 
-      // Step 2: persist name to profile
-      await profileService.updateProfile({ name: name.trim(), age: null, city: null, university: null });
-
-      setError('');
+      console.log('Register completed successfully');
       Alert.alert(t('common.success'), t('auth.registerSuccess'));
       navigation.replace('Onboarding');
     } catch (err: any) {
-      setError(getErrorMessage(err, t));
+      console.error('Error caught in handleRegister:', err);
+
+      let displayError = 'Bilinmeyen hata';
+      if (!err.response) {
+        displayError = `Network Error: ${err.message}`;
+      } else if (err.response.status === 0) {
+        displayError = 'Sunucuya bağlanamıyor (CORS veya network)';
+      } else if (err.response.data?.message) {
+        displayError = err.response.data.message;
+      } else {
+        displayError = `Error ${err.response.status}: ${err.response.statusText}`;
+      }
+
+      setError(displayError);
     } finally {
       setLoading(false);
+      console.log('======================================\n');
     }
   }, [email, password, name, validateForm, setToken, setUser, navigation, t]);
 

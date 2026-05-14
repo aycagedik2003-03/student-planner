@@ -1,46 +1,62 @@
 import axios, { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { navigateTo } from '../utils/navigationRef';
-import { useAppStore } from '../store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
+console.log('API Configuration:');
+console.log('  URL:', API_URL);
+console.log('  Environment:', __DEV__ ? 'development' : 'production');
+
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 12000,
+  timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ── Token okuma — SecureStore hata toleranslı ────────────────────────────────
-const getToken = async (): Promise<string | null> => {
-  try {
-    return await SecureStore.getItemAsync('userToken');
-  } catch (error) {
-    console.log('Token okuma hatası:', error);
-    return null;
-  }
-};
+// ── Request interceptor ───────────────────────────────────────────────────────
+api.interceptors.request.use(
+  async (config) => {
+    console.log(`[${config.method?.toUpperCase()}] ${config.url}`);
+    if (config.data) console.log('  Body:', config.data);
 
-// ── Request interceptor: token ekle ──────────────────────────────────────────
-api.interceptors.request.use(async (config) => {
-  const token = await getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+    const token = await SecureStore.getItemAsync('userToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('  Token: attached');
+    }
+    return config;
+  },
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  },
+);
 
-// ── Response interceptor: hata yönetimi ──────────────────────────────────────
+// ── Response interceptor ──────────────────────────────────────────────────────
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`[${response.status}] ${response.config.url}`);
+    return response;
+  },
   async (error: AxiosError) => {
-    const status = error.response?.status;
+    console.error('Response error:', {
+      message:    error.message,
+      status:     error.response?.status,
+      data:       error.response?.data,
+      url:        error.config?.url,
+      method:     error.config?.method,
+    });
 
-    if (status === 401) {
-      // Token süresi dolmuş veya geçersiz → oturumu kapat
-      await SecureStore.deleteItemAsync('userToken');
-      useAppStore.getState().clearUser();
-      navigateTo('Auth');
+    if (error.response?.status === 401) {
+      console.log('401 — attempting token refresh...');
+      try {
+        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        if (refreshToken) {
+          // TODO: call refresh endpoint and update tokens
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+      }
     }
 
     return Promise.reject(error);
@@ -49,11 +65,7 @@ api.interceptors.response.use(
 
 export default api;
 
-// ── Global hata mesajı çözümleyici ───────────────────────────────────────────
-/**
- * Axios hatasından kullanıcıya gösterilebilir mesaj üretir.
- * Ekranlarda `catch (err) { setError(parseApiError(err)); }` şeklinde kullanın.
- */
+// ── Kept for backward compatibility (ProfileEditScreen) ───────────────────────
 export function parseApiError(err: unknown): string {
   if (!err) return 'Bilinmeyen hata.';
 
@@ -63,8 +75,8 @@ export function parseApiError(err: unknown): string {
 
   if (status === 400) {
     const raw = data?.message ?? data?.error ?? data?.detail;
-    if (Array.isArray(raw))        return raw[0];
-    if (typeof raw === 'string')   return raw;
+    if (Array.isArray(raw))      return raw[0];
+    if (typeof raw === 'string') return raw;
     return 'Girilen bilgileri kontrol edin.';
   }
 
