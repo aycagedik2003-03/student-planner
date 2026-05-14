@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { authService } from '../api/AuthService';
+import { profileService } from '../api/ProfileService';
 import { useAppStore } from '../store';
 import { RootStackParamList } from '../../App';
 import { parseApiError } from '../api/client';
@@ -81,20 +82,35 @@ export default function AuthScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
-      const data = isLogin
-        ? await authService.login(email.trim(), password)
-        : await authService.register(email.trim(), password, name.trim());
+      if (isLogin) {
+        const data = await authService.login(email.trim(), password);
+        setToken(data.access_token);
+        setUser({
+          id:            data.user.id,
+          name:          data.user.name,
+          email:         data.user.email,
+          quizCompleted: false,
+        });
+      } else {
+        // Step 1: Register (email + password only)
+        const data = await authService.register(email.trim(), password);
+        setToken(data.access_token);
+        setUser({
+          id:            data.user.id,
+          name:          name.trim(),
+          email:         data.user.email,
+          quizCompleted: false,
+        });
 
-      // Store'u güncelle
-      setToken(data.access_token);
-      setUser({
-        id:            data.user.id,
-        name:          data.user.name,
-        email:         data.user.email,
-        quizCompleted: false,
-      });
+        // Step 2: Save name to profile
+        await profileService.updateProfile({
+          name:       name.trim(),
+          age:        null,
+          city:       null,
+          university: null,
+        });
+      }
 
-      // Onboarding akışına yönlendir
       navigation.replace('Onboarding');
     } catch (err) {
       setErrorMsg(parseApiError(err));

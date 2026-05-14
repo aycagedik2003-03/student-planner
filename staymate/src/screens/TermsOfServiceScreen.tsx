@@ -1,97 +1,136 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { View, ScrollView, Text } from 'react-native';
 import { useTranslation } from '../i18n/useTranslation';
 
-type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'TermsOfService'> };
-
-const C = {
-  bg: '#FFFFFF', ink: '#1F2937', soft: '#4B5563',
-  mute: '#9CA3AF', line: 'rgba(31,41,55,0.08)',
-};
-
-function Section({ title, children }: { title: string; children: string }) {
-  return (
-    <View style={st.section}>
-      <Text style={st.sectionTitle}>{title}</Text>
-      <Text style={st.sectionBody}>{children}</Text>
-    </View>
-  );
-}
-
-export default function TermsOfServiceScreen({ navigation }: Props) {
+export const TermsOfServiceScreen = () => {
   const { t } = useTranslation();
 
   return (
-    <SafeAreaView style={st.root} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+    <ScrollView style={{ flex: 1, padding: 16, backgroundColor: '#fff' }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>
+        {t('auth.termsOfService')}
+      </Text>
 
-      {/* Header */}
-      <View style={st.header}>
-        <TouchableOpacity style={st.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={st.backTxt}>←</Text>
-        </TouchableOpacity>
-        <Text style={st.hTitle}>{t('auth.termsOfService')}</Text>
-        <View style={st.backBtn} />
-      </View>
+      <Section title="1. Zakreś usług">
+        Staymate to platforma do łączenia osób poszukujących wspólnego wynajmu
+        mieszkań i pokojów. Nie jesteśmy wynajmującymi ani pośrednikami handlowymi,
+        tylko połączeniem między użytkownikami.
+      </Section>
 
-      <ScrollView contentContainerStyle={st.content} showsVerticalScrollIndicator={false}>
-        <Text style={st.lastUpdated}>Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</Text>
+      <Section title="2. Warunki korzystania">
+        Muszą być spełnione:{'\n'}
+        • Wiek minimum 18 lat{'\n'}
+        • Godzenie się z polskim prawem{'\n'}
+        • Posiadanie ważnego adresu email{'\n'}
+        • Bycie osobą fizyczną (nie firma bez pozwolenia){'\n'}
+        • Zgodność z Polityką Prywatności
+      </Section>
 
-        <Section title="1. Hizmetin Kapsamı">
-          {`Staymate, üniversite öğrencilerine ve genç profesyonellere ev arkadaşı bulma platformu sunar. Platform; profil oluşturma, eşleştirme ve mesajlaşma işlevlerini içerir.`}
-        </Section>
+      <Section title="3. Twoja odpowiedzialność">
+        Odpowiadasz za:{'\n'}
+        • Dokładność informacji w profilu{'\n'}
+        • Bezpieczeństwo hasła i konta{'\n'}
+        • Wszystkie działania na swoim koncie{'\n'}
+        • Poszanowanie prywatności innych użytkowników{'\n'}
+        • Niepublikowanie danych osobowych trzecich osób
+      </Section>
 
-        <Section title="2. Kullanım Koşulları">
-          {`• Platformu yalnızca yasal amaçlarla kullanabilirsiniz.\n• Gerçek ve güncel bilgi sağlamakla yükümlüsünüz.\n• Hesabınızı başkasına devredemezsiniz.\n• Taciz, nefret söylemi veya spam içerik yasaktır.`}
-        </Section>
+      <Section title="4. Zabronione zachowania">
+        Zabronione jest:{'\n'}
+        • Publikowanie fałszywych lub wprowadzających informacji{'\n'}
+        • Molestowanie, groźby, mowa nienawiści{'\n'}
+        • Oszustwa lub wyłudzanie{'\n'}
+        • Spamowanie lub phishing{'\n'}
+        • Naruszanie praw autorskich{'\n'}
+        • Handel narkotykami lub przedmiotami nielegalnymi{'\n'}
+        • Dyskryminacja ze względu na rasę, płeć, religię itp.{'\n'}
+        • Publikowanie treści dla dorosłych (porno, przemoc)
+      </Section>
 
-        <Section title="3. Hesap Güvenliği">
-          {`Hesabınızın güvenliğinden siz sorumlusunuz. Şüpheli aktivite fark ederseniz hemen bildirin: support@staymate.app`}
-        </Section>
+      <Section title="5. Odpowiedzialność Staymate">
+        Staymate nie jest odpowiedzialny za:{'\n'}
+        • Transakcje między użytkownikami{'\n'}
+        • Oszustwa lub kradzieże popełnione przez użytkowników{'\n'}
+        • Uszkodzenia mienia lub osobowe{'\n'}
+        • Pogubione klucze lub pieniądze{'\n'}
+        • Konflikty między wspólnikami{'\n'}
+        • Niedotrzymanie warunków najmu{'\n\n'}
+        Maksymalna odpowiedzialność: zwrot opłaty za usługę.
+      </Section>
 
-        <Section title="4. Fikri Mülkiyet">
-          {`Platform içeriği, logoları ve tasarımı Staymate'e aittir. İzinsiz kullanım yasaktır.`}
-        </Section>
+      <Section title="6. Wiadomości i komunikacja">
+        • Wiadomości między użytkownikami nie są moderowane{'\n'}
+        • Staymate nie kontroluje zawartości rozmów{'\n'}
+        • Jeśli otrzymasz zagrażające wiadomości, zgłoś nas{'\n'}
+        • Nie udostępniamy numerów telefonów bez zgody
+      </Section>
 
-        <Section title="5. Sorumluluğun Sınırlandırılması">
-          {`Staymate, kullanıcılar arasındaki anlaşmazlıklarda aracı değildir. Platform \"olduğu gibi\" sunulur; belirli bir amaca uygunluk garantisi verilmez.`}
-        </Section>
+      <Section title="7. Zmiany lub usunięcie konta">
+        Możesz:{'\n'}
+        • Zmienić dane w profilu w każdej chwili{'\n'}
+        • Usunąć konto - dane zostaną skasowane w 30 dni{'\n'}
+        • Wznowić konto w ciągu 30 dni od usunięcia{'\n\n'}
+        Możemy:{'\n'}
+        • Zawiesić konto za naruszenie regulaminu{'\n'}
+        • Usunąć konto bez ostrzeżenia w razie oszustwa{'\n'}
+        • Zaarchiwizować dane na potrzeby prawne
+      </Section>
 
-        <Section title="6. Hesap Askıya Alma">
-          {`Kullanım koşullarını ihlal eden hesaplar uyarısız askıya alınabilir veya silinebilir.`}
-        </Section>
+      <Section title="8. Opłaty i rozliczenia">
+        Staymate jest bezpłatna dla wszystkich użytkowników.{'\n'}
+        W przyszłości możemy wprowadzić opłaty za premium - zawsze
+        z ostrzeżeniem z wyprzedzeniem.
+      </Section>
 
-        <Section title="7. Değişiklikler">
-          {`Bu koşulları güncelleme hakkını saklı tutarız. Önemli değişiklikler e-posta ile bildirilir.`}
-        </Section>
+      <Section title="9. Własność intelektualna">
+        • Staymate, logo, kod źródłowy - własność Staymate Sp. z o.o.{'\n'}
+        • Twoje zdjęcia i tekst profilu - Twoja własność{'\n'}
+        • Przyznajemy prawo do używania Twojej zawartości do
+          poprawy naszych usług
+      </Section>
 
-        <Section title="8. Uygulanacak Hukuk">
-          {`Bu koşullar Polonya hukukuna tabidir. Uyuşmazlıklar Poznań mahkemelerinde çözülür.`}
-        </Section>
+      <Section title="10. Modyfikacja regulaminu">
+        Możemy zmienić warunki w każdej chwili.{'\n'}
+        Powiadomimy Cię mailowo 30 dni przed zmianą.{'\n'}
+        Dalsze korzystanie = akceptacja nowych warunków.
+      </Section>
 
-        <Text style={st.footer}>İletişim: support@staymate.app</Text>
-      </ScrollView>
-    </SafeAreaView>
+      <Section title="11. Rozwiązywanie sporów">
+        • Najpierw spróbuj rozwiązać problem z drugą osobą{'\n'}
+        • Jeśli się nie powiedzie, skontaktuj się z nami: support@staymate.app{'\n'}
+        • Ostatecznym forum jest sąd właściwy dla Poznania{'\n'}
+        • Prawo polskie (Kodeks cywilny)
+      </Section>
+
+      <Section title="12. Kontakt">
+        Staymate Sp. z o.o.{'\n'}
+        ul. [ADRES], 61-000 Poznań, Polska{'\n'}
+        Email: support@staymate.app{'\n'}
+        Tel: +48 [NUMER]
+      </Section>
+
+      <Section title="13. Rękojmia">
+        USŁUGA JEST ŚWIADCZONA "TAK JAK JEST" BEZ GWARANCJI.{'\n'}
+        Nie gwarantujemy bezprzerwowego dostępu do platformy.
+      </Section>
+
+      <Text style={{ fontSize: 12, color: '#888', marginTop: 24, marginBottom: 32 }}>
+        Akceptując warunki, potwierdzasz, że je przeczytałeś i rozumiesz.{'\n'}
+        Ostatnia aktualizacja: {new Date().toLocaleDateString('pl-PL')}
+      </Text>
+    </ScrollView>
   );
-}
+};
 
-const st = StyleSheet.create({
-  root:    { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: C.line,
-  },
-  backBtn:  { width: 38, height: 38, borderRadius: 999, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  backTxt:  { color: C.ink, fontSize: 17 },
-  hTitle:   { color: C.ink, fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
-  content:  { padding: 20, paddingBottom: 40 },
-  lastUpdated:  { color: C.mute, fontSize: 12, marginBottom: 20 },
-  section:      { marginBottom: 22 },
-  sectionTitle: { color: C.ink, fontSize: 14, fontWeight: '700', marginBottom: 8 },
-  sectionBody:  { color: C.soft, fontSize: 13, lineHeight: 22 },
-  footer:       { color: C.mute, fontSize: 12, marginTop: 24, textAlign: 'center' },
-});
+const Section = ({ title, children }: any) => (
+  <View style={{ marginBottom: 20 }}>
+    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#1D9E75' }}>
+      {title}
+    </Text>
+    <Text style={{ fontSize: 12, color: '#555', lineHeight: 20 }}>
+      {children}
+    </Text>
+  </View>
+);
+
+export default TermsOfServiceScreen;

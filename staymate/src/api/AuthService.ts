@@ -18,12 +18,10 @@ export const authService = {
   register: async (
     email: string,
     password: string,
-    name: string,
   ): Promise<AuthResponse> => {
     const res = await api.post<AuthResponse>('/auth/register', {
       email,
       password,
-      name,
     });
     await SecureStore.setItemAsync('userToken', res.data.access_token);
     return res.data;

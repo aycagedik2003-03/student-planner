@@ -17,9 +17,10 @@ export type UserProfile = {
   quizCompleted?: boolean;
 };
 
-export type UpdateProfilePayload = Partial<
-  Omit<UserProfile, 'id' | 'email' | 'avatarUrl'>
->;
+export type UpdateProfilePayload = Partial<{
+  [K in keyof Omit<UserProfile, 'id' | 'email' | 'avatarUrl'>]:
+    UserProfile[K] | null;
+}>;
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
