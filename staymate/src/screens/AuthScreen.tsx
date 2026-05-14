@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
-import Checkbox from 'expo-checkbox';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   Pressable,
-  StyleSheet,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
+  Alert,
+  StyleSheet,
   ActivityIndicator,
   StatusBar,
+  Platform,
+  KeyboardAvoidingView,
+  SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
+import Checkbox from 'expo-checkbox';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from '../i18n/useTranslation';
+import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
 import { profileService } from '../api/ProfileService';
-import { useAppStore } from '../store';
+import { getErrorMessage } from '../api/ErrorHandler';
 import { RootStackParamList } from '../../App';
-import { parseApiError } from '../api/client';
-import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Auth'>;
 };
 
-// ── Design tokens (aynı app paletini kullanıyoruz) ───────────────────────────
 const C = {
   bg:      '#FFFFFF',
   bgSoft:  '#FAFAFA',
@@ -35,95 +35,112 @@ const C = {
   mute:    '#9CA3AF',
   line:    'rgba(31,41,55,0.10)',
   inputBg: '#F9FAFB',
-  brandA:  '#00CFC8',   // teal
-  brandB:  '#FF9ACD',   // pink
-  error:   '#EF4444',
-  errorBg: 'rgba(239,68,68,0.08)',
+  brand:   '#1D9E75',
+  brandBg: '#E1F5EE',
+  brandTx: '#085041',
+  brandA:  '#00CFC8',
+  brandB:  '#FF9ACD',
 };
 
 type Mode = 'login' | 'register';
 
+const LANGUAGES = [
+  { code: 'tr' as const, label: 'Türkçe' },
+  { code: 'pl' as const, label: 'Polski' },
+  { code: 'en' as const, label: 'English' },
+];
+
 export default function AuthScreen({ navigation }: Props) {
   const { setToken, setUser } = useAppStore();
-  const language    = useAppStore(s => s.language);
-  const setLanguage = useAppStore(s => s.setLanguage);
-  const { t }       = useTranslation();
+  const { t, language }      = useTranslation();
+  const setLanguage          = useAppStore((s) => s.setLanguage);
 
-  const [mode, setMode]               = useState<Mode>('login');
-  const [name, setName]               = useState('');
-  const [email, setEmail]             = useState('');
-  const [password, setPassword]       = useState('');
-  const [showPw, setShowPw]           = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [errorMsg, setErrorMsg]       = useState<string | null>(null);
+  const [mode, setMode]                   = useState<Mode>('register');
+  const [name, setName]                   = useState('');
+  const [email, setEmail]                 = useState('');
+  const [password, setPassword]           = useState('');
+  const [showPassword, setShowPassword]   = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [error, setError]                 = useState('');
+  const [loading, setLoading]             = useState(false);
 
   const isLogin = mode === 'login';
 
-  const clearForm = () => {
-    setName(''); setEmail(''); setPassword(''); setErrorMsg(null);
-  };
+  // ── Validation ───────────────────────────────────────────────────────────────
+  const validateEmail    = useCallback((v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), []);
+  const validatePassword = useCallback((v: string) => v.length >= 8, []);
 
-  const toggleMode = () => {
-    clearForm();
-    setMode(isLogin ? 'register' : 'login');
-  };
+  const validateForm = useCallback((): boolean => {
+    setError('');
 
-  // ── API çağrısı ────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    setErrorMsg(null);
+    if (!email.trim())         { setError(t('errors.emptyEmail'));    return false; }
+    if (!validateEmail(email)) { setError(t('errors.invalidEmail'));  return false; }
+    if (!password)             { setError(t('errors.emptyPassword')); return false; }
+    if (!validatePassword(password)) {
+      setError(t('validation.minLength', { 0: '8' }));
+      return false;
+    }
+    if (!isLogin) {
+      if (!name.trim())      { setError(t('errors.emptyName'));    return false; }
+      if (!agreedToTerms)    { setError(t('auth.acceptTerms'));    return false; }
+    }
+    return true;
+  }, [email, password, name, isLogin, agreedToTerms, validateEmail, validatePassword, t]);
 
-    // Basit client-side validasyon
-    if (!email.trim())    { setErrorMsg('E-posta gerekli.'); return; }
-    if (!password.trim()) { setErrorMsg('Şifre gerekli.'); return; }
-    if (!isLogin && !name.trim()) { setErrorMsg('Ad Soyad gerekli.'); return; }
-    if (password.length < 6)      { setErrorMsg('Şifre en az 6 karakter olmalı.'); return; }
-    if (!isLogin && !agreedToTerms) { setErrorMsg(t('auth.acceptTerms')); return; }
-
+  // ── Register ─────────────────────────────────────────────────────────────────
+  const handleRegister = useCallback(async () => {
+    if (!validateForm()) return;
     setLoading(true);
     try {
-      if (isLogin) {
-        const data = await authService.login(email.trim(), password);
-        setToken(data.access_token);
-        setUser({
-          id:            data.user.id,
-          name:          data.user.name,
-          email:         data.user.email,
-          quizCompleted: false,
-        });
-      } else {
-        // Step 1: Register (email + password only)
-        const data = await authService.register(email.trim(), password);
-        setToken(data.access_token);
-        setUser({
-          id:            data.user.id,
-          name:          name.trim(),
-          email:         data.user.email,
-          quizCompleted: false,
-        });
+      // Step 1: create account
+      const data = await authService.register(email.trim(), password);
+      setToken(data.access_token);
+      setUser({ id: data.user.id, name: name.trim(), email: data.user.email, quizCompleted: false });
 
-        // Step 2: Save name to profile
-        await profileService.updateProfile({
-          name:       name.trim(),
-          age:        null,
-          city:       null,
-          university: null,
-        });
-      }
+      // Step 2: persist name to profile
+      await profileService.updateProfile({ name: name.trim(), age: null, city: null, university: null });
 
+      setError('');
+      Alert.alert(t('common.success'), t('auth.registerSuccess'));
       navigation.replace('Onboarding');
-    } catch (err) {
-      setErrorMsg(parseApiError(err));
+    } catch (err: any) {
+      setError(getErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
+  }, [email, password, name, validateForm, setToken, setUser, navigation, t]);
+
+  // ── Login ────────────────────────────────────────────────────────────────────
+  const handleLogin = useCallback(async () => {
+    if (!validateForm()) return;
+    setLoading(true);
+    try {
+      const data = await authService.login(email.trim(), password);
+      setToken(data.access_token);
+      setUser({ id: data.user.id, name: data.user.name, email: data.user.email, quizCompleted: false });
+
+      setError('');
+      Alert.alert(t('common.success'), t('auth.loginSuccess'));
+      navigation.replace('Onboarding');
+    } catch (err: any) {
+      setError(getErrorMessage(err, t));
+    } finally {
+      setLoading(false);
+    }
+  }, [email, password, validateForm, setToken, setUser, navigation, t]);
+
+  const handleSubmit = isLogin ? handleLogin : handleRegister;
+
+  const toggleMode = () => {
+    setName(''); setEmail(''); setPassword(''); setError(''); setAgreedToTerms(false);
+    setMode(isLogin ? 'register' : 'login');
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={st.root}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      {/* ── Dekoratif aurora blobları ── */}
       <View style={[st.blob, st.blobTR]} />
       <View style={[st.blob, st.blobBL]} />
 
@@ -137,114 +154,113 @@ export default function AuthScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Logo ── */}
-          <View style={st.logoRow}>
-            <View style={st.logoMark}>
-              <Text style={st.logoMarkTxt}>s</Text>
+          {/* Header row: logo + language selector */}
+          <View style={st.header}>
+            <View style={st.logoRow}>
+              <View style={st.logoMark}>
+                <Text style={st.logoMarkTxt}>s</Text>
+              </View>
+              <Text style={st.logoTxt}>staymate</Text>
+              <View style={st.betaBadge}>
+                <Text style={st.betaTxt}>BETA</Text>
+              </View>
             </View>
-            <Text style={st.logoTxt}>staymate</Text>
-            <View style={st.betaBadge}>
-              <Text style={st.betaTxt}>BETA</Text>
+
+            <View style={st.langRow}>
+              {LANGUAGES.map((lang) => (
+                <Pressable
+                  key={lang.code}
+                  onPress={() => setLanguage(lang.code)}
+                  style={[st.langBtn, language === lang.code && st.langBtnActive]}
+                >
+                  <Text style={[st.langBtnTxt, language === lang.code && st.langBtnTxtActive]}>
+                    {lang.label}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
           </View>
 
-          {/* ── Dil seçici — button group ── */}
-          <View style={st.langRow}>
-            {([ { code: 'tr', label: 'Türkçe' }, { code: 'pl', label: 'Polski' }, { code: 'en', label: 'English' } ] as const).map(lang => (
-              <Pressable
-                key={lang.code}
-                onPress={() => setLanguage(lang.code)}
-                style={[st.langBtn, language === lang.code && st.langBtnActive]}
-              >
-                <Text style={[st.langBtnTxt, language === lang.code && st.langBtnTxtActive]}>
-                  {lang.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* ── Kart ── */}
+          {/* Card */}
           <View style={st.card}>
-            {/* Başlık */}
-            <View style={st.cardHeader}>
-              <Text style={st.title}>
-                {isLogin ? `${t('welcome')} 👋` : `${t('auth.register')} ✨`}
-              </Text>
-              <Text style={st.subtitle}>
-                {isLogin
-                  ? `${t('auth.email')} & ${t('auth.password').toLowerCase()}`
-                  : t('auth.alreadyHaveAccount').split('?')[0] + '?'}
-              </Text>
-            </View>
+            <Text style={st.title}>
+              {isLogin ? `${t('common.welcome')} 👋` : `${t('auth.register')} ✨`}
+            </Text>
+            <Text style={st.subtitle}>
+              {isLogin ? t('auth.email') + ' & ' + t('auth.password').toLowerCase() : t('common.welcome')}
+            </Text>
 
-            {/* ── Form ── */}
             <View style={st.form}>
-              {/* Ad Soyad — sadece kayıt modunda */}
+              {/* Name — register only */}
               {!isLogin && (
                 <View style={st.fieldWrap}>
                   <Text style={st.label}>{t('auth.name')}</Text>
                   <TextInput
                     style={st.input}
-                    placeholder="Adın ve soyadın"
+                    placeholder={t('auth.namePlaceholder')}
                     placeholderTextColor={C.mute}
                     value={name}
-                    onChangeText={(t) => { setName(t); setErrorMsg(null); }}
+                    onChangeText={(v) => { setName(v); setError(''); }}
                     autoCapitalize="words"
                     returnKeyType="next"
+                    editable={!loading}
                   />
                 </View>
               )}
 
-              {/* E-posta */}
+              {/* Email */}
               <View style={st.fieldWrap}>
                 <Text style={st.label}>{t('auth.email')}</Text>
                 <TextInput
                   style={st.input}
-                  placeholder="ornek@email.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   placeholderTextColor={C.mute}
                   value={email}
-                  onChangeText={(t) => { setEmail(t); setErrorMsg(null); }}
+                  onChangeText={(v) => { setEmail(v); setError(''); }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
+                  editable={!loading}
                 />
               </View>
 
-              {/* Şifre */}
+              {/* Password */}
               <View style={st.fieldWrap}>
                 <Text style={st.label}>{t('auth.password')}</Text>
                 <View style={st.pwWrap}>
                   <TextInput
                     style={[st.input, st.pwInput]}
-                    placeholder="En az 6 karakter"
+                    placeholder={t('auth.passwordPlaceholder')}
                     placeholderTextColor={C.mute}
                     value={password}
-                    onChangeText={(t) => { setPassword(t); setErrorMsg(null); }}
-                    secureTextEntry={!showPw}
+                    onChangeText={(v) => { setPassword(v); setError(''); }}
+                    secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="done"
                     onSubmitEditing={handleSubmit}
+                    editable={!loading}
                   />
                   <TouchableOpacity
                     style={st.eyeBtn}
-                    onPress={() => setShowPw(p => !p)}
+                    onPress={() => setShowPassword((p) => !p)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Text style={st.eyeIcon}>{showPw ? '🙈' : '👁️'}</Text>
+                    <Text style={st.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Terms checkbox — sadece kayıt modunda */}
+              {/* Terms checkbox — register only */}
               {!isLogin && (
                 <View style={st.termsRow}>
                   <Checkbox
                     value={agreedToTerms}
                     onValueChange={setAgreedToTerms}
-                    color={agreedToTerms ? '#1D9E75' : undefined}
+                    color={agreedToTerms ? C.brand : undefined}
                     style={st.checkbox}
+                    disabled={loading}
                   />
                   <Text style={st.termsTxt}>
                     <Text
@@ -253,7 +269,7 @@ export default function AuthScreen({ navigation }: Props) {
                     >
                       {t('auth.privacyPolicy')}
                     </Text>
-                    {' ve '}
+                    {' & '}
                     <Text
                       onPress={() => navigation.navigate('TermsOfService')}
                       style={st.termsLink}
@@ -265,15 +281,15 @@ export default function AuthScreen({ navigation }: Props) {
                 </View>
               )}
 
-              {/* Hata mesajı */}
-              {errorMsg && (
+              {/* Error */}
+              {error ? (
                 <View style={st.errorBox}>
                   <Text style={st.errorIcon}>⚠</Text>
-                  <Text style={st.errorTxt}>{errorMsg}</Text>
+                  <Text style={st.errorTxt}>{error}</Text>
                 </View>
-              )}
+              ) : null}
 
-              {/* Submit butonu */}
+              {/* Submit */}
               <TouchableOpacity
                 style={[st.submitBtn, loading && st.submitBtnDisabled]}
                 onPress={handleSubmit}
@@ -293,19 +309,14 @@ export default function AuthScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
 
-            {/* ── Mod değiştir ── */}
-            <TouchableOpacity style={st.switchBtn} onPress={toggleMode} activeOpacity={0.7}>
+            {/* Toggle mode */}
+            <TouchableOpacity style={st.switchBtn} onPress={toggleMode} activeOpacity={0.7} disabled={loading}>
               <Text style={st.switchTxt}>
-                {isLogin ? 'Hesabın yok mu?' : 'Zaten hesabın var mı?'}
-                {'  '}
-                <Text style={st.switchLink}>
-                  {isLogin ? 'Kayıt Ol' : 'Giriş Yap'}
-                </Text>
+                {isLogin ? t('auth.noAccount') : t('auth.alreadyHaveAccount')}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Alt not */}
           <Text style={st.legalTxt}>{t('auth.continueText')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -313,280 +324,72 @@ export default function AuthScreen({ navigation }: Props) {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: C.bg,
-    overflow: 'hidden',
-  },
+  root:   { flex: 1, backgroundColor: C.bg, overflow: 'hidden' },
 
-  // Aurora blobları
-  blob: {
-    position: 'absolute',
-    borderRadius: 999,
-    opacity: 0.15,
-  },
-  blobTR: {
-    width: 320,
-    height: 320,
-    backgroundColor: C.brandA,
-    top: -100,
-    right: -120,
-  },
-  blobBL: {
-    width: 280,
-    height: 280,
-    backgroundColor: C.brandB,
-    bottom: -80,
-    left: -100,
-  },
+  blob:   { position: 'absolute', borderRadius: 999, opacity: 0.15 },
+  blobTR: { width: 320, height: 320, backgroundColor: C.brandA, top: -100, right: -120 },
+  blobBL: { width: 280, height: 280, backgroundColor: C.brandB, bottom: -80, left: -100 },
 
-  // Layout
-  kav: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    justifyContent: 'center',
-  },
+  kav:    { flex: 1 },
+  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 32, justifyContent: 'center' },
 
-  // Logo satırı
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 28,
-    marginTop: 8,
-  },
-  logoMark: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: C.brandA,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoMarkTxt: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  logoTxt: {
-    color: C.ink,
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-  },
-  betaBadge: {
-    backgroundColor: C.bgSoft,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: C.line,
-  },
-  betaTxt: {
-    color: C.mute,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  langRow: {
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'flex-end',
-    marginBottom: 16,
-  },
-  langBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#E1F5EE',
-  },
-  langBtnActive: {
-    backgroundColor: '#1D9E75',
-  },
-  langBtnTxt: {
-    color: '#085041',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  langBtnTxtActive: {
-    color: '#fff',
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, marginTop: 8 },
 
-  // Kart
+  logoRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoMark:    { width: 30, height: 30, borderRadius: 10, backgroundColor: C.brandA, alignItems: 'center', justifyContent: 'center' },
+  logoMarkTxt: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  logoTxt:     { color: C.ink, fontSize: 18, fontWeight: '700', letterSpacing: -0.4 },
+  betaBadge:   { backgroundColor: C.bgSoft, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(31,41,55,0.10)' },
+  betaTxt:     { color: C.mute, fontSize: 10, fontWeight: '700', letterSpacing: 1.5 },
+
+  langRow:        { flexDirection: 'row', gap: 6 },
+  langBtn:        { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: C.brandBg },
+  langBtnActive:  { backgroundColor: C.brand },
+  langBtnTxt:     { color: C.brandTx, fontSize: 11, fontWeight: '500' },
+  langBtnTxtActive:{ color: '#fff' },
+
   card: {
-    backgroundColor: C.bg,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: C.line,
-    padding: 24,
-    shadowColor: '#1F2937',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 32,
-    elevation: 6,
+    backgroundColor: C.bg, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(31,41,55,0.10)',
+    padding: 24, shadowColor: '#1F2937', shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08, shadowRadius: 32, elevation: 6,
   },
-  cardHeader: {
-    marginBottom: 24,
-  },
-  title: {
-    color: C.ink,
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: C.soft,
-    fontSize: 14,
-    lineHeight: 20,
-  },
+  title:    { color: C.ink, fontSize: 22, fontWeight: '800', letterSpacing: -0.4, marginBottom: 6 },
+  subtitle: { color: C.soft, fontSize: 14, lineHeight: 20, marginBottom: 24 },
 
-  // Form
-  form: {
-    gap: 16,
-  },
-  fieldWrap: {
-    gap: 6,
-  },
-  label: {
-    color: C.soft,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.1,
-  },
+  form:      { gap: 16 },
+  fieldWrap: { gap: 6 },
+  label:     { color: C.soft, fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
   input: {
-    backgroundColor: C.inputBg,
-    borderWidth: 1.5,
-    borderColor: C.line,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: C.ink,
+    backgroundColor: C.inputBg, borderWidth: 1.5, borderColor: 'rgba(31,41,55,0.10)',
+    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: C.ink,
   },
 
-  // Şifre alanı
-  pwWrap: {
-    position: 'relative',
-  },
-  pwInput: {
-    paddingRight: 52,
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: 14,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  },
-  eyeIcon: {
-    fontSize: 18,
-  },
+  pwWrap:  { position: 'relative' },
+  pwInput: { paddingRight: 52 },
+  eyeBtn:  { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
+  eyeIcon: { fontSize: 18 },
 
-  // Hata kutusu
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: '#FAECE7',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  errorIcon: {
-    fontSize: 14,
-    color: '#D85A30',
-    marginTop: 1,
-  },
-  errorTxt: {
-    color: '#D85A30',
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 1,
-    lineHeight: 18,
-  },
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  checkbox: { width: 18, height: 18, borderRadius: 4, marginTop: 2 },
+  termsTxt: { flex: 1, color: C.soft, fontSize: 12.5, lineHeight: 19 },
+  termsLink:{ color: C.brand, fontWeight: '600', textDecorationLine: 'underline' },
 
-  // Submit butonu
+  errorBox:  { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FAECE7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12 },
+  errorIcon: { fontSize: 14, color: '#D85A30', marginTop: 1 },
+  errorTxt:  { color: '#D85A30', fontSize: 13, fontWeight: '500', flex: 1, lineHeight: 18 },
+
   submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: C.brandA,
-    borderRadius: 999,
-    paddingVertical: 17,
-    marginTop: 4,
-    shadowColor: C.brandA,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.38,
-    shadowRadius: 20,
-    elevation: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: C.brand, borderRadius: 999, paddingVertical: 17, marginTop: 4,
+    shadowColor: C.brand, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.38, shadowRadius: 20, elevation: 8,
   },
-  submitBtnDisabled: {
-    opacity: 0.7,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  submitTxt: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  submitArrow: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  submitBtnDisabled: { opacity: 0.7, shadowOpacity: 0, elevation: 0 },
+  submitTxt:   { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
+  submitArrow: { color: '#fff', fontSize: 18, fontWeight: '700' },
 
-  // Mod değiştir
-  switchBtn: {
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  switchTxt: {
-    color: C.mute,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  switchLink: {
-    color: C.brandA,
-    fontWeight: '700',
-  },
+  switchBtn: { alignItems: 'center', paddingTop: 20 },
+  switchTxt: { color: C.mute, fontSize: 13, fontWeight: '500' },
 
-  // Alt not
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    marginTop: 2,
-  },
-  termsTxt: {
-    flex: 1,
-    color: C.soft,
-    fontSize: 12.5,
-    lineHeight: 19,
-  },
-  termsLink: {
-    color: '#1D9E75',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  legalTxt: {
-    color: C.mute,
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 16,
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
+  legalTxt: { color: C.mute, fontSize: 11, textAlign: 'center', lineHeight: 16, marginTop: 20, paddingHorizontal: 16 },
 });
