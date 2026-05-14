@@ -11,9 +11,19 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// ── Token okuma — SecureStore hata toleranslı ────────────────────────────────
+const getToken = async (): Promise<string | null> => {
+  try {
+    return await SecureStore.getItemAsync('userToken');
+  } catch (error) {
+    console.log('Token okuma hatası:', error);
+    return null;
+  }
+};
+
 // ── Request interceptor: token ekle ──────────────────────────────────────────
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('userToken');
+  const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

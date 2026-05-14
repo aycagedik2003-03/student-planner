@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+import { Picker } from '@react-native-picker/picker';
 import { authService } from '../api/AuthService';
 import { useAppStore } from '../store';
 import { RootStackParamList } from '../../App';
 import { parseApiError } from '../api/client';
+import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Auth'>;
@@ -42,6 +44,9 @@ type Mode = 'login' | 'register';
 
 export default function AuthScreen({ navigation }: Props) {
   const { setToken, setUser } = useAppStore();
+  const language    = useAppStore(s => s.language);
+  const setLanguage = useAppStore(s => s.setLanguage);
+  const { t }       = useTranslation();
 
   const [mode, setMode]           = useState<Mode>('login');
   const [name, setName]           = useState('');
@@ -114,7 +119,7 @@ export default function AuthScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Logo ── */}
+          {/* ── Logo + dil seçici ── */}
           <View style={st.logoRow}>
             <View style={st.logoMark}>
               <Text style={st.logoMarkTxt}>s</Text>
@@ -122,6 +127,18 @@ export default function AuthScreen({ navigation }: Props) {
             <Text style={st.logoTxt}>staymate</Text>
             <View style={st.betaBadge}>
               <Text style={st.betaTxt}>BETA</Text>
+            </View>
+            <View style={st.langPicker}>
+              <Picker
+                selectedValue={language}
+                onValueChange={v => setLanguage(v as 'tr' | 'pl' | 'en')}
+                style={st.langPickerInner}
+                dropdownIconColor={C.mute}
+              >
+                <Picker.Item label="🇹🇷" value="tr" />
+                <Picker.Item label="🇵🇱" value="pl" />
+                <Picker.Item label="🇬🇧" value="en" />
+              </Picker>
             </View>
           </View>
 
@@ -144,7 +161,7 @@ export default function AuthScreen({ navigation }: Props) {
               {/* Ad Soyad — sadece kayıt modunda */}
               {!isLogin && (
                 <View style={st.fieldWrap}>
-                  <Text style={st.label}>Ad Soyad</Text>
+                  <Text style={st.label}>{t('auth.name')}</Text>
                   <TextInput
                     style={st.input}
                     placeholder="Adın ve soyadın"
@@ -159,7 +176,7 @@ export default function AuthScreen({ navigation }: Props) {
 
               {/* E-posta */}
               <View style={st.fieldWrap}>
-                <Text style={st.label}>E-posta</Text>
+                <Text style={st.label}>{t('auth.email')}</Text>
                 <TextInput
                   style={st.input}
                   placeholder="ornek@email.com"
@@ -175,7 +192,7 @@ export default function AuthScreen({ navigation }: Props) {
 
               {/* Şifre */}
               <View style={st.fieldWrap}>
-                <Text style={st.label}>Şifre</Text>
+                <Text style={st.label}>{t('auth.password')}</Text>
                 <View style={st.pwWrap}>
                   <TextInput
                     style={[st.input, st.pwInput]}
@@ -219,7 +236,7 @@ export default function AuthScreen({ navigation }: Props) {
                 ) : (
                   <>
                     <Text style={st.submitTxt}>
-                      {isLogin ? 'Giriş Yap' : 'Hesap Oluştur'}
+                      {isLogin ? t('auth.login') : t('auth.register')}
                     </Text>
                     <Text style={st.submitArrow}>→</Text>
                   </>
@@ -327,6 +344,19 @@ const st = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.5,
+  },
+  langPicker: {
+    marginLeft: 'auto' as any,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: C.bgSoft,
+  },
+  langPickerInner: {
+    height: 34,
+    width: 80,
+    color: C.ink,
   },
 
   // Kart
