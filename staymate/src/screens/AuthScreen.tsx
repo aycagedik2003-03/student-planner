@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -13,8 +14,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-import { Picker } from '@react-native-picker/picker';
 import { authService } from '../api/AuthService';
 import { useAppStore } from '../store';
 import { RootStackParamList } from '../../App';
@@ -119,7 +118,7 @@ export default function AuthScreen({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Logo + dil seçici ── */}
+          {/* ── Logo ── */}
           <View style={st.logoRow}>
             <View style={st.logoMark}>
               <Text style={st.logoMarkTxt}>s</Text>
@@ -128,18 +127,21 @@ export default function AuthScreen({ navigation }: Props) {
             <View style={st.betaBadge}>
               <Text style={st.betaTxt}>BETA</Text>
             </View>
-            <View style={st.langPicker}>
-              <Picker
-                selectedValue={language}
-                onValueChange={v => setLanguage(v as 'tr' | 'pl' | 'en')}
-                style={st.langPickerInner}
-                dropdownIconColor={C.mute}
+          </View>
+
+          {/* ── Dil seçici — button group ── */}
+          <View style={st.langRow}>
+            {([ { code: 'tr', label: 'Türkçe' }, { code: 'pl', label: 'Polski' }, { code: 'en', label: 'English' } ] as const).map(lang => (
+              <Pressable
+                key={lang.code}
+                onPress={() => setLanguage(lang.code)}
+                style={[st.langBtn, language === lang.code && st.langBtnActive]}
               >
-                <Picker.Item label="🇹🇷" value="tr" />
-                <Picker.Item label="🇵🇱" value="pl" />
-                <Picker.Item label="🇬🇧" value="en" />
-              </Picker>
-            </View>
+                <Text style={[st.langBtnTxt, language === lang.code && st.langBtnTxtActive]}>
+                  {lang.label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
           {/* ── Kart ── */}
@@ -147,12 +149,12 @@ export default function AuthScreen({ navigation }: Props) {
             {/* Başlık */}
             <View style={st.cardHeader}>
               <Text style={st.title}>
-                {isLogin ? 'Tekrar Hoş Geldin 👋' : 'Hesap Oluştur ✨'}
+                {isLogin ? `${t('welcome')} 👋` : `${t('auth.register')} ✨`}
               </Text>
               <Text style={st.subtitle}>
                 {isLogin
-                  ? 'E-posta ve şifrenle giriş yap.'
-                  : 'Ücretsiz hesap aç, ev arkadaşını bul.'}
+                  ? `${t('auth.email')} & ${t('auth.password').toLowerCase()}`
+                  : t('auth.alreadyHaveAccount').split('?')[0] + '?'}
               </Text>
             </View>
 
@@ -345,18 +347,28 @@ const st = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.5,
   },
-  langPicker: {
-    marginLeft: 'auto' as any,
-    borderWidth: 1,
-    borderColor: C.line,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: C.bgSoft,
+  langRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+    marginBottom: 16,
   },
-  langPickerInner: {
-    height: 34,
-    width: 80,
-    color: C.ink,
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#E1F5EE',
+  },
+  langBtnActive: {
+    backgroundColor: '#1D9E75',
+  },
+  langBtnTxt: {
+    color: '#085041',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  langBtnTxtActive: {
+    color: '#fff',
   },
 
   // Kart

@@ -1,5 +1,6 @@
 export const translations = {
   tr: {
+    welcome: 'Hoşgeldiniz',
     auth: {
       register:           'Hesap Oluştur',
       login:              'Giriş Yap',
@@ -24,6 +25,7 @@ export const translations = {
     },
   },
   pl: {
+    welcome: 'Witaj',
     auth: {
       register:           'Utwórz konto',
       login:              'Zaloguj się',
@@ -48,6 +50,7 @@ export const translations = {
     },
   },
   en: {
+    welcome: 'Welcome',
     auth: {
       register:           'Create Account',
       login:              'Login',
