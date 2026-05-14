@@ -4,36 +4,41 @@ import { validateTaskForm } from '../../utils/validation'
 import { TASK_TYPES, TASK_PRIORITIES, TASK_STATUSES } from '../../utils/constants'
 import { toInputDate, fromInputDate } from '../../utils/dateUtils'
 import Button from '../common/Button'
-import Input from '../common/Input'
+import Input  from '../common/Input'
+
+const selectClass = [
+  'w-full rounded-xl border border-gray-300 dark:border-gray-600',
+  'px-3 py-2.5 text-base sm:text-sm',     /* 16px on mobile = no iOS zoom */
+  'bg-white dark:bg-gray-800',
+  'text-gray-900 dark:text-gray-100',
+  'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
+].join(' ')
+
+const labelClass = 'text-sm font-medium text-gray-700 dark:text-gray-300'
 
 const TaskForm = ({ task, onClose }) => {
   const { createTask, updateTask } = useTasks()
   const isEditing = Boolean(task)
 
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    type: 'assignment',
-    priority: 'medium',
-    status: 'pending',
-    dueDate: '',
-    estimatedHours: '',
-    category: '',
+    title: '', description: '', type: 'assignment',
+    priority: 'medium', status: 'pending',
+    dueDate: '', estimatedHours: '', category: '',
   })
-  const [errors, setErrors] = useState({})
+  const [errors,  setErrors]  = useState({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (task) {
       setForm({
-        title: task.title || '',
-        description: task.description || '',
-        type: task.type || 'assignment',
-        priority: task.priority || 'medium',
-        status: task.status || 'pending',
-        dueDate: task.dueDate ? toInputDate(task.dueDate) : '',
+        title:          task.title          || '',
+        description:    task.description    || '',
+        type:           task.type           || 'assignment',
+        priority:       task.priority       || 'medium',
+        status:         task.status         || 'pending',
+        dueDate:        task.dueDate        ? toInputDate(task.dueDate) : '',
         estimatedHours: task.estimatedHours || '',
-        category: task.category || '',
+        category:       task.category       || '',
       })
     }
   }, [task])
@@ -48,31 +53,25 @@ const TaskForm = ({ task, onClose }) => {
     e.preventDefault()
     const errs = validateTaskForm(form)
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
-
     setLoading(true)
     await new Promise(r => setTimeout(r, 200))
-
     const data = {
       ...form,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      dueDate: form.dueDate ? fromInputDate(form.dueDate) : null,
+      title:          form.title.trim(),
+      description:    form.description.trim(),
+      dueDate:        form.dueDate        ? fromInputDate(form.dueDate) : null,
       estimatedHours: form.estimatedHours ? Number(form.estimatedHours) : null,
-      category: form.category.trim(),
+      category:       form.category.trim(),
     }
-
-    if (isEditing) {
-      updateTask(task.id, data)
-    } else {
-      createTask(data)
-    }
-
+    if (isEditing) updateTask(task.id, data)
+    else           createTask(data)
     setLoading(false)
     onClose()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 sm:gap-4" noValidate>
+
       <Input
         label="Task title *"
         name="title"
@@ -82,51 +81,39 @@ const TaskForm = ({ task, onClose }) => {
         error={errors.title}
       />
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+      {/* Description */}
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass}>Description</label>
         <textarea
           name="description"
           value={form.description}
           onChange={handleChange}
-          placeholder="Additional details..."
+          placeholder="Additional details…"
           rows={3}
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors"
+          className={`${selectClass} resize-none`}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Type *</label>
-          <select
-            name="type"
-            value={form.type}
-            onChange={handleChange}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {TASK_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
+      {/* Type & Priority — stacked on mobile, side-by-side on sm+ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Type *</label>
+          <select name="type" value={form.type} onChange={handleChange} className={selectClass}>
+            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
           {errors.type && <p className="text-xs text-red-500">{errors.type}</p>}
         </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority *</label>
-          <select
-            name="priority"
-            value={form.priority}
-            onChange={handleChange}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {TASK_PRIORITIES.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Priority *</label>
+          <select name="priority" value={form.priority} onChange={handleChange} className={selectClass}>
+            {TASK_PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
           {errors.priority && <p className="text-xs text-red-500">{errors.priority}</p>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Due date & Hours */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
           label="Due date"
           type="date"
@@ -148,7 +135,8 @@ const TaskForm = ({ task, onClose }) => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Category & Status */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
           label="Category"
           name="category"
@@ -157,29 +145,34 @@ const TaskForm = ({ task, onClose }) => {
           placeholder="e.g. Math, Physics"
         />
         {isEditing && (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {TASK_STATUSES.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass}>Status</label>
+            <select name="status" value={form.status} onChange={handleChange} className={selectClass}>
+              {TASK_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 pt-2">
+      {/* Actions */}
+      <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
           Cancel
         </Button>
-        <Button type="submit" loading={loading} className="flex-1">
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 h-10 rounded-xl text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+          style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
+        >
+          {loading && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+          )}
           {isEditing ? 'Save Changes' : 'Create Task'}
-        </Button>
+        </button>
       </div>
     </form>
   )

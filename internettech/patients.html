@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patients — MyPet VetClinic</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">🐾 MyPet VetClinic</div>
+  <div class="nav-links">
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/patients.html" class="active">Patients</a>
+    <a href="/booking.html">Appointments</a>
+    <a href="/records.html">Records</a>
+    <a href="/admin.html" id="nav-admin-link" style="display:none;">Admin</a>
+  </div>
+  <div id="nav-user" class="nav-user-area"></div>
+</nav>
+
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1>Patients</h1>
+      <p style="color:#6b7280;margin:0.3rem 0 0;" id="patientCount">Loading…</p>
+    </div>
+    <div id="header-actions"></div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍  Search by name, species, breed or owner…" oninput="filterPatients(this.value)" />
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div id="patientsTableWrap"><div class="loading">Loading patients…</div></div>
+  </div>
+</div>
+
+<!-- Add/Edit Patient Modal -->
+<div class="modal-overlay" id="patientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Patient</h3>
+      <button class="modal-close" onclick="closeModal('patientModal')">✕</button>
+    </div>
+    <form onsubmit="savePatient(event)">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Patient Name *</label>
+          <input type="text" id="f-name" required placeholder="e.g. Max" />
+        </div>
+        <div class="form-group">
+          <label>Species *</label>
+          <select id="f-species" required>
+            <option value="">Select…</option>
+            <option value="Dog">Dog</option>
+            <option value="Cat">Cat</option>
+            <option value="Rabbit">Rabbit</option>
+            <option value="Bird">Bird</option>
+            <option value="Hamster">Hamster</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Breed</label>
+          <input type="text" id="f-breed" placeholder="e.g. Golden Retriever" />
+        </div>
+        <div class="form-group">
+          <label>Age (years)</label>
+          <input type="number" id="f-age" step="0.5" min="0" placeholder="3" />
+        </div>
+        <div class="form-group">
+          <label>Weight (kg)</label>
+          <input type="number" id="f-weight" step="0.1" min="0" placeholder="28.5" />
+        </div>
+        <div class="form-group">
+          <label>Owner Name *</label>
+          <input type="text" id="f-owner" required placeholder="John Smith" />
+        </div>
+        <div class="form-group">
+          <label>Owner Phone</label>
+          <input type="tel" id="f-phone" placeholder="+48 600 100 001" />
+        </div>
+        <div class="form-group">
+          <label>Owner Email</label>
+          <input type="email" id="f-email" placeholder="owner@example.com" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Owner Address</label>
+        <input type="text" id="f-address" placeholder="ul. Długa 12, Poznań" />
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="f-notes" rows="2" placeholder="Allergies, conditions, special notes…"></textarea>
+      </div>
+      <input type="hidden" id="f-id" />
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('patientModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save Patient</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Patient Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 id="detailTitle">Patient Details</h3>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+let user, allPatients = [];
+
+const user_ = requireAuth();
+if (user_) { user = user_; init(); }
+
+async function init() {
+  renderNavUser();
+  if (user.role === 'admin') document.getElementById('nav-admin-link').style.display = '';
+  if (user.role !== 'doctor') {
+    document.getElementById('header-actions').innerHTML =
+      `<button class="btn btn-primary" onclick="openAddModal()">+ Add Patient</button>`;
+  }
+  await loadPatients();
+}
+
+async function loadPatients() {
+  const wrap = document.getElementById('patientsTableWrap');
+  try {
+    allPatients = await api.get('/patients') || [];
+    document.getElementById('patientCount').textContent = `${allPatients.length} patient(s) registered`;
+    renderTable(allPatients);
+  } catch(e) {
+    wrap.innerHTML = '<p style="color:#ef4444;">Failed to load patients.</p>';
+  }
+}
+
+function renderTable(list) {
+  const wrap = document.getElementById('patientsTableWrap');
+  if (!list.length) {
+    wrap.innerHTML = '<p style="color:#9ca3af;padding:1.5rem 0;text-align:center;">No patients found.</p>';
+    return;
+  }
+  const canEdit = user.role !== 'doctor';
+  wrap.innerHTML = `<table class="data-table">
+    <thead><tr><th>Name</th><th>Species / Breed</th><th>Age</th><th>Weight</th><th>Owner</th><th>Contact</th><th>Actions</th></tr></thead>
+    <tbody>${list.map(p => `
+      <tr>
+        <td><strong>${p.name}</strong></td>
+        <td>${p.species}${p.breed ? '<br><small style="color:#9ca3af">'+p.breed+'</small>' : ''}</td>
+        <td>${p.age ? p.age+' yrs' : '—'}</td>
+        <td>${p.weight ? p.weight+' kg' : '—'}</td>
+        <td>${p.owner_name}</td>
+        <td>${p.owner_phone || '—'}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-sm" onclick="viewPatient(${p.id})">View</button>
+            ${canEdit ? `<button class="btn btn-sm btn-warning" onclick="editPatient(${p.id})">Edit</button>` : ''}
+            ${user.role === 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deletePatient(${p.id},'${p.name}')">Delete</button>` : ''}
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function filterPatients(q) {
+  const term = q.toLowerCase();
+  renderTable(allPatients.filter(p =>
+    p.name.toLowerCase().includes(term) ||
+    p.species.toLowerCase().includes(term) ||
+    (p.breed||'').toLowerCase().includes(term) ||
+    p.owner_name.toLowerCase().includes(term)
+  ));
+}
+
+function openAddModal() {
+  document.getElementById('modalTitle').textContent = 'Add New Patient';
+  ['name','breed','age','weight','owner','phone','email','address','notes','id'].forEach(f =>
+    { const el = document.getElementById('f-'+f); if (el) el.value = ''; });
+  document.getElementById('f-species').value = '';
+  openModal('patientModal');
+}
+
+function editPatient(id) {
+  const p = allPatients.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modalTitle').textContent = 'Edit Patient';
+  document.getElementById('f-id').value      = p.id;
+  document.getElementById('f-name').value    = p.name;
+  document.getElementById('f-species').value = p.species;
+  document.getElementById('f-breed').value   = p.breed   || '';
+  document.getElementById('f-age').value     = p.age     || '';
+  document.getElementById('f-weight').value  = p.weight  || '';
+  document.getElementById('f-owner').value   = p.owner_name;
+  document.getElementById('f-phone').value   = p.owner_phone   || '';
+  document.getElementById('f-email').value   = p.owner_email   || '';
+  document.getElementById('f-address').value = p.owner_address || '';
+  document.getElementById('f-notes').value   = p.notes || '';
+  openModal('patientModal');
+}
+
+async function savePatient(e) {
+  e.preventDefault();
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const id = document.getElementById('f-id').value;
+  const body = {
+    name:          document.getElementById('f-name').value.trim(),
+    species:       document.getElementById('f-species').value,
+    breed:         document.getElementById('f-breed').value.trim(),
+    age:           document.getElementById('f-age').value,
+    weight:        document.getElementById('f-weight').value,
+    owner_name:    document.getElementById('f-owner').value.trim(),
+    owner_phone:   document.getElementById('f-phone').value.trim(),
+    owner_email:   document.getElementById('f-email').value.trim(),
+    owner_address: document.getElementById('f-address').value.trim(),
+    notes:         document.getElementById('f-notes').value.trim()
+  };
+  try {
+    if (id) {
+      await api.put('/patients/'+id, body);
+      showSuccess('Patient updated successfully.');
+    } else {
+      await api.post('/patients', body);
+      showSuccess('Patient added successfully.');
+    }
+    closeModal('patientModal');
+    await loadPatients();
+  } catch(err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Patient';
+  }
+}
+
+async function deletePatient(id, name) {
+  if (!confirm(`Delete patient "${name}"? This cannot be undone.`)) return;
+  try {
+    await api.delete('/patients/'+id);
+    showSuccess('Patient deleted.');
+    await loadPatients();
+  } catch(err) { showError(err.message); }
+}
+
+async function viewPatient(id) {
+  const content = document.getElementById('detailContent');
+  content.innerHTML = '<div class="loading">Loading…</div>';
+  openModal('detailModal');
+  try {
+    const p = await api.get('/patients/'+id);
+    document.getElementById('detailTitle').textContent = p.name + ' — Patient Profile';
+    content.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>Animal Info</h4>
+          <div class="detail-row"><span>Species</span><strong>${p.species}</strong></div>
+          <div class="detail-row"><span>Breed</span><strong>${p.breed||'—'}</strong></div>
+          <div class="detail-row"><span>Age</span><strong>${p.age ? p.age+' years' : '—'}</strong></div>
+          <div class="detail-row"><span>Weight</span><strong>${p.weight ? p.weight+' kg' : '—'}</strong></div>
+          <div class="detail-row"><span>Notes</span><strong>${p.notes||'—'}</strong></div>
+        </div>
+        <div class="detail-section">
+          <h4>Owner Info</h4>
+          <div class="detail-row"><span>Name</span><strong>${p.owner_name}</strong></div>
+          <div class="detail-row"><span>Phone</span><strong>${p.owner_phone||'—'}</strong></div>
+          <div class="detail-row"><span>Email</span><strong>${p.owner_email||'—'}</strong></div>
+          <div class="detail-row"><span>Address</span><strong>${p.owner_address||'—'}</strong></div>
+        </div>
+      </div>
+      <h4 style="margin-top:1.5rem;">Appointment History (${(p.appointments||[]).length})</h4>
+      ${(p.appointments||[]).length ? `<table class="data-table" style="margin-top:0.5rem;">
+        <thead><tr><th>Date</th><th>Time</th><th>Reason</th><th>Status</th></tr></thead>
+        <tbody>${p.appointments.slice().reverse().map(a=>`
+          <tr><td>${a.date}</td><td>${a.time}</td><td>${a.reason||'—'}</td><td>${statusBadge(a.status)}</td></tr>`).join('')}
+        </tbody></table>`
+      : '<p style="color:#9ca3af;">No appointments yet.</p>'}
+      <h4 style="margin-top:1.5rem;">Medical Records (${(p.records||[]).length})</h4>
+      ${(p.records||[]).length ? `<div>${p.records.slice().reverse().map(r=>`
+        <div class="record-card" style="border:1px solid #e5e7eb;border-radius:8px;padding:1rem;margin-bottom:0.8rem;">
+          <div style="font-size:0.78rem;color:#9ca3af;margin-bottom:0.5rem;">${fmtDate(r.created_at)}</div>
+          <div><strong>Diagnosis:</strong> ${r.diagnosis}</div>
+          <div><strong>Treatment:</strong> ${r.treatment||'—'}</div>
+          <div><strong>Medications:</strong> ${r.medications||'—'}</div>
+          ${r.notes ? `<div><strong>Notes:</strong> ${r.notes}</div>` : ''}
+        </div>`).join('')}</div>`
+      : '<p style="color:#9ca3af;">No medical records yet.</p>'}`;
+  } catch(e) {
+    content.innerHTML = '<p style="color:#ef4444;">Failed to load patient details.</p>';
+  }
+}
+</script>
+</body>
+</html>

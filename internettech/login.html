@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — MyPet VetClinic</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+    .login-card {
+      background:white; border-radius:16px; box-shadow:0 8px 32px rgba(79,70,229,0.15);
+      padding:2.5rem 2rem; width:100%; max-width:420px;
+    }
+    .login-logo { text-align:center; margin-bottom:2rem; }
+    .login-logo .paw { font-size:3rem; display:block; }
+    .login-logo h1  { font-size:1.5rem; color:#1e3a8a; margin:0.5rem 0 0.2rem; }
+    .login-logo p   { color:#6b7280; font-size:0.88rem; margin:0; }
+    .login-card label { display:block; font-size:0.82rem; font-weight:600; color:#374151; margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.06em; }
+    .login-card input { width:100%; padding:0.75rem 1rem; border:1.5px solid #e5e7eb; border-radius:8px; font-size:0.95rem; box-sizing:border-box; transition:border-color 0.2s; }
+    .login-card input:focus { outline:none; border-color:#6366f1; }
+    .login-btn { width:100%; padding:0.8rem; background:#4f46e5; color:white; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:0.5rem; transition:background 0.2s; }
+    .login-btn:hover { background:#4338ca; }
+    .login-btn:disabled { background:#9ca3af; cursor:not-allowed; }
+    .login-err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; padding:0.7rem 1rem; font-size:0.85rem; margin-bottom:1rem; display:none; }
+    .login-hint { margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid #f3f4f6; }
+    .login-hint h4 { font-size:0.78rem; color:#9ca3af; margin:0 0 0.6rem; text-transform:uppercase; letter-spacing:0.08em; }
+    .hint-row { display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; padding:0.25rem 0; }
+    .hint-role { color:#4f46e5; font-weight:600; min-width:100px; }
+    .hint-cred { color:#6b7280; font-family:monospace; }
+    .form-group { margin-bottom:1.2rem; }
+  </style>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-logo">
+    <span class="paw">🐾</span>
+    <h1>MyPet VetClinic</h1>
+    <p>Clinic Management System</p>
+  </div>
+
+  <div class="login-err" id="loginErr"></div>
+
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="your@email.com" autocomplete="email" />
+  </div>
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+  </div>
+  <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+
+  <div class="login-hint">
+    <h4>Test Accounts</h4>
+    <div class="hint-row"><span class="hint-role">Admin</span><span class="hint-cred">admin@vetclinic.com / Admin123</span></div>
+    <div class="hint-row"><span class="hint-role">Doctor</span><span class="hint-cred">dr.webb@vetclinic.com / Doctor123</span></div>
+    <div class="hint-row"><span class="hint-role">Doctor</span><span class="hint-cred">dr.bennett@vetclinic.com / Doctor123</span></div>
+    <div class="hint-row"><span class="hint-role">Receptionist</span><span class="hint-cred">reception@vetclinic.com / Recep123</span></div>
+  </div>
+</div>
+
+<script>
+  if (localStorage.getItem('vc_token')) window.location.href = '/dashboard.html';
+
+  async function doLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('loginBtn');
+    const errEl    = document.getElementById('loginErr');
+
+    errEl.style.display = 'none';
+    if (!email || !password) {
+      errEl.textContent = 'Please enter email and password.';
+      errEl.style.display = 'block';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Signing in…';
+
+    try {
+      const res  = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed.');
+      localStorage.setItem('vc_token', data.token);
+      localStorage.setItem('vc_user',  JSON.stringify(data.user));
+      window.location.href = '/dashboard.html';
+    } catch (err) {
+      errEl.textContent   = err.message;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>

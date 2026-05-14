@@ -1,0 +1,211 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* BODY */
+body {
+  font-family: 'Comic Sans MS', cursive;
+  background: linear-gradient(135deg, #ffd6ec, #ffc2e2);
+  text-align: center;
+}
+
+/* TITLE + KITTY */
+.title {
+  font-size: 60px;
+  color: white;
+  margin-top: 80px;
+
+  -webkit-text-stroke: 2px #ff69b4;
+
+  text-shadow: 
+    2px 2px 0 #ff69b4,
+    4px 4px 10px rgba(255, 105, 180, 0.5);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* KITTY IMAGES */
+.side-kitty {
+  width: 80px;
+  height: auto;
+}
+
+/* CONTAINER */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+}
+
+/* CARD */
+.box {
+  background: #fff0f6;
+  padding: 30px;
+  border-radius: 30px;
+
+  box-shadow: 0 10px 30px rgba(255, 105, 180, 0.3);
+  width: 320px;
+}
+
+/* INPUT */
+input {
+  width: 65%;
+  padding: 10px;
+
+  border-radius: 20px;
+  border: none;
+  outline: none;
+
+  background: #ffe4ef;
+}
+
+/* BUTTON */
+button {
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: none;
+
+  background: #ff69b4;
+  color: white;
+
+  cursor: pointer;
+  margin-left: 5px;
+
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #ff1493;
+  transform: scale(1.05);
+}
+
+/* TEXT */
+#city {
+  margin-top: 15px;
+  font-size: 24px;
+  color: #ff4fa3;
+}
+
+#temp {
+  font-size: 20px;
+  color: #555;
+}
+
+/* WEATHER ICON */
+#icon {
+  width: 120px;
+  margin-top: 10px;
+}
+
+/* ✨ OPTIONAL ANIMATION */
+.side-kitty {
+  animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+#icon {
+  width: 140px;
+  margin-top: 10px;
+  filter: drop-shadow(0 8px 15px rgba(255,105,180,0.3));
+}
+#hourly {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.hour-card {
+  min-width: 70px;
+  background: #ffe4ef;
+  border-radius: 15px;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+}
+/* SCROLL BAR GÜZELLEŞTİRME */
+#hourly::-webkit-scrollbar {
+  height: 6px;
+}
+
+#hourly::-webkit-scrollbar-track {
+  background: #ffd6ec;
+  border-radius: 10px;
+}
+
+#hourly::-webkit-scrollbar-thumb {
+  background: #ff69b4;
+  border-radius: 10px;
+}
+
+#hourly::-webkit-scrollbar-thumb:hover {
+  background: #ff1493;
+}
+
+#hourly {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  overflow-x: auto;
+
+  scroll-snap-type: x mandatory;
+}
+
+.hour-card {
+  scroll-snap-align: center;
+}
+.hour-card {
+  min-width: 70px;
+  background: #ffe4ef;
+  padding: 10px;
+  border-radius: 20px;
+
+  box-shadow: 0 8px 20px rgba(255, 105, 180, 0.25);
+  text-align: center;
+}
+#hourly {
+  scroll-snap-type: x mandatory;
+}
+
+.hour-card {
+  scroll-snap-align: center;
+}
+.hour-card p:first-child {
+  font-weight: bold;
+  color: #ff4fa3;
+}
+
+.hour-card p:last-child {
+  color: #555;
+}
+#hourly {
+  scroll-behavior: smooth;
+}
+#hourly {
+  padding-left: 10px;
+}
+.now-card::after {
+  content: "●";
+  color: #ff1493;
+  display: block;
+  font-size: 10px;
+  margin-top: 2px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}

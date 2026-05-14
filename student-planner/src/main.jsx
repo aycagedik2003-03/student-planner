@@ -1,17 +1,12 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+/* Importing settingsStore applies dark mode synchronously before paint */
+import './store/settingsStore.js'
 import App from './App.jsx'
-import useSettingsStore from './store/settingsStore.js'
-
-const Root = () => {
-  const initDarkMode = useSettingsStore(s => s.initDarkMode)
-  useEffect(() => { initDarkMode() }, [initDarkMode])
-  return <App />
-}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Root />
+    <App />
   </StrictMode>
 )

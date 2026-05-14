@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(head -100)",
+      "Bash(node -e \"require\\('./routes/auth'\\)\")",
+      "Bash(node -e \"require\\('./routes/products'\\)\")",
+      "Bash(node server.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

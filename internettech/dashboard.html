@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — MyPet VetClinic</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">🐾 MyPet VetClinic</div>
+  <div class="nav-links">
+    <a href="/dashboard.html" class="active">Dashboard</a>
+    <a href="/patients.html">Patients</a>
+    <a href="/booking.html">Appointments</a>
+    <a href="/records.html">Records</a>
+    <a href="/admin.html" id="nav-admin-link" style="display:none;">Admin</a>
+  </div>
+  <div id="nav-user" class="nav-user-area"></div>
+</nav>
+
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1 id="welcome-title">Dashboard</h1>
+      <p id="welcome-sub" style="color:#6b7280;margin:0.3rem 0 0;"></p>
+    </div>
+    <div id="header-actions"></div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Today's Appointments -->
+  <div class="card" style="margin-top:2rem;" id="todaySection">
+    <div class="card-header">
+      <h3>Today's Appointments</h3>
+      <a href="/booking.html" class="btn btn-sm">View All →</a>
+    </div>
+    <div id="todayList"><div class="loading">Loading…</div></div>
+  </div>
+
+  <!-- Recent Patients (Admin / Receptionist) -->
+  <div class="card" style="margin-top:1.5rem;" id="recentPatientsCard">
+    <div class="card-header">
+      <h3>Recent Patients</h3>
+      <a href="/patients.html" class="btn btn-sm">View All →</a>
+    </div>
+    <div id="recentPatientsList"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const user = requireAuth();
+if (user) init();
+
+async function init() {
+  renderNavUser();
+
+  // Show admin link
+  if (user.role === 'admin') {
+    document.getElementById('nav-admin-link').style.display = '';
+  }
+
+  // Welcome message
+  document.getElementById('welcome-title').textContent = `Welcome back, ${user.name.split(' ')[0]}!`;
+  document.getElementById('welcome-sub').textContent =
+    `${user.role.charAt(0).toUpperCase()+user.role.slice(1)} • ${new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
+
+  // Quick action button
+  if (user.role !== 'doctor') {
+    document.getElementById('header-actions').innerHTML =
+      `<a href="/booking.html" class="btn btn-primary">+ New Appointment</a>`;
+  }
+
+  // Hide recent patients for doctors
+  if (user.role === 'doctor') {
+    document.getElementById('recentPatientsCard').style.display = 'none';
+  }
+
+  await Promise.all([loadStats(), loadTodayAppointments(), loadRecentPatients()]);
+}
+
+async function loadStats() {
+  try {
+    const stats = await api.get('/stats');
+    const defs = user.role === 'doctor'
+      ? [
+          { label: 'My Appointments Today', val: '—', id: 'my-today', icon: '📅' },
+          { label: 'Total Records', val: stats.totalRecords, icon: '📋' },
+          { label: 'Pending',       val: stats.pendingAppts,  icon: '⏳' },
+          { label: 'Completed',     val: stats.completedAppts,icon: '✅' }
+        ]
+      : [
+          { label: 'Total Patients',  val: stats.totalPatients,  icon: '🐾' },
+          { label: 'Doctors',         val: stats.totalDoctors,   icon: '👨‍⚕️' },
+          { label: 'Appts Today',     val: stats.todayAppts,     icon: '📅' },
+          { label: 'Pending Appts',   val: stats.pendingAppts,   icon: '⏳' }
+        ];
+
+    document.getElementById('statsGrid').innerHTML = defs.map(d => `
+      <div class="stat-card">
+        <div class="stat-icon">${d.icon}</div>
+        <div class="stat-val" ${d.id ? `id="${d.id}"` : ''}>${d.val}</div>
+        <div class="stat-label">${d.label}</div>
+      </div>`).join('');
+
+    // For doctor, count their own today's appointments
+    if (user.role === 'doctor') {
+      const appts = await api.get('/appointments');
+      if (appts) {
+        const today = new Date().toISOString().split('T')[0];
+        const myToday = appts.filter(a => a.date === today).length;
+        const el = document.getElementById('my-today');
+        if (el) el.textContent = myToday;
+      }
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function loadTodayAppointments() {
+  const el = document.getElementById('todayList');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const all   = await api.get('/appointments');
+    if (!all) return;
+    const todayList = all.filter(a => a.date === today)
+                         .sort((a,b) => a.time.localeCompare(b.time));
+
+    if (!todayList.length) {
+      el.innerHTML = '<p style="color:#9ca3af;padding:1rem 0;">No appointments scheduled for today.</p>';
+      return;
+    }
+    el.innerHTML = `<table class="data-table">
+      <thead><tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Reason</th><th>Status</th></tr></thead>
+      <tbody>${todayList.map(a => `
+        <tr>
+          <td><strong>${a.time}</strong></td>
+          <td>${a.patient_name} <small style="color:#9ca3af">${a.patient_species}</small></td>
+          <td>${a.doctor_name}</td>
+          <td>${a.reason || '—'}</td>
+          <td>${statusBadge(a.status)}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<p style="color:#ef4444;">Failed to load appointments.</p>';
+  }
+}
+
+async function loadRecentPatients() {
+  if (user.role === 'doctor') return;
+  const el = document.getElementById('recentPatientsList');
+  try {
+    const patients = await api.get('/patients');
+    if (!patients) return;
+    const recent = patients.slice(0, 5);
+    if (!recent.length) { el.innerHTML = '<p style="color:#9ca3af;padding:1rem 0;">No patients yet.</p>'; return; }
+    el.innerHTML = `<table class="data-table">
+      <thead><tr><th>Name</th><th>Species / Breed</th><th>Owner</th><th>Age</th><th></th></tr></thead>
+      <tbody>${recent.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.species}${p.breed ? ' — '+p.breed : ''}</td>
+          <td>${p.owner_name}</td>
+          <td>${p.age ? p.age+' yrs' : '—'}</td>
+          <td><a href="/patients.html" class="btn btn-sm">View</a></td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<p style="color:#ef4444;">Failed to load patients.</p>';
+  }
+}
+</script>
+</body>
+</html>

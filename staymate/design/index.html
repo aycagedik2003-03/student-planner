@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Staymate — Mobile (iOS + Android)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --turq: #00CFC8; --turq-2: #33D9D3; --turq-50: #E6FBFA;
+    --rose: #FF9ACD; --rose-2: #F06EB1; --rose-50: #FFF0F7;
+    --ink: #1F2937; --ink-soft: #4B5563; --ink-mute: #9CA3AF;
+    --line: rgba(31,41,55,0.08);
+    --bg: #FFFFFF; --bg-soft: #FAFAF9;
+  }
+  html, body { background: #F0EFEC; color: var(--ink); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; margin: 0; }
+  /* Brand gradients used inside frames */
+  .grad-brand { background-image: linear-gradient(135deg, #00CFC8 0%, #6BD8E8 45%, #FF9ACD 100%); }
+  .grad-text-sm { background: linear-gradient(110deg, #00A8A2 0%, #00CFC8 35%, #FF9ACD 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .stripe-ph { background-color: #F8FAFC; background-image: repeating-linear-gradient(135deg, rgba(0,207,200,0.12) 0 6px, rgba(255,154,205,0.12) 6px 12px, transparent 12px 22px); }
+  .nice-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .ph-tint-turq { background-image: linear-gradient(135deg, rgba(0,207,200,0.20), rgba(255,154,205,0.10)); }
+  .ph-tint-rose { background-image: linear-gradient(135deg, rgba(255,154,205,0.22), rgba(0,207,200,0.10)); }
+  ::selection { background: rgba(0,207,200,0.22); color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="mobile-ui.jsx"></script>
+<script type="text/babel" src="mobile-screens.jsx"></script>
+<script type="text/babel" src="mobile-app.jsx"></script>
+</body>
+</html>

@@ -3,16 +3,23 @@ import { Eye, EyeOff, BookOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { validateLoginForm } from '../../utils/validation'
-import Button from '../common/Button'
 import Input from '../common/Input'
 
+const Spinner = () => (
+  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+  </svg>
+)
+
 const Login = ({ onSwitch }) => {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
   const { login, error, clearError } = useAuth()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [errors, setErrors] = useState({})
+
+  const [form,         setForm]         = useState({ email: '', password: '' })
+  const [errors,       setErrors]       = useState({})
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading,      setLoading]      = useState(false)
 
   const handleChange = e => {
     const { name, value } = e.target
@@ -33,21 +40,34 @@ const Login = ({ onSwitch }) => {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
-          <BookOpen size={24} className="text-white" />
+    <div className="w-full">
+      {/* ── Brand header ── */}
+      <div className="flex flex-col items-center mb-6 sm:mb-8">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-violet-200 dark:shadow-violet-900/40"
+          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+        >
+          <BookOpen size={26} className="text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Sign in to your student planner</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          Welcome back
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1.5">
+          Sign in to your student planner
+        </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
+      {/* ── Card ── */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/60 dark:shadow-black/40 border border-gray-100 dark:border-gray-700 p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+
+          {/* Server-level error banner */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-600 dark:text-red-400">
-              {error}
+            <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/60 rounded-xl px-4 py-3">
+              <svg className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+              </svg>
+              <p className="text-sm text-red-600 dark:text-red-400 leading-snug">{error}</p>
             </div>
           )}
 
@@ -60,6 +80,9 @@ const Login = ({ onSwitch }) => {
             placeholder="you@university.edu"
             error={errors.email}
             autoComplete="email"
+            autoCapitalize="none"
+            spellCheck="false"
+            inputMode="email"
           />
 
           <Input
@@ -75,35 +98,31 @@ const Login = ({ onSwitch }) => {
               <button
                 type="button"
                 onClick={() => setShowPassword(p => !p)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             }
           />
 
+          {/* Submit — 48px min height for touch target */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full mt-1 h-12 rounded-xl text-base font-semibold text-white flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
           >
-            {loading && (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-            )}
-            Sign In
+            {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
           </button>
         </form>
 
+        {/* Switch to register */}
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
           Don&apos;t have an account?{' '}
           <button
             onClick={onSwitch}
-            className="font-medium hover:underline"
+            className="font-semibold hover:underline underline-offset-2"
             style={{ color: '#7c3aed' }}
           >
             Create one
