@@ -134,6 +134,8 @@ type AppStore = {
   updateNotificationPref: (key: keyof NotificationPreferences, val: boolean) => void;
   appSettings: AppSettings;
   updateSetting: (key: keyof AppSettings, val: boolean) => void;
+  language: 'tr' | 'pl' | 'en';
+  setLanguage: (lang: 'tr' | 'pl' | 'en') => void;
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -190,6 +192,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ── Misc ─────────────────────────────────────────────────────────────────────
   isVerified: false,
   setVerified: (isVerified) => set({ isVerified }),
+  language: 'tr',
+  setLanguage: (language) => set({ language }),
   notificationPreferences: { matches: true, messages: true, listings: false },
   updateNotificationPref: (key, val) =>
     set((s) => ({

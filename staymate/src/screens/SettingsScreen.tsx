@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar,
   ScrollView, Switch, Alert,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -10,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TabParamList, RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
+import { useTranslation } from '../i18n/useTranslation';
 
 type NavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Settings'>,
@@ -78,6 +80,9 @@ export default function SettingsScreen({ navigation }: Props) {
   const updateNotifPref = useAppStore(s => s.updateNotificationPref);
   const appSettings     = useAppStore(s => s.appSettings);
   const updateSetting   = useAppStore(s => s.updateSetting);
+  const language        = useAppStore(s => s.language);
+  const setLanguage     = useAppStore(s => s.setLanguage);
+  const { t }           = useTranslation();
 
   const handleLogout = () => {
     Alert.alert(
@@ -186,6 +191,29 @@ export default function SettingsScreen({ navigation }: Props) {
             onPress={() => handlePlaceholder('Gizlilik Politikası')} />
         </View>
 
+        {/* ── Dil ── */}
+        <SectionHeader label={t('settings.language').toUpperCase()} />
+        <View style={st.card}>
+          <View style={st.row}>
+            <View style={st.rowIconWrap}>
+              <Text style={st.rowIcon}>🌐</Text>
+            </View>
+            <Text style={[st.rowLabel, { flex: 0, marginRight: 8 }]}>{t('settings.language')}</Text>
+            <View style={st.pickerWrap}>
+              <Picker
+                selectedValue={language}
+                onValueChange={v => setLanguage(v as 'tr' | 'pl' | 'en')}
+                style={st.picker}
+                dropdownIconColor={C.mute}
+              >
+                <Picker.Item label="🇹🇷  Türkçe" value="tr" />
+                <Picker.Item label="🇵🇱  Polski" value="pl" />
+                <Picker.Item label="🇬🇧  English" value="en" />
+              </Picker>
+            </View>
+          </View>
+        </View>
+
         {/* ── Hesap ── */}
         <SectionHeader label="HESAP" />
         <View style={st.card}>
@@ -215,7 +243,7 @@ export default function SettingsScreen({ navigation }: Props) {
 
         {/* ── Çıkış Yap ── */}
         <TouchableOpacity style={st.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-          <Text style={st.logoutTxt}>🚪  Çıkış Yap</Text>
+          <Text style={st.logoutTxt}>🚪  {t('settings.logout')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 32 }} />
@@ -285,5 +313,12 @@ const st = StyleSheet.create({
     shadowColor: C.red, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1, shadowRadius: 8, elevation: 2,
   },
-  logoutTxt: { color: C.red, fontSize: 15, fontWeight: '700' },
+  logoutTxt:  { color: C.red, fontSize: 15, fontWeight: '700' },
+
+  pickerWrap: {
+    flex: 1, borderWidth: 1, borderColor: C.line,
+    borderRadius: 12, overflow: 'hidden',
+    backgroundColor: C.bgSoft,
+  },
+  picker: { height: 44, color: C.ink },
 });
