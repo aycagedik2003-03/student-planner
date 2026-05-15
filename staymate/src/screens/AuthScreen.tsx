@@ -167,12 +167,6 @@ export default function AuthScreen({ navigation }: Props) {
 
   const handleSubmit = isLogin ? handleLogin : handleRegister;
 
-  const toggleMode = () => {
-    setName(''); setEmail(''); setPassword(''); setError('');
-    setAgreedToTerms(false); setPasswordErrors([]);
-    setMode(isLogin ? 'register' : 'login');
-  };
-
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={st.root}>
@@ -362,11 +356,15 @@ export default function AuthScreen({ navigation }: Props) {
             </View>
 
             {/* Toggle mode */}
-            <TouchableOpacity style={st.switchBtn} onPress={toggleMode} activeOpacity={0.7} disabled={loading}>
+            <Pressable
+              onPress={() => { setMode(isLogin ? 'register' : 'login'); setError(''); }}
+              style={{ alignItems: 'center', marginTop: 16 }}
+              disabled={loading}
+            >
               <Text style={st.switchTxt}>
                 {isLogin ? t('auth.noAccount') : t('auth.alreadyHaveAccount')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <Text style={st.legalTxt}>{t('auth.continueText')}</Text>
