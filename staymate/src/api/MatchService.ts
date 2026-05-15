@@ -67,8 +67,18 @@ export const matchService = {
    * Mevcut kullanıcıya önerilen profilleri getirir.
    * `filters` opsiyonel query param olarak iletilir.
    */
-  getSuggestions: async (filters: Record<string, unknown> = {}): Promise<ApiSuggestion[]> => {
-    const res = await api.get<ApiSuggestion[]>('/matches/suggestions', { params: filters });
+  getSuggestions: async (filters: Record<string, any> = {}): Promise<ApiSuggestion[]> => {
+    const params = new URLSearchParams();
+    if (filters.city)      params.append('city',       String(filters.city));
+    if (filters.budgetMin) params.append('budget_min', String(filters.budgetMin));
+    if (filters.budgetMax) params.append('budget_max', String(filters.budgetMax));
+    if (filters.gender)    params.append('gender',     String(filters.gender));
+    if (filters.smoking)   params.append('smoking',    String(filters.smoking));
+    if (filters.alcohol)   params.append('alcohol',    String(filters.alcohol));
+
+    console.log('Match filters:', Object.fromEntries(params));
+
+    const res = await api.get<ApiSuggestion[]>(`/matches/suggestions?${params.toString()}`);
     return res.data;
   },
 

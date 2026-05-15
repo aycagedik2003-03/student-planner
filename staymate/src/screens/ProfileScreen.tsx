@@ -181,6 +181,12 @@ export default function ProfileScreen({ navigation }: Props) {
         if (v.isVerified === true || v.verified === true) {
           setVerified(true);
         }
+      } else {
+        const err = (verifyResult as PromiseRejectedResult).reason;
+        if (err?.response?.status === 404) {
+          console.log('Verify status endpoint henüz yok');
+        }
+        setVerified(false);
       }
 
       setLoading(false);

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar,
-  FlatList, TextInput, Modal, Animated,
+  FlatList, TextInput, Modal, Animated, Alert,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../App';
 import { scheduleMessageNotification } from '../services/NotificationService';
 import { useAppStore, type ChatMessage } from '../store';
 import { chatService } from '../api/ChatService';
+import api from '../api/client';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Chat'>;
@@ -157,7 +158,7 @@ export default function ChatScreen({ navigation, route }: Props) {
   };
 
   // ── Mesaj gönder ───────────────────────────────────────────────────────────
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     const text = inputText.trim();
     if (!text) return;
 
@@ -165,20 +166,28 @@ export default function ChatScreen({ navigation, route }: Props) {
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
     const newMsg: ChatMessage = { id: String(Date.now()), sender: 'me', text, time };
 
-    // Önce UI'ya ekle (optimistic update)
+    // Optimistic update
     setLocalMessages(prev => [...prev, newMsg]);
     addMessage(matchId, newMsg);
     setInputText('');
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
 
-    // Socket'e gönder (bağlıysa)
-    if (socketOk) {
-      chatService.sendMessage(matchId, text);
-    }
+    try {
+      if (socketOk) {
+        chatService.sendMessage(matchId, text);
+      } else {
+        await api.post(`/chat/${matchId}/messages`, { content: text });
+      }
 
-    const { notificationPreferences } = useAppStore.getState();
-    if (notificationPreferences.messages) {
-      scheduleMessageNotification(peer.name, 'Yeni bir mesajın var 👋', 5);
+      const { notificationPreferences } = useAppStore.getState();
+      if (notificationPreferences.messages) {
+        scheduleMessageNotification(peer.name, 'Yeni bir mesajın var 👋', 5);
+      }
+    } catch (error) {
+      console.error('Message send failed:', error);
+      // Rollback
+      setLocalMessages(prev => prev.filter(m => m.id !== newMsg.id));
+      Alert.alert('Hata', 'Mesaj gönderilemedi, tekrar dene');
     }
   }, [inputText, matchId, socketOk, peer.name, addMessage]);
 

@@ -138,22 +138,32 @@ export default function AuthScreen({ navigation }: Props) {
 
   // ── Login ────────────────────────────────────────────────────────────────────
   const handleLogin = useCallback(async () => {
-    if (!validateForm()) return;
+    if (!email.trim()) { setError(t('errors.emptyEmail'));    return; }
+    if (!password)     { setError(t('errors.emptyPassword')); return; }
+
     setLoading(true);
+    setError('');
+
     try {
+      console.log('Login attempt:', email);
       const data = await authService.login(email.trim(), password);
+      console.log('Login success:', data.user_id);
+
       setToken(data.access_token);
       setUser({ id: data.user_id, name: '', email: email.trim(), quizCompleted: false });
 
-      setError('');
-      Alert.alert(t('common.success'), t('auth.loginSuccess'));
-      navigation.replace('Onboarding');
+      navigation.replace('MainTabs');
     } catch (err: any) {
-      setError(getErrorMessage(err, t));
+      console.error('Login failed:', err.response?.data || err.message);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.detail  ||
+        t('errors.invalidCredentials');
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [email, password, validateForm, setToken, setUser, navigation, t]);
+  }, [email, password, t, setToken, setUser, navigation]);
 
   const handleSubmit = isLogin ? handleLogin : handleRegister;
 
