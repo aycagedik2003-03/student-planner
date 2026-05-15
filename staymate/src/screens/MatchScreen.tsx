@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, StatusBar,
+  View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert,
   Animated, PanResponder, Dimensions, Modal, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -134,8 +134,21 @@ export default function MatchScreen({ navigation }: Props) {
           setUsingFallback(true);
         }
       })
-      .catch(() => {
-        if (!cancelled) { setAllUsers(FALLBACK_USERS); setUsingFallback(true); }
+      .catch((error: any) => {
+        if (cancelled) return;
+        console.error('Match load error:', error.response?.data);
+        if (error.response?.status === 400) {
+          Alert.alert(
+            'Quiz Tamamlanmadı',
+            error.response.data?.detail || "Eşleşme görmek için önce quiz'i tamamla",
+            [
+              { text: "Quiz'e Git", onPress: () => navigation.navigate('Quiz') },
+              { text: 'İptal' },
+            ],
+          );
+        }
+        setAllUsers(FALLBACK_USERS);
+        setUsingFallback(true);
       })
       .finally(() => { if (!cancelled) setLoadingUsers(false); });
     return () => { cancelled = true; };
@@ -250,20 +263,23 @@ export default function MatchScreen({ navigation }: Props) {
       if (!user) return;
 
       if (dir === 'right') {
-        // 2. Beğen — API sonucuna göre modal göster
-        try {
-          const res = await matchService.likeMatch(user.id);
-          if (res.matched) {
-            setMatchedUser(user);
-            openMatchModal();
-            const { notificationPreferences } = useAppStore.getState();
-            if (notificationPreferences.matches) scheduleMatchNotification(user.name);
-          }
-        } catch {
-          // API hatası → küçük bir ihtimalle göster (offline fallback)
-          if (Math.random() > 0.6) {
-            setMatchedUser(user);
-            openMatchModal();
+        // 2. Beğen — UUID kontrolü + API
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(user.id)) {
+          console.log('Fallback user — skipping like API call for id:', user.id);
+        } else {
+          try {
+            console.log('Like:', user.id);
+            const res = await matchService.likeMatch(user.id);
+            console.log('Like response:', res);
+            if (res.matched) {
+              setMatchedUser(user);
+              openMatchModal();
+              const { notificationPreferences } = useAppStore.getState();
+              if (notificationPreferences.matches) scheduleMatchNotification(user.name);
+            }
+          } catch (error: any) {
+            console.error('Like error:', error.response?.data);
           }
         }
       } else {

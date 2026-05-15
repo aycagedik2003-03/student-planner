@@ -150,49 +150,41 @@ export default function ProfileScreen({ navigation }: Props) {
 
   // ── Profile fetch ──────────────────────────────────────────────────────────
   useEffect(() => {
-    // Zaten store'da varsa tekrar çekme
-    if (storeProfile) return;
-
-    let cancelled = false;
-    setLoading(true);
-    setFetchErr(null);
-
-    // Profil ve doğrulama durumunu paralel olarak çek
-    Promise.allSettled([
-      profileService.getProfile(),
-      verificationService.getVerificationStatus(),
-    ]).then(([profileResult, verifyResult]) => {
-      if (cancelled) return;
-
-      if (profileResult.status === 'fulfilled') {
-        setProfile(profileResult.value);
-        setFetchErr(null);
-      } else {
-        const err = (profileResult as PromiseRejectedResult).reason;
+    const loadProfile = async () => {
+      if (storeProfile) return;
+      setLoading(true);
+      setFetchErr(null);
+      try {
+        const profile = await profileService.getProfile();
+        setProfile(profile);
+      } catch (error: any) {
+        console.error('Profile load error:', error);
         const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error   ||
+          error?.response?.data?.message ||
+          error?.response?.data?.error   ||
           'Profil yüklenemedi.';
         setFetchErr(Array.isArray(msg) ? msg[0] : msg);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (verifyResult.status === 'fulfilled') {
-        const v = verifyResult.value;
-        if (v.isVerified === true || v.verified === true) {
-          setVerified(true);
-        }
-      } else {
-        const err = (verifyResult as PromiseRejectedResult).reason;
-        if (err?.response?.status === 404) {
-          console.log('Verify status endpoint henüz yok');
+    const loadVerificationStatus = async () => {
+      try {
+        const status = await verificationService.getVerificationStatus();
+        setVerified(status.isVerified === true || (status as any).verified === true);
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          console.log('Verify endpoint yok, atlanıyor');
+        } else {
+          console.error('Verify status error:', error);
         }
         setVerified(false);
       }
+    };
 
-      setLoading(false);
-    });
-
-    return () => { cancelled = true; };
+    loadProfile();
+    loadVerificationStatus();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Görüntülenecek değerler ─────────────────────────────────────────────────

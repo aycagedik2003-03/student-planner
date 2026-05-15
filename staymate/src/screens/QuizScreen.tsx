@@ -10,6 +10,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
@@ -188,24 +189,51 @@ export default function QuizScreen({ navigation }: Props) {
       return;
     }
 
-    // Son soru → cevapları kaydet ve submit et
-    setQuizAnswers(finalAnswers);
+    // ── Validation ─────────────────────────────────────────────────────────────
+    const incompleteIdx = finalAnswers.findIndex(ans => ans === null || ans === undefined);
+    if (incompleteIdx !== -1) {
+      Alert.alert(
+        'Eksik Cevap',
+        `Soru ${incompleteIdx + 1}'i cevaplamadın. Tüm soruları cevaplaman gerekiyor.`,
+      );
+      setIdx(incompleteIdx);
+      setPicked(finalAnswers[incompleteIdx] as number | null);
+      return;
+    }
+
+    if (finalAnswers.length < 8) {
+      Alert.alert('Eksik Cevap', 'En az 8 soruyu cevaplamalısın. Lütfen devam et.');
+      return;
+    }
+
+    const validAnswers = finalAnswers.map(ans => parseInt(String(ans), 10));
+    if (validAnswers.some(a => isNaN(a))) {
+      Alert.alert('Hata', 'Cevaplarda geçersiz değer var');
+      return;
+    }
+
+    // ── Submit ─────────────────────────────────────────────────────────────────
+    setQuizAnswers(validAnswers);
     setSubmitErr(null);
     setSubmitting(true);
 
     try {
-      await quizService.submitAnswers(finalAnswers);
+      console.log('Submitting quiz answers:', validAnswers);
+      await quizService.submitAnswers(validAnswers);
+      console.log('Quiz submitted successfully');
+      navigation.replace('Profile');
     } catch (err: any) {
-      // Submit hatası kullanıcıyı engellemez — sadece göster
-      const msg =
+      console.error('Quiz submit error:', err.response?.data);
+      const errorMsg =
+        err?.response?.data?.detail  ||
         err?.response?.data?.message ||
         err?.response?.data?.error   ||
-        'Cevaplar kaydedilemedi, daha sonra tekrar denenecek.';
-      setSubmitErr(Array.isArray(msg) ? msg[0] : msg);
+        'Quiz gönderilemedi';
+      const msg = Array.isArray(errorMsg) ? errorMsg[0] : String(errorMsg);
+      setSubmitErr(msg);
+      Alert.alert('Hata', msg);
     } finally {
       setSubmitting(false);
-      // Başarılı ya da başarısız — Profile'a git
-      navigation.replace('Profile');
     }
   };
 
