@@ -56,23 +56,26 @@ export default function AuthScreen({ navigation, route }: Props) {
     [],
   );
 
-  const checkPasswordStrength = useCallback(
-    (v: string) => v.length >= 8 && /[A-Z]/.test(v) && /[0-9]/.test(v),
-    [],
-  );
+  const validatePassword = useCallback((pw: string): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    if (pw.length < 8)        errors.push('Min 8 karakter');
+    if (!/[A-Z]/.test(pw))   errors.push('1 büyük harf gerekli (A-Z)');
+    if (!/[0-9]/.test(pw))   errors.push('1 rakam gerekli (0-9)');
+    return { valid: errors.length === 0, errors };
+  }, []);
 
   const validateForm = useCallback((): boolean => {
     setError('');
-    if (!email.trim())             { setError(t('errors.emptyEmail'));    return false; }
-    if (!validateEmail(email))     { setError(t('errors.invalidEmail'));  return false; }
-    if (!password)                 { setError(t('errors.emptyPassword')); return false; }
-    if (!checkPasswordStrength(password)) { setError(t('errors.weakPassword')); return false; }
+    if (!email.trim())                    { setError(t('errors.emptyEmail'));    return false; }
+    if (!validateEmail(email))            { setError(t('errors.invalidEmail'));  return false; }
+    if (!password)                        { setError(t('errors.emptyPassword')); return false; }
+    if (!validatePassword(password).valid){ setError(t('errors.weakPassword')); return false; }
     if (!isLogin) {
       if (!name.trim())   { setError(t('errors.emptyName'));  return false; }
       if (!agreedToTerms) { setError(t('auth.acceptTerms')); return false; }
     }
     return true;
-  }, [email, password, name, isLogin, agreedToTerms, validateEmail, checkPasswordStrength, t]);
+  }, [email, password, name, isLogin, agreedToTerms, validateEmail, validatePassword, t]);
 
   // ── Register ─────────────────────────────────────────────────────────────────
   const handleRegister = useCallback(async () => {
@@ -176,7 +179,7 @@ export default function AuthScreen({ navigation, route }: Props) {
           {isLogin ? t('auth.login') : t('auth.register')} ✨
         </Text>
         <Text style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
-          {isLogin ? 'Mevcut hesabına giriş yap' : 'Yeni hesap oluştur'}
+          {isLogin ? 'Var olan hesabınızla giriş yapın' : t('auth.agreeTerms')}
         </Text>
 
         {/* Name — register only */}
@@ -228,6 +231,22 @@ export default function AuthScreen({ navigation, route }: Props) {
               <Text>{showPassword ? '🙈' : '👁️'}</Text>
             </Pressable>
           </View>
+
+          {/* Password strength feedback — register only */}
+          {!isLogin && password && validatePassword(password).errors.length > 0 && (
+            <View style={{ marginTop: 8, padding: 8, backgroundColor: '#FAECE7', borderRadius: 6 }}>
+              {validatePassword(password).errors.map((err, idx) => (
+                <Text key={idx} style={{ fontSize: 11, color: '#D85A30', marginBottom: 4 }}>
+                  ❌ {err}
+                </Text>
+              ))}
+            </View>
+          )}
+          {!isLogin && password && validatePassword(password).valid && (
+            <Text style={{ marginTop: 8, fontSize: 11, color: '#1D9E75', fontWeight: 'bold' }}>
+              ✅ Şifre güçlü
+            </Text>
+          )}
         </View>
 
         {/* Error */}
