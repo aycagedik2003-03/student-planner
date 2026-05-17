@@ -1,5 +1,5 @@
 import api from './client';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 
 export type AuthResponse = {
   access_token:  string;
@@ -17,9 +17,9 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/register', { email, password });
       const { access_token, refresh_token, user_id } = response.data;
 
-      await SecureStore.setItemAsync('userToken',    access_token);
-      await SecureStore.setItemAsync('refreshToken', refresh_token);
-      await SecureStore.setItemAsync('userId',       user_id);
+      await storage.setItem('userToken',    access_token);
+      await storage.setItem('refreshToken', refresh_token);
+      await storage.setItem('userId',       user_id);
 
       console.log('=== REGISTER SUCCESS — user_id:', user_id, '===\n');
       return response.data;
@@ -41,9 +41,9 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/login', { email, password });
       const { access_token, refresh_token, user_id } = response.data;
 
-      await SecureStore.setItemAsync('userToken',    access_token);
-      await SecureStore.setItemAsync('refreshToken', refresh_token);
-      await SecureStore.setItemAsync('userId',       user_id);
+      await storage.setItem('userToken',    access_token);
+      await storage.setItem('refreshToken', refresh_token);
+      await storage.setItem('userId',       user_id);
 
       console.log('=== LOGIN SUCCESS — user_id:', user_id, '===\n');
       return response.data;
@@ -58,9 +58,9 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     try {
-      await SecureStore.deleteItemAsync('userToken');
-      await SecureStore.deleteItemAsync('refreshToken');
-      await SecureStore.deleteItemAsync('userId');
+      await storage.deleteItem('userToken');
+      await storage.deleteItem('refreshToken');
+      await storage.deleteItem('userId');
       console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
@@ -69,7 +69,7 @@ export const authService = {
 
   getToken: async (): Promise<string | null> => {
     try {
-      const token = await SecureStore.getItemAsync('userToken');
+      const token = await storage.getItem('userToken');
       console.log('Token:', token ? 'exists' : 'not found');
       return token;
     } catch (error) {
@@ -80,7 +80,7 @@ export const authService = {
 
   getUserId: async (): Promise<string | null> => {
     try {
-      return await SecureStore.getItemAsync('userId');
+      return await storage.getItem('userId');
     } catch {
       return null;
     }

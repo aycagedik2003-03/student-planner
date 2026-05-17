@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,7 +19,7 @@ api.interceptors.request.use(
     console.log(`[${config.method?.toUpperCase()}] ${config.url}`);
     if (config.data) console.log('  Body:', config.data);
 
-    const token = await SecureStore.getItemAsync('userToken');
+    const token = await storage.getItem('userToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('  Token: attached');
@@ -50,7 +50,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log('401 — attempting token refresh...');
       try {
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        const refreshToken = await storage.getItem('refreshToken');
         if (refreshToken) {
           // TODO: call refresh endpoint and update tokens
         }
