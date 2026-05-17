@@ -88,14 +88,7 @@ function mapSuggestion(raw: ApiSuggestion): MatchUser {
   };
 }
 
-// ── Hardcoded fallback (API erişilemezse) ─────────────────────────────────────
-const FALLBACK_USERS: MatchUser[] = [
-  { id: 'f1', name: 'Zofia', age: 24, initial: 'Z', avatarColor: '#00CFC8', city: 'Kraków', uni: 'Uniwersytet Jagielloński', budget: 1800, match: 96, gender: 'Kadın', smokes: false, alcohol: 'social', hasPet: false, diet: 'normal', sleepPattern: 'night', cleanlinessRating: 5, verified: true, bio: 'Sabah yogası, bitki annesi ve pour-over kahve ritüelim var.', traits: ['🌙 Gece kuşu', '🌿 Bitki annesi', '🚭 Sigara içmez'], compat: { sleep: 90, clean: 98, social: 88, work: 94, lifestyle: 96 } },
-  { id: 'f2', name: 'Kasia', age: 27, initial: 'K', avatarColor: '#FF9ACD', city: 'Warszawa', uni: 'Politechnika Warszawska', budget: 2400, match: 92, gender: 'Kadın', smokes: false, alcohol: 'social', hasPet: true, diet: 'normal', sleepPattern: 'early', cleanlinessRating: 4, verified: true, bio: 'Stüdyoda müzik yapıyorum. Hafta sonu kahvaltıları büyük tutkum.', traits: ['🎵 Müzisyen', '☀️ Erken kalkan', '🤝 Sosyal'], compat: { sleep: 88, clean: 90, social: 97, work: 86, lifestyle: 92 } },
-  { id: 'f3', name: 'Marta', age: 22, initial: 'M', avatarColor: '#33D9D3', city: 'Wrocław', uni: 'Politechnika Wrocławska', budget: 1600, match: 91, gender: 'Kadın', smokes: false, alcohol: 'never', hasPet: false, diet: 'vegetarian', sleepPattern: 'mid', cleanlinessRating: 5, verified: true, bio: 'Hafta içi sessiz, hafta sonu keyifli. Matcha içerim, kitap okurum.', traits: ['🧘 İçe dönük', '✨ Düzenli', '🌱 Vejeteryan'], compat: { sleep: 94, clean: 95, social: 80, work: 89, lifestyle: 88 } },
-  { id: 'f4', name: 'Ola', age: 29, initial: 'O', avatarColor: '#FFA8D4', city: 'Poznań', uni: 'Politechnika Poznańska', budget: 2200, match: 89, gender: 'Kadın', smokes: false, alcohol: 'social', hasPet: false, diet: 'normal', sleepPattern: 'mid', cleanlinessRating: 5, verified: false, bio: 'Tasarımcı, remote çalışıyorum. Minimal yaşam, temiz mutfak.', traits: ['💻 Remote', '✨ Düzenli', '🍳 Ev yemeği'], compat: { sleep: 85, clean: 93, social: 82, work: 96, lifestyle: 88 } },
-  { id: 'f5', name: 'Hania', age: 25, initial: 'H', avatarColor: '#C9A8FF', city: 'Gdańsk', uni: 'Politechnika Gdańska', budget: 1900, match: 88, gender: 'Kadın', smokes: false, alcohol: 'never', hasPet: true, diet: 'vegan', sleepPattern: 'night', cleanlinessRating: 3, verified: false, bio: 'Geceleri okur, sabah sessiz ister. Kedi sahibi, bitki koleksiyonu.', traits: ['🌙 Gece kuşu', '🐾 Kedi sahibi', '🌱 Vegan'], compat: { sleep: 91, clean: 87, social: 78, work: 85, lifestyle: 93 } },
-];
+// FALLBACK_USERS kaldırıldı — gerçek API zorunlu
 
 const COMPAT_LABELS: { key: keyof Compat; label: string }[] = [
   { key: 'sleep', label: 'Uyku düzeni' }, { key: 'clean', label: 'Temizlik' },
@@ -114,44 +107,36 @@ export default function MatchScreen({ navigation }: Props) {
   const filteredMatches = useAppStore(s => s.filteredMatches); // API-filtered results
 
   // ── Suggestion fetch (all users, no filter) ────────────────────────────────
-  const [allUsers,      setAllUsers]      = useState<MatchUser[]>([]);
-  const [loadingUsers,  setLoadingUsers]  = useState(true);
-  const [usingFallback, setUsingFallback] = useState(false);
+  const [allUsers,     setAllUsers]     = useState<MatchUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [fetchError,   setFetchError]   = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    matchService
-      .getSuggestions()
-      .then(raw => {
-        if (cancelled) return;
-        if (Array.isArray(raw) && raw.length > 0) {
-          const mapped = raw.map(mapSuggestion);
-          setAllUsers(mapped);
-          setMatches(raw);
-          setUsingFallback(false);
+    const loadMatches = async () => {
+      try {
+        const data = await matchService.getSuggestions();
+        if (!data || data.length === 0) {
+          setFetchError('Henüz öneri yok. Biraz bekle veya başka kullanıcıların quiz doldurmasını bekle.');
+          setAllUsers([]);
+          setMatches([]);
         } else {
-          setAllUsers(FALLBACK_USERS);
-          setUsingFallback(true);
+          setFetchError(null);
+          setAllUsers(data.map(mapSuggestion));
+          setMatches(data);
         }
-      })
-      .catch((error: any) => {
-        if (cancelled) return;
+      } catch (error: any) {
         console.error('Match load error:', error.response?.data);
         if (error.response?.status === 400) {
-          Alert.alert(
-            'Quiz Tamamlanmadı',
-            error.response.data?.detail || "Eşleşme görmek için önce quiz'i tamamla",
-            [
-              { text: "Quiz'e Git", onPress: () => navigation.navigate('Quiz') },
-              { text: 'İptal' },
-            ],
-          );
+          setFetchError('Öneri görmek için quizi tamamla!');
+        } else {
+          setFetchError('Öneriler yüklenemedi.');
         }
-        setAllUsers(FALLBACK_USERS);
-        setUsingFallback(true);
-      })
-      .finally(() => { if (!cancelled) setLoadingUsers(false); });
-    return () => { cancelled = true; };
+        setAllUsers([]);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    loadMatches();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Swipe state ────────────────────────────────────────────────────────────
@@ -353,10 +338,12 @@ export default function MatchScreen({ navigation }: Props) {
     if (done) {
       return (
         <View style={st.emptyWrap}>
-          <Text style={st.emptyIcon}>✿</Text>
-          <Text style={st.emptyTitle}>{filterActive ? 'Filtre sonucu yok' : 'Hepsi bu kadar!'}</Text>
+          <Text style={st.emptyIcon}>{fetchError ? '⚠' : '✿'}</Text>
+          <Text style={st.emptyTitle}>
+            {fetchError ? 'Öneriler yüklenemedi' : filterActive ? 'Filtre sonucu yok' : 'Hepsi bu kadar!'}
+          </Text>
           <Text style={st.emptySub}>
-            {filterActive ? 'Filtreleri genişletmeyi dene.' : 'Tüm profilleri gördün.\nYeni eşleşmeler yakında.'}
+            {fetchError ?? (filterActive ? 'Filtreleri genişletmeyi dene.' : 'Tüm profilleri gördün.\nYeni eşleşmeler yakında.')}
           </Text>
           <TouchableOpacity
             style={st.emptyBtn}
@@ -416,7 +403,7 @@ export default function MatchScreen({ navigation }: Props) {
         </TouchableOpacity>
         <View style={st.hCenter}>
           <Text style={st.hTitle}>Keşfet</Text>
-          {usingFallback && <View style={st.offlineDot} />}
+          {fetchError && <View style={st.offlineDot} />}
           {!done && !loadingUsers && (
             <>
               <View style={st.hDot} />
