@@ -143,4 +143,20 @@ export const listingService = {
     const res = await api.post<{ favorited: boolean }>(`/listings/${listingId}/favorite`);
     return res.data;
   },
+
+  /**
+   * Giriş yapan ev sahibinin kendi ilanlarını getirir.
+   */
+  getMyListings: async (): Promise<Listing[]> => {
+    const res = await api.get<ApiListing[]>('/listings/my');
+    const raw = Array.isArray(res.data) ? res.data : [];
+    return raw.map(normalizeApiListing);
+  },
+
+  /**
+   * İlanı yayınla / yayından kaldır.
+   */
+  togglePublish: async (id: string, published: boolean): Promise<void> => {
+    await api.patch(`/listings/${id}/publish`, { published });
+  },
 };

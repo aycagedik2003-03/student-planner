@@ -18,6 +18,7 @@ type User = {
   name: string;
   email?: string;
   quizCompleted: boolean;
+  userType: 'student' | 'landlord';
 };
 
 export type Filters = {
@@ -127,6 +128,10 @@ type AppStore = {
   setFilters: (f: Filters) => void;
   resetFilters: () => void;
 
+  // ── User type ─────────────────────────────────────────────────────────────────
+  userType: 'student' | 'landlord';
+  setUserType: (t: 'student' | 'landlord') => void;
+
   // ── Misc ─────────────────────────────────────────────────────────────────────
   isVerified: boolean;
   setVerified: (v: boolean) => void;
@@ -188,6 +193,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   filters: { ...DEFAULT_FILTERS },
   setFilters: (filters) => set({ filters }),
   resetFilters: () => set({ filters: { ...DEFAULT_FILTERS } }),
+
+  // ── User type ─────────────────────────────────────────────────────────────────
+  userType: 'student',
+  setUserType: (userType) => set({ userType }),
 
   // ── Misc ─────────────────────────────────────────────────────────────────────
   isVerified: false,

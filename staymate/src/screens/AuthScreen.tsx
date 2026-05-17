@@ -37,10 +37,12 @@ export default function AuthScreen({ navigation, route }: Props) {
   const setLanguage     = useAppStore((s) => s.setLanguage);
   const setToken        = useAppStore((s) => s.setToken);
   const setUser         = useAppStore((s) => s.setUser);
+  const setUserType     = useAppStore((s) => s.setUserType);
 
   const initialMode = route.params?.mode ?? 'register';
 
   const [mode, setMode]                   = useState<'login' | 'register'>(initialMode);
+  const [userRole, setUserRole]           = useState<'student' | 'landlord'>('student');
   const [name, setName]                   = useState('');
   const [email, setEmail]                 = useState('');
   const [password, setPassword]           = useState('');
@@ -89,11 +91,16 @@ export default function AuthScreen({ navigation, route }: Props) {
       console.log('Register success:', response.user_id);
 
       setToken(response.access_token);
-      setUser({ id: response.user_id, name: name.trim(), email: email.trim(), quizCompleted: false });
+      setUserType(userRole);
+      setUser({ id: response.user_id, name: name.trim(), email: email.trim(), quizCompleted: false, userType: userRole });
 
       setError('');
       Alert.alert(t('common.success'), t('auth.registerSuccess'));
-      navigation.replace('Quiz');
+      if (userRole === 'landlord') {
+        navigation.replace('MainTabs');
+      } else {
+        navigation.replace('Quiz');
+      }
     } catch (err: any) {
       console.error('❌ Register error:', err);
 
@@ -176,6 +183,35 @@ export default function AuthScreen({ navigation, route }: Props) {
         <Text style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
           {isLogin ? 'Var olan hesabınızla giriş yapın' : t('auth.agreeTerms')}
         </Text>
+
+        {/* Role selector — register only */}
+        {!isLogin && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 14, fontWeight: '500', marginBottom: 10 }}>Hesap Türü</Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {([
+                { value: 'student',  label: '🎓 Öğrenci',   desc: 'Oda arkadaşı ara' },
+                { value: 'landlord', label: '🏠 Ev Sahibi', desc: 'İlan yayınla' },
+              ] as const).map((opt) => (
+                <Pressable
+                  key={opt.value}
+                  onPress={() => setUserRole(opt.value)}
+                  style={{
+                    flex: 1, borderRadius: 12, padding: 14,
+                    borderWidth: 2,
+                    borderColor: userRole === opt.value ? C.brand : C.border,
+                    backgroundColor: userRole === opt.value ? '#E6FBFA' : '#fff',
+                  }}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: userRole === opt.value ? C.brand : C.muted }}>
+                    {opt.label}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{opt.desc}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Name — register only */}
         {!isLogin && (
