@@ -114,10 +114,11 @@ export default function MatchScreen({ navigation }: Props) {
   useEffect(() => {
     const loadMatches = async () => {
       setLoadingUsers(true);
+      setFetchError(null);
       try {
         const data = await matchService.getSuggestions();
         if (!data || data.length === 0) {
-          setFetchError('Henüz yeterli öneri yok. Lütfen daha sonra dene.');
+          setFetchError('Henüz yeterli öneri yok. Başka kullanıcılar quiz doldurduğunda görebileceksin.');
           setAllUsers([]);
           setMatches([]);
         } else {
@@ -126,11 +127,16 @@ export default function MatchScreen({ navigation }: Props) {
           setMatches(data);
         }
       } catch (error: any) {
-        console.error('Match load error:', error);
+        console.error('❌ Match load error:', error.response?.data || error.message);
         if (error.response?.status === 400) {
           setFetchError("Öneri görmek için quiz'i tamamla!");
         } else {
-          setFetchError(error.response?.data?.detail || 'Öneriler yüklenemedi');
+          const errorMsg =
+            error.response?.data?.detail ||
+            error.response?.data?.message ||
+            error.message ||
+            'Öneriler yüklenemedi';
+          setFetchError(String(errorMsg));
         }
         setAllUsers([]);
       } finally {

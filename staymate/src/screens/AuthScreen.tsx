@@ -14,6 +14,7 @@ import { RouteProp } from '@react-navigation/native';
 import { useTranslation } from '../i18n/useTranslation';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
+import { getErrorMessage } from '../api/ErrorHandler';
 import { RootStackParamList } from '../../App';
 
 type Props = {
@@ -80,6 +81,7 @@ export default function AuthScreen({ navigation, route }: Props) {
   // ── Register ─────────────────────────────────────────────────────────────────
   const handleRegister = useCallback(async () => {
     if (!validateForm()) return;
+
     setLoading(true);
     try {
       console.log('Register attempt:', { email });
@@ -93,13 +95,22 @@ export default function AuthScreen({ navigation, route }: Props) {
       Alert.alert(t('common.success'), t('auth.registerSuccess'));
       navigation.replace('Quiz');
     } catch (err: any) {
-      console.error('Register error:', err);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.detail  ||
-        err.message                 ||
-        t('errors.unknownError');
-      setError(String(msg));
+      console.error('❌ Register error:', err);
+
+      if (err.response?.status === 409) {
+        setError(t('errors.emailAlreadyExists'));
+        Alert.alert(
+          'Email Zaten Kayıtlı',
+          'Bu email ile bir hesap var. Giriş yapmayı deneyin.',
+          [
+            { text: 'Giriş Yap', onPress: () => setMode('login') },
+            { text: 'İptal' },
+          ],
+        );
+        return;
+      }
+
+      setError(getErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
