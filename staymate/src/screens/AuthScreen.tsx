@@ -152,25 +152,9 @@ export default function AuthScreen({ navigation, route }: Props) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
 
-      {/* Header: logo + language selector */}
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header: logo */}
+      <View style={{ padding: 16 }}>
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: C.brand }}>staymate</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {LANGS.map((lang) => (
-            <Pressable
-              key={lang.code}
-              onPress={() => setLanguage(lang.code)}
-              style={{
-                paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
-                backgroundColor: language === lang.code ? C.brand : C.brandBg,
-              }}
-            >
-              <Text style={{ color: language === lang.code ? '#fff' : C.brandTx, fontSize: 12, fontWeight: '500' }}>
-                {lang.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
       </View>
 
       {/* Form */}
@@ -296,6 +280,26 @@ export default function AuthScreen({ navigation, route }: Props) {
               </Text>
           }
         </Pressable>
+
+        {/* Dil seçeneği — buton altında */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 20, marginBottom: 20 }}>
+          {LANGS.map((lang) => (
+            <Pressable
+              key={lang.code}
+              onPress={() => setLanguage(lang.code)}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 16,
+                backgroundColor: language === lang.code ? C.brand : C.brandBg,
+              }}
+            >
+              <Text style={{ color: language === lang.code ? '#fff' : C.brandTx, fontSize: 11, fontWeight: '500' }}>
+                {lang.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Toggle mode */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>

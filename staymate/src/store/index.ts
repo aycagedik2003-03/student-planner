@@ -192,7 +192,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ── Misc ─────────────────────────────────────────────────────────────────────
   isVerified: false,
   setVerified: (isVerified) => set({ isVerified }),
-  language: 'tr',
+  language: 'pl',
   setLanguage: (language) => set({ language }),
   notificationPreferences: { matches: true, messages: true, listings: false },
   updateNotificationPref: (key, val) =>
