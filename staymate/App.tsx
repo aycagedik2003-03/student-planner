@@ -38,7 +38,7 @@ export type TabParamList = {
 
 // ── Root stack param list ──────────────────────────────────────────────────────
 export type RootStackParamList = {
-  Auth:            undefined;
+  Auth:            { mode?: 'login' | 'register' } | undefined;
   Onboarding:      undefined;
   Quiz:            undefined;
   Profile:         undefined;

@@ -12,6 +12,7 @@ export const translations = {
       close:    'Kapat',
       next:     'İleri',
       back:     'Geri',
+      start:    'Başla',
     },
     auth: {
       register:           'Hesap Oluştur',
@@ -82,6 +83,7 @@ export const translations = {
       close:    'Zamknij',
       next:     'Dalej',
       back:     'Wstecz',
+      start:    'Zacznij',
     },
     auth: {
       register:           'Utwórz konto',
@@ -152,6 +154,7 @@ export const translations = {
       close:    'Close',
       next:     'Next',
       back:     'Back',
+      start:    'Get Started',
     },
     auth: {
       register:           'Create Account',
