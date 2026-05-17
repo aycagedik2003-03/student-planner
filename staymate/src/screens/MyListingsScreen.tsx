@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { landlordService } from '../api/LandlordService';
+import { listingService } from '../api/ListingService';
+import { useAppStore } from '../store';
 import type { Listing } from '../data/listings';
 
 type Props = {
@@ -23,6 +25,8 @@ const C = {
 type ListingWithPublished = Listing & { published?: boolean };
 
 export default function MyListingsScreen({ navigation }: Props) {
+  const userId = useAppStore((s) => s.user?.id);
+
   const [listings,   setListings]   = useState<ListingWithPublished[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,7 +36,10 @@ export default function MyListingsScreen({ navigation }: Props) {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const data = await landlordService.getMyListings();
+      // GET /listings?landlord_id={userId} — önce dene, yoksa /listings/my'a fallback
+      const data = userId
+        ? await listingService.getListingsByLandlord(userId)
+        : await landlordService.getMyListings();
       setListings(data as ListingWithPublished[]);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'İlanlar yüklenemedi.');

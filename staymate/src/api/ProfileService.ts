@@ -10,6 +10,8 @@ export type UserProfile = {
   city?: string;
   university?: string;
   bio?: string;
+  phone?: string;
+  user_type?: 'student' | 'landlord';
   /** Trait string dizisi — "Gece kuşu", "Sigara içmez" gibi okunabilir veya snake_case gelebilir */
   traits?: string[];
   avatarUrl?: string;   // camelCase (normalize edilmiş)

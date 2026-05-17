@@ -87,17 +87,18 @@ export default function AuthScreen({ navigation, route }: Props) {
     setLoading(true);
     try {
       console.log('Register attempt:', { email });
-      const response = await authService.register(email.trim(), password);
-      console.log('Register success:', response.user_id);
+      const response = await authService.register(email.trim(), password, userRole);
+      console.log('Register success:', response.user_id, 'type:', response.user_type);
 
+      const resolvedType = response.user_type ?? userRole;
       setToken(response.access_token);
-      setUserType(userRole);
-      setUser({ id: response.user_id, name: name.trim(), email: email.trim(), quizCompleted: false, userType: userRole });
+      setUserType(resolvedType);
+      setUser({ id: response.user_id, name: name.trim(), email: email.trim(), quizCompleted: false, userType: resolvedType });
 
       setError('');
       Alert.alert(t('common.success'), t('auth.registerSuccess'));
-      if (userRole === 'landlord') {
-        navigation.replace('MainTabs');
+      if (resolvedType === 'landlord') {
+        navigation.replace('LandlordTabs');
       } else {
         navigation.replace('Quiz');
       }
@@ -135,11 +136,17 @@ export default function AuthScreen({ navigation, route }: Props) {
       const response = await authService.login(email.trim(), password);
       console.log('Login success:', response.user_id);
 
+      const resolvedType = response.user_type ?? 'student';
       setToken(response.access_token);
-      setUser({ id: response.user_id, name: '', email: email.trim(), quizCompleted: false });
+      setUserType(resolvedType);
+      setUser({ id: response.user_id, name: '', email: email.trim(), quizCompleted: false, userType: resolvedType });
 
       Alert.alert(t('common.success'), t('auth.loginSuccess'));
-      navigation.replace('MainTabs');
+      if (resolvedType === 'landlord') {
+        navigation.replace('LandlordTabs');
+      } else {
+        navigation.replace('MainTabs');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       const msg =

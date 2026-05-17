@@ -154,6 +154,33 @@ export const listingService = {
   },
 
   /**
+   * Belirli bir landlord'un ilanlarını getirir.
+   * GET /listings?landlord_id={landlordId}
+   */
+  getListingsByLandlord: async (landlordId: string): Promise<Listing[]> => {
+    const res = await api.get<ApiListing[]>('/listings', { params: { landlord_id: landlordId } });
+    const raw = Array.isArray(res.data) ? res.data : [];
+    return raw.map(normalizeApiListing);
+  },
+
+  /**
+   * İlana ilgi gösteren öğrencileri getirir.
+   * GET /listings/{listingId}/interested-students
+   */
+  getInterestedStudents: async (listingId: string): Promise<any[]> => {
+    const res = await api.get<any[]>(`/listings/${listingId}/interested-students`);
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
+  /**
+   * İlanı favorilere ekler/çıkarır.
+   */
+  addFavorite: async (listingId: string): Promise<{ favorited: boolean }> => {
+    const res = await api.post<{ favorited: boolean }>(`/listings/${listingId}/favorite`);
+    return res.data;
+  },
+
+  /**
    * İlanı yayınla / yayından kaldır.
    */
   togglePublish: async (id: string, published: boolean): Promise<void> => {

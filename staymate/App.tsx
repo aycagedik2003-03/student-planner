@@ -25,6 +25,7 @@ import TermsOfServiceScreen      from './src/screens/TermsOfServiceScreen';
 import MyListingsScreen          from './src/screens/MyListingsScreen';
 import LandlordProfileScreen     from './src/screens/LandlordProfileScreen';
 import InterestedStudentsScreen  from './src/screens/InterestedStudentsScreen';
+import BrowseListingsScreen      from './src/screens/BrowseListingsScreen';
 
 import { authService }                   from './src/api/AuthService';
 import { useAppStore }                   from './src/store';
@@ -33,16 +34,18 @@ import { navigationRef }                 from './src/utils/navigationRef';
 
 // ── Student tab param list ─────────────────────────────────────────────────────
 export type TabParamList = {
-  Match:      undefined;
-  Listings:   undefined;
-  ProfileTab: undefined;
-  Settings:   undefined;
+  Match:          undefined;
+  BrowseListings: undefined;
+  ChatListTab:    undefined;
+  ProfileTab:     undefined;
+  Settings:       undefined;
 };
 
 // ── Landlord tab param list ────────────────────────────────────────────────────
 export type LandlordTabParamList = {
   MyListings:         undefined;
   InterestedStudents: undefined;
+  ChatListTab:        undefined;
   LandlordProfile:    undefined;
   Settings:           undefined;
 };
@@ -78,15 +81,16 @@ export type RootStackParamList = {
 
 // ── Tab icon maps ──────────────────────────────────────────────────────────────
 const STUDENT_ICONS: Record<string, string> = {
-  Match:      '✦',
-  Listings:   '🏠',
-  ProfileTab: '◉',
-  Settings:   '⚙',
+  Match:          '✦',
+  BrowseListings: '🏠',
+  ChatListTab:    '💬',
+  ProfileTab:     '◉',
+  Settings:       '⚙',
 };
-
 const LANDLORD_ICONS: Record<string, string> = {
   MyListings:         '🏠',
   InterestedStudents: '🎓',
+  ChatListTab:        '💬',
   LandlordProfile:    '◉',
   Settings:           '⚙',
 };
@@ -115,10 +119,11 @@ function StudentTabs() {
         ),
       })}
     >
-      <StudentTab.Screen name="Match"      component={MatchScreen}      options={{ tabBarLabel: 'Keşfet'  }} />
-      <StudentTab.Screen name="Listings"   component={ListingScreen}    options={{ tabBarLabel: 'İlanlar' }} />
-      <StudentTab.Screen name="ProfileTab" component={ProfileTabScreen} options={{ tabBarLabel: 'Profil'  }} />
-      <StudentTab.Screen name="Settings"   component={SettingsScreen}   options={{ tabBarLabel: 'Ayarlar' }} />
+      <StudentTab.Screen name="Match"          component={MatchScreen}          options={{ tabBarLabel: 'Keşfet'  }} />
+      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen} options={{ tabBarLabel: 'İlanlar' }} />
+      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}       options={{ tabBarLabel: 'Mesajlar'}} />
+      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}     options={{ tabBarLabel: 'Profil'  }} />
+      <StudentTab.Screen name="Settings"       component={SettingsScreen}       options={{ tabBarLabel: 'Ayarlar' }} />
     </StudentTab.Navigator>
   );
 }
@@ -147,8 +152,9 @@ function LandlordTabs() {
         ),
       })}
     >
-      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}         options={{ tabBarLabel: 'İlanlarım'  }} />
+      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}        options={{ tabBarLabel: 'İlanlarım'  }} />
       <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen} options={{ tabBarLabel: 'Öğrenciler' }} />
+      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}          options={{ tabBarLabel: 'Mesajlar'   }} />
       <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}   options={{ tabBarLabel: 'Profil'     }} />
       <LandlordTab.Screen name="Settings"           component={SettingsScreen}          options={{ tabBarLabel: 'Ayarlar'    }} />
     </LandlordTab.Navigator>
@@ -158,7 +164,7 @@ function LandlordTabs() {
 // ── Root stack navigator ───────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// ── Splash / loading ekranı ────────────────────────────────────────────────────
+// ── Splash ─────────────────────────────────────────────────────────────────────
 function SplashScreen() {
   return (
     <View style={splash.root}>
@@ -171,30 +177,14 @@ function SplashScreen() {
 }
 
 const splash = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoMark: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: '#00CFC8',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoTxt: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '800',
-  },
+  root:     { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  logoMark: { width: 56, height: 56, borderRadius: 18, backgroundColor: '#00CFC8', alignItems: 'center', justifyContent: 'center' },
+  logoTxt:  { color: '#fff', fontSize: 28, fontWeight: '800' },
 });
 
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const { setToken } = useAppStore();
+  const { setToken, setUserType } = useAppStore();
 
   const [isReady,      setIsReady]      = useState(false);
   const [initialRoute, setInitialRoute] =
@@ -204,10 +194,17 @@ export default function App() {
     const bootstrap = async () => {
       try {
         registerForPushNotifications().catch(() => {});
+
         const token = await authService.getToken();
         if (token) {
           setToken(token);
-          setInitialRoute('Onboarding');
+
+          // user_type'ı storage'dan oku ve store'a yaz
+          const storedType = await authService.getUserType();
+          setUserType(storedType);
+
+          // user_type'a göre başlangıç ekranını belirle
+          setInitialRoute(storedType === 'landlord' ? 'LandlordTabs' : 'Onboarding');
         } else {
           setInitialRoute('Auth');
         }
@@ -217,16 +214,15 @@ export default function App() {
         setIsReady(true);
       }
     };
+
     bootstrap();
-  }, [setToken]);
+  }, [setToken, setUserType]);
 
   if (!isReady) {
     if (Platform.OS === 'web') {
       return (
         <View style={st.webShell}>
-          <View style={st.phone}>
-            <SplashScreen />
-          </View>
+          <View style={st.phone}><SplashScreen /></View>
         </View>
       );
     }
@@ -239,19 +235,17 @@ export default function App() {
         initialRouteName={initialRoute}
         screenOptions={{ headerShown: false, animation: 'fade' }}
       >
-        {/* Auth akışı */}
+        {/* Auth */}
         <Stack.Screen name="Auth"       component={AuthScreen} />
 
-        {/* Ana akış */}
-        <Stack.Screen name="Onboarding"          component={OnboardingScreen} />
-        <Stack.Screen name="Quiz"                component={QuizScreen} />
-        <Stack.Screen name="Profile"             component={ProfileScreen} />
+        {/* Ortak akış */}
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Quiz"       component={QuizScreen} />
+        <Stack.Screen name="Profile"    component={ProfileScreen} />
 
-        {/* Öğrenci tabları */}
-        <Stack.Screen name="MainTabs"            component={StudentTabs} />
-
-        {/* Ev sahibi tabları */}
-        <Stack.Screen name="LandlordTabs"        component={LandlordTabs} />
+        {/* Tab containers */}
+        <Stack.Screen name="MainTabs"     component={StudentTabs}  />
+        <Stack.Screen name="LandlordTabs" component={LandlordTabs} />
 
         {/* Ortak stack ekranları */}
         <Stack.Screen name="Filter"              component={FilterScreen} />

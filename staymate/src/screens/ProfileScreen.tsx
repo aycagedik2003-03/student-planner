@@ -144,6 +144,8 @@ export default function ProfileScreen({ navigation }: Props) {
   const setVerified  = useAppStore(s => s.setVerified);
   const storeProfile = useAppStore(s => s.profile);
   const setProfile   = useAppStore(s => s.setProfile);
+  const userType     = useAppStore(s => s.userType);
+  const isLandlord   = userType === 'landlord';
 
   const [loading,  setLoading]  = useState(!storeProfile); // daha önce fetch'lendiyse skip
   const [fetchErr, setFetchErr] = useState<string | null>(null);
@@ -284,16 +286,28 @@ export default function ProfileScreen({ navigation }: Props) {
               .join(' · ') || 'Profil bilgisi yok'}
           </Text>
 
+          {/* Rol badge */}
+          {isLandlord && (
+            <View style={[st.infoChip, { backgroundColor: '#FEF9C3', borderColor: '#F59E0B55', marginBottom: 4 }]}>
+              <Text style={{ color: '#854D0E', fontSize: 12, fontWeight: '700' }}>🏠 Ev Sahibi</Text>
+            </View>
+          )}
+
           {/* Üniversite + doğrulama */}
           <View style={st.infoRow}>
-            {displayUniversity && (
+            {!isLandlord && displayUniversity && (
               <View style={st.infoChip}>
                 <Text style={st.infoChipTxt}>🎓 {displayUniversity}</Text>
               </View>
             )}
-            {isVerified && (
+            {!isLandlord && isVerified && (
               <View style={[st.infoChip, st.verifiedChip]}>
                 <Text style={st.verifiedChipTxt}>✓ Doğrulanmış Öğrenci</Text>
+              </View>
+            )}
+            {isLandlord && storeProfile?.phone && (
+              <View style={st.infoChip}>
+                <Text style={st.infoChipTxt}>📞 {storeProfile.phone}</Text>
               </View>
             )}
           </View>
@@ -310,8 +324,8 @@ export default function ProfileScreen({ navigation }: Props) {
             <Text style={st.scoreTxt}>{traits.length} özellik belirlendi</Text>
           </View>
 
-          {/* Doğrulama butonu */}
-          {!isVerified && (
+          {/* Doğrulama butonu — sadece öğrenci */}
+          {!isLandlord && !isVerified && (
             <TouchableOpacity
               style={st.verifyBtn}
               onPress={() => navigation.navigate('Verification')}
@@ -347,10 +361,10 @@ export default function ProfileScreen({ navigation }: Props) {
         <View style={st.footer}>
           <TouchableOpacity
             style={st.cta}
-            onPress={() => navigation.replace('MainTabs')}
+            onPress={() => navigation.replace(isLandlord ? 'LandlordTabs' : 'MainTabs')}
             activeOpacity={0.85}
           >
-            <Text style={st.ctaTxt}>Eşleşmeleri Gör</Text>
+            <Text style={st.ctaTxt}>{isLandlord ? 'İlanlarıma Git' : 'Eşleşmeleri Gör'}</Text>
             <Text style={st.ctaArrow}>→</Text>
           </TouchableOpacity>
 
