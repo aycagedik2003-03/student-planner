@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet,
   TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions,
 } from 'react-native';
+import { useTranslation } from '../i18n/useTranslation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -31,6 +32,7 @@ const C = {
 const CITIES = ['Tümü', 'Kraków', 'Warszawa', 'Wrocław', 'Gdańsk', 'Poznań'];
 
 export default function BrowseListingsScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const [listings,   setListings]   = useState<Listing[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -38,15 +40,23 @@ export default function BrowseListingsScreen({ navigation }: Props) {
   const [favorites,  setFavorites]  = useState<Set<string>>(new Set());
 
   // Filtreler
-  const [selectedCity, setSelectedCity] = useState('Tümü');
+  const [selectedCity, setSelectedCity] = useState('');
   const [maxPrice,     setMaxPrice]     = useState('');
   const [minRooms,     setMinRooms]     = useState('');
 
   const buildFilters = useCallback(() => ({
-    ...(selectedCity !== 'Tümü' ? { city: selectedCity } : {}),
-    ...(maxPrice ? { priceMax: Number(maxPrice) } : {}),
-    ...(minRooms ? { rooms:    Number(minRooms) } : {}),
-  }), [selectedCity, maxPrice, minRooms]);
+    ...(selectedCity ? { city: selectedCity } : {}),
+  }), [selectedCity]);
+
+  // Client-side filter for price + rooms (instant, no network)
+  const displayListings = useMemo(() => {
+    return listings.filter(l => {
+      if (selectedCity && l.city !== selectedCity) return false;
+      if (maxPrice && l.price > Number(maxPrice)) return false;
+      if (minRooms && l.rooms < Number(minRooms)) return false;
+      return true;
+    });
+  }, [listings, selectedCity, maxPrice, minRooms]);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -127,54 +137,55 @@ export default function BrowseListingsScreen({ navigation }: Props) {
     <SafeAreaView style={st.root}>
       {/* Header */}
       <View style={st.header}>
-        <Text style={st.title}>İlanlar</Text>
+        <Text style={st.title}>{t('listing.title')}</Text>
         <Text style={st.count}>
-          {!loading && `${listings.length} ilan`}
+          {!loading && `${displayListings.length} ${t('listing.count')}`}
         </Text>
       </View>
 
       {/* Şehir filtresi */}
       <FlatList
-        data={CITIES}
-        keyExtractor={(c) => c}
+        data={[null, ...CITIES]}
+        keyExtractor={(c) => c ?? '__all__'}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={st.cityStrip}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[st.cityChip, selectedCity === item && st.cityChipActive]}
-            onPress={() => setSelectedCity(item)}
-          >
-            <Text style={[st.cityTxt, selectedCity === item && st.cityTxtActive]}>{item}</Text>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          const isAll = item === null;
+          const active = isAll ? selectedCity === '' : selectedCity === item;
+          return (
+            <Pressable
+              style={[st.cityChip, active && st.cityChipActive]}
+              onPress={() => setSelectedCity(isAll ? '' : item!)}
+            >
+              <Text style={[st.cityTxt, active && st.cityTxtActive]}>
+                {isAll ? t('listing.allCities') : item}
+              </Text>
+            </Pressable>
+          );
+        }}
       />
 
       {/* Fiyat + oda filtresi */}
       <View style={st.filterRow}>
         <TextInput
           style={st.filterInput}
-          placeholder="Max fiyat (PLN)"
+          placeholder={t('listing.maxPrice')}
           value={maxPrice}
           onChangeText={setMaxPrice}
           keyboardType="numeric"
-          returnKeyType="search"
-          onSubmitEditing={() => load()}
+          returnKeyType="done"
           placeholderTextColor={C.mute}
         />
         <TextInput
           style={st.filterInput}
-          placeholder="Min oda"
+          placeholder={t('listing.minRooms')}
           value={minRooms}
           onChangeText={setMinRooms}
           keyboardType="numeric"
-          returnKeyType="search"
-          onSubmitEditing={() => load()}
+          returnKeyType="done"
           placeholderTextColor={C.mute}
         />
-        <Pressable style={st.searchBtn} onPress={() => load()}>
-          <Text style={st.searchBtnTxt}>Ara</Text>
-        </Pressable>
       </View>
 
       {loading ? (
@@ -186,18 +197,18 @@ export default function BrowseListingsScreen({ navigation }: Props) {
           <Text style={st.emptyIcon}>⚠</Text>
           <Text style={st.errorTxt}>{error}</Text>
           <Pressable style={st.retryBtn} onPress={() => load()}>
-            <Text style={st.retryTxt}>Tekrar Dene</Text>
+            <Text style={st.retryTxt}>{t('common.tryAgain')}</Text>
           </Pressable>
         </View>
-      ) : listings.length === 0 ? (
+      ) : displayListings.length === 0 ? (
         <View style={st.center}>
           <Text style={st.emptyIcon}>🏠</Text>
-          <Text style={st.emptyTitle}>İlan bulunamadı</Text>
-          <Text style={st.emptySub}>Filtreleri genişletmeyi dene.</Text>
+          <Text style={st.emptyTitle}>{t('listing.noResults')}</Text>
+          <Text style={st.emptySub}>{t('listing.noResultsSub')}</Text>
         </View>
       ) : (
         <FlatList
-          data={listings}
+          data={displayListings}
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
           numColumns={2}
@@ -224,8 +235,6 @@ const st = StyleSheet.create({
   cityTxtActive:  { color: C.brand },
   filterRow:  { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 10, gap: 8 },
   filterInput:{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: C.ink, backgroundColor: C.bgSoft },
-  searchBtn:  { backgroundColor: C.brand, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
-  searchBtnTxt:{ color: '#fff', fontWeight: '700', fontSize: 13 },
   center:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyIcon:  { fontSize: 52, marginBottom: 14 },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: C.ink, marginBottom: 8 },

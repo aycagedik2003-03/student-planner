@@ -116,9 +116,10 @@ const LANDLORD_ICONS: Record<string, string> = {
 const StudentTab = createBottomTabNavigator<TabParamList>();
 
 function StudentTabs() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   return (
     <StudentTab.Navigator
+      key={language}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor:   '#E91E63',
@@ -150,9 +151,10 @@ function StudentTabs() {
 const LandlordTab = createBottomTabNavigator<LandlordTabParamList>();
 
 function LandlordTabs() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   return (
     <LandlordTab.Navigator
+      key={language}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor:   '#E91E63',

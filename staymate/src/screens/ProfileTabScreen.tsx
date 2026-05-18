@@ -172,16 +172,21 @@ export default function ProfileTabScreen({ navigation }: Props) {
 
         {/* Dil seçici */}
         <View style={st.langCard}>
-          <Text style={st.langTitle}>🌐 Dil</Text>
+          <Text style={st.langTitle}>🌐 {t('settings.language')}</Text>
           <View style={st.langRow}>
-            {(['pl', 'tr', 'en'] as const).map(lang => (
+            {([
+              { code: 'pl' as const, short: 'PL', flag: '🇵🇱' },
+              { code: 'tr' as const, short: 'TR', flag: '🇹🇷' },
+              { code: 'en' as const, short: 'EN', flag: '🇺🇸' },
+            ]).map(lang => (
               <Pressable
-                key={lang}
-                onPress={() => setLanguage(lang)}
-                style={[st.langBtn, language === lang && st.langBtnActive]}
+                key={lang.code}
+                onPress={() => setLanguage(lang.code)}
+                style={[st.langBtn, language === lang.code && st.langBtnActive]}
               >
-                <Text style={[st.langBtnTxt, language === lang && st.langBtnTxtActive]}>
-                  {lang === 'pl' ? 'PL' : lang === 'tr' ? 'TR' : 'EN'}
+                <Text style={{ fontSize: 18, marginBottom: 2 }}>{lang.flag}</Text>
+                <Text style={[st.langBtnTxt, language === lang.code && st.langBtnTxtActive]}>
+                  {lang.short}
                 </Text>
               </Pressable>
             ))}

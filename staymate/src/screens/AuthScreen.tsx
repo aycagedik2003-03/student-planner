@@ -198,17 +198,17 @@ export default function AuthScreen({ navigation, route }: Props) {
           {isLogin ? t('auth.login') : t('auth.register')} ✨
         </Text>
         <Text style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
-          {isLogin ? 'Var olan hesabınızla giriş yapın' : t('auth.agreeTerms')}
+          {isLogin ? t('auth.loginSubtitle') : t('auth.agreeTerms')}
         </Text>
 
         {/* Role selector — register only */}
         {!isLogin && (
           <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontSize: 14, fontWeight: '500', marginBottom: 10 }}>Hesap Türü</Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', marginBottom: 10 }}>{t('auth.accountType')}</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {([
-                { value: 'student',  label: '🎓 Öğrenci',   desc: 'Oda arkadaşı ara' },
-                { value: 'landlord', label: '🏠 Ev Sahibi', desc: 'İlan yayınla' },
+                { value: 'student',  label: '🎓 ' + t('auth.student'),  desc: t('auth.studentDesc') },
+                { value: 'landlord', label: '🏠 ' + t('auth.landlord'), desc: t('auth.landlordDesc') },
               ] as const).map((opt) => (
                 <Pressable
                   key={opt.value}

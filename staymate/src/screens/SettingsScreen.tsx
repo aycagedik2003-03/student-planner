@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, Pressable, StyleSheet, StatusBar,
-  ScrollView, Switch, Alert,
+  ScrollView, Switch, Alert, Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -111,6 +111,16 @@ export default function SettingsScreen({ navigation }: Props) {
     navigation.navigate('DeleteAccount' as any);
   };
 
+  const handleRateApp = () => {
+    const appId = Platform.OS === 'ios' ? 'YOUR_APP_STORE_ID' : 'com.roomski.app';
+    const url   = Platform.OS === 'ios'
+      ? `https://apps.apple.com/app/id${appId}`
+      : `https://play.google.com/store/apps/details?id=${appId}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert(t('settings.rateApp'), t('settings.comingSoon'));
+    });
+  };
+
   const handlePlaceholder = (label: string) => {
     Alert.alert(label, t('settings.comingSoon'));
   };
@@ -162,7 +172,7 @@ export default function SettingsScreen({ navigation }: Props) {
             {([
               { code: 'pl' as const, label: 'Polski',  flag: '🇵🇱' },
               { code: 'tr' as const, label: 'Türkçe',  flag: '🇹🇷' },
-              { code: 'en' as const, label: 'English', flag: '🇬🇧' },
+              { code: 'en' as const, label: 'English', flag: '🇺🇸' },
             ]).map(lang => (
               <Pressable
                 key={lang.code}
@@ -210,7 +220,7 @@ export default function SettingsScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Help' as any)} />
           <View style={st.rowDivider} />
           <Row icon="⭐" label={t('settings.rateApp')}
-            onPress={() => handlePlaceholder(t('settings.rateApp'))} />
+            onPress={handleRateApp} />
           <View style={st.rowDivider} />
           <Row icon="ℹ️" label={t('settings.about')}
             value="v2026.1.0"
