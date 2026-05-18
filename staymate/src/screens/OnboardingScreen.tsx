@@ -13,12 +13,8 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 };
 
-const CTA: Record<string, string> = {
-  pl: 'Zacznij', tr: 'Başla', en: 'Get started',
-};
-const LOGIN: Record<string, string> = {
-  pl: 'Mam już konto', tr: 'Hesabım var', en: 'I have an account',
-};
+const CTA:   Record<string, string> = { pl: 'Zacznij',        tr: 'Başla',       en: 'Get started'     };
+const LOGIN: Record<string, string> = { pl: 'Mam już konto',  tr: 'Hesabım var', en: 'I have an account' };
 
 export default function OnboardingScreen({ navigation }: Props) {
   const language    = useAppStore(s => s.language);
@@ -29,19 +25,23 @@ export default function OnboardingScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={st.container}>
-        {/* Marketing image — fills remaining space */}
-        <View style={st.imageWrap}>
-          <Image
-            source={require('../../assets/roomski-marketing.png')}
-            style={st.marketing}
-            resizeMode="cover"
-          />
-        </View>
 
-        {/* Bottom button strip */}
+        {/* Marketing image — tam ekran arka plan */}
+        <Image
+          source={require('../../assets/roomski-marketing.png')}
+          style={st.bg}
+          resizeMode="cover"
+        />
+
+        {/* Beyaz overlay — görseldeki "Get started" metnini kapatır */}
+        <LinearGradient
+          colors={['transparent', '#fff', '#fff']}
+          locations={[0, 0.18, 1]}
+          style={st.overlay}
+        />
+
+        {/* Buton şeridi */}
         <View style={st.bottom}>
-
-          {/* Gradient CTA */}
           <LinearGradient
             colors={['#00BCD4', '#E91E63']}
             start={{ x: 0, y: 0.5 }}
@@ -56,7 +56,6 @@ export default function OnboardingScreen({ navigation }: Props) {
             </Pressable>
           </LinearGradient>
 
-          {/* Login link */}
           <Pressable
             onPress={() => navigation.navigate('Auth', { mode: 'login' })}
             style={st.loginBtn}
@@ -64,7 +63,6 @@ export default function OnboardingScreen({ navigation }: Props) {
             <Text style={st.loginTxt}>{LOGIN[language] ?? 'I have an account'}</Text>
           </Pressable>
 
-          {/* Language selector */}
           <View style={st.langRow}>
             {(['pl', 'tr', 'en'] as const).map(l => (
               <Pressable
@@ -88,27 +86,38 @@ const st = StyleSheet.create({
   root:      { flex: 1, backgroundColor: '#fff' },
   container: { flex: 1 },
 
-  // Image fills all space above the buttons
-  imageWrap: { flex: 1 },
-  marketing: { width: '100%', height: '100%' },
-
-  // Button strip at bottom
-  bottom: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
+  // Tam ekran arka plan görseli
+  bg: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%', height: '100%',
   },
 
-  ctaGrad: { borderRadius: 30, marginBottom: 12 },
+  // Alt gradient — görselin buton alanını beyazla örter
+  overlay: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    height: '42%',
+  },
+
+  // Buton şeridi — en alta sabitlenmiş
+  bottom: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+
+  ctaGrad: { borderRadius: 30, marginBottom: 10 },
   ctaBtn:  { paddingVertical: 16, alignItems: 'center' },
   ctaTxt:  { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   loginBtn: { alignItems: 'center', paddingVertical: 10 },
-  loginTxt: { color: '#999', fontSize: 14, fontWeight: '500' },
+  loginTxt: { color: '#666', fontSize: 14, fontWeight: '500' },
 
-  langRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 12 },
-  langBtn:       { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F0F0F0' },
+  langRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 10 },
+  langBtn:       { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(240,240,240,0.9)' },
   langBtnActive: { backgroundColor: '#00BCD4' },
   langTxt:       { fontSize: 12, fontWeight: '500', color: '#666' },
   langTxtActive: { color: '#fff', fontWeight: '700' },
