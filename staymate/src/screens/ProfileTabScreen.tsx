@@ -70,9 +70,9 @@ export default function ProfileTabScreen({ navigation }: Props) {
         }))
       : deriveTraits(quizAnswers);
 
-  const bgMap: Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
+  const bgMap: Record<TraitColor, string> = { teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4' };
   const txMap: Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
-  const bdMap: Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
+  const bdMap: Record<TraitColor, string> = { teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4' };
 
   const handleLogout = () => {
     Alert.alert(
@@ -297,7 +297,7 @@ const st = StyleSheet.create({
   langTitle:      { fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
   langRow:        { flexDirection: 'row', gap: 10 },
   langBtn:        { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
-  langBtnActive:  { backgroundColor: '#1D9E75', borderColor: '#1D9E75' },
+  langBtnActive:  { backgroundColor: '#00BCD4', borderColor: '#00BCD4' },
   langBtnTxt:     { fontSize: 14, fontWeight: '600', color: '#1F2937' },
   langBtnTxtActive:{ color: '#fff' },
   settingsSection: { paddingHorizontal: 18, paddingTop: 24 },

@@ -7,7 +7,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
-const C = { bg: '#fff', ink: '#1F2937', soft: '#4B5563', mute: '#9CA3AF', line: '#E5E7EB', brand: '#1D9E75', brandBg: '#E1F5EE' };
+const C = { bg: '#fff', ink: '#1F2937', soft: '#4B5563', mute: '#9CA3AF', line: '#E5E7EB', brand: '#00BCD4', brandBg: '#E1F5EE' };
 
 const FAQS = [
   { q: 'Nasıl eşleşme alırım?', a: 'Quiz\'i tamamladıktan sonra sistem kişilik uyumuna göre önerileri hesaplar.' },

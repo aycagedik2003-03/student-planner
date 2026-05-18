@@ -296,7 +296,7 @@ const st = StyleSheet.create({
   photoIcon:   { fontSize: 36 },
   furnishedBadge: {
     position: 'absolute', top: 8, left: 8,
-    backgroundColor: '#1D9E75', borderRadius: 6,
+    backgroundColor: '#00BCD4', borderRadius: 6,
     paddingHorizontal: 6, paddingVertical: 3,
   },
   furnishedTxt: { color: '#fff', fontSize: 9, fontWeight: '700' },
@@ -312,7 +312,7 @@ const st = StyleSheet.create({
   cardDistrict: { color: C.mute, fontSize: 11, marginBottom: 6 },
   cardMeta:     { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   metaChip:     { backgroundColor: '#E1F5EE', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  metaChipTxt:  { color: '#1D9E75', fontSize: 10, fontWeight: '600' },
+  metaChipTxt:  { color: '#00BCD4', fontSize: 10, fontWeight: '600' },
 
   empty:      { alignItems: 'center', paddingTop: 60 },
   emptyIcon:  { fontSize: 40, marginBottom: 12 },

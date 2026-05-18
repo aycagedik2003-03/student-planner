@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import AuthScreen                from './src/screens/AuthScreen';
 import OnboardingScreen          from './src/screens/OnboardingScreen';
@@ -115,8 +116,8 @@ function StudentTabs() {
     <StudentTab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor:   '#00CFC8',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor:   '#E91E63',
+        tabBarInactiveTintColor: '#00BCD4',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
@@ -148,8 +149,8 @@ function LandlordTabs() {
     <LandlordTab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor:   '#00CFC8',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor:   '#E91E63',
+        tabBarInactiveTintColor: '#00BCD4',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
@@ -179,19 +180,32 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // ── Splash ─────────────────────────────────────────────────────────────────────
 function SplashScreen() {
   return (
-    <View style={splash.root}>
+    <LinearGradient
+      colors={['#00BCD4', '#E91E63']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={splash.root}
+    >
       <View style={splash.logoMark}>
-        <Text style={splash.logoTxt}>s</Text>
+        <Image
+          source={require('./assets/roomski-logo.png')}
+          style={{ width: 72, height: 68 }}
+          resizeMode="contain"
+        />
       </View>
-      <ActivityIndicator color="#00CFC8" style={{ marginTop: 24 }} />
-    </View>
+      <Text style={splash.appName}>roomski</Text>
+      <Text style={splash.tagline}>find your people. feel at home.</Text>
+      <ActivityIndicator color="rgba(255,255,255,0.8)" style={{ marginTop: 32 }} />
+    </LinearGradient>
   );
 }
 
 const splash = StyleSheet.create({
-  root:     { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  logoMark: { width: 56, height: 56, borderRadius: 18, backgroundColor: '#00CFC8', alignItems: 'center', justifyContent: 'center' },
-  logoTxt:  { color: '#fff', fontSize: 28, fontWeight: '800' },
+  root:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  logoMark: { width: 96, height: 96, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  logoIcon: { fontSize: 52 },
+  appName:  { color: '#fff', fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  tagline:  { color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 6 },
 });
 
 // ── Main App ───────────────────────────────────────────────────────────────────

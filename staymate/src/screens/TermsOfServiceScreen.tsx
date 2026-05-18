@@ -124,7 +124,7 @@ export const TermsOfServiceScreen = () => {
 
 const Section = ({ title, children }: any) => (
   <View style={{ marginBottom: 20 }}>
-    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#1D9E75' }}>
+    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8, color: '#00BCD4' }}>
       {title}
     </Text>
     <Text style={{ fontSize: 12, color: '#555', lineHeight: 20 }}>

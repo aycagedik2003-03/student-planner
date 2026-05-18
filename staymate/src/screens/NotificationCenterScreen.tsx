@@ -6,7 +6,7 @@ import { useAppStore } from '../store';
 
 const C = {
   bg: '#F5F5F5', card: '#FFFFFF', ink: '#000000',
-  sub: '#888888', line: '#EEEEEE', brand: '#1D9E75',
+  sub: '#888888', line: '#EEEEEE', brand: '#00BCD4',
 };
 
 export default function NotificationCenterScreen() {

@@ -11,7 +11,7 @@ import api from '../api/client';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
-const C = { bg: '#fff', ink: '#1F2937', soft: '#4B5563', mute: '#9CA3AF', line: '#E5E7EB', brand: '#1D9E75', error: '#EF4444' };
+const C = { bg: '#fff', ink: '#1F2937', soft: '#4B5563', mute: '#9CA3AF', line: '#E5E7EB', brand: '#00BCD4', error: '#EF4444' };
 
 export default function ChangePasswordScreen({ navigation }: Props) {
   const { t } = useTranslation();

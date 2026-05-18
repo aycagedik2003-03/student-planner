@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Checkbox from 'expo-checkbox';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -23,7 +24,7 @@ type Props = {
 };
 
 const C = {
-  brand:   '#1D9E75',
+  brand:   '#00BCD4',
   brandBg: '#E1F5EE',
   brandTx: '#085041',
   error:   '#D85A30',
@@ -281,7 +282,7 @@ export default function AuthScreen({ navigation, route }: Props) {
             </View>
           )}
           {!isLogin && password && validatePassword(password).valid && (
-            <Text style={{ marginTop: 8, fontSize: 11, color: '#1D9E75', fontWeight: 'bold' }}>
+            <Text style={{ marginTop: 8, fontSize: 11, color: '#00BCD4', fontWeight: 'bold' }}>
               ✅ Şifre güçlü
             </Text>
           )}
@@ -318,22 +319,25 @@ export default function AuthScreen({ navigation, route }: Props) {
         )}
 
         {/* Submit */}
-        <Pressable
-          onPress={handleSubmit}
-          disabled={loading}
-          style={{
-            backgroundColor: loading ? '#ccc' : C.brand,
-            padding: 14, borderRadius: 8, marginBottom: 16,
-            alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
-          }}
+        <LinearGradient
+          colors={loading ? ['#ccc', '#ccc'] : ['#00BCD4', '#E91E63']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ borderRadius: 10, marginBottom: 16 }}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" size="small" />
-            : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                {isLogin ? t('auth.login') : t('auth.register')}
-              </Text>
-          }
-        </Pressable>
+          <Pressable
+            onPress={handleSubmit}
+            disabled={loading}
+            style={{ padding: 15, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+                  {isLogin ? t('auth.login') : t('auth.register')}
+                </Text>
+            }
+          </Pressable>
+        </LinearGradient>
 
         {/* Dil seçeneği — buton altında */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 20, marginBottom: 20 }}>

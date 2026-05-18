@@ -102,7 +102,7 @@ export default function AboutScreen({ navigation }: Props) {
           <Text style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
             {current.version}
           </Text>
-          <Text style={{ fontSize: 16, color: '#1D9E75', fontWeight: '600', textAlign: 'center', marginBottom: 32 }}>
+          <Text style={{ fontSize: 16, color: '#00BCD4', fontWeight: '600', textAlign: 'center', marginBottom: 32 }}>
             {current.subtitle}
           </Text>
 
@@ -119,7 +119,7 @@ export default function AboutScreen({ navigation }: Props) {
 
           <Pressable
             onPress={() => Linking.openURL('mailto:roomski.app@gmail.com')}
-            style={{ marginTop: 32, padding: 12, backgroundColor: '#1D9E75', borderRadius: 8, width: '100%' }}
+            style={{ marginTop: 32, padding: 12, backgroundColor: '#00BCD4', borderRadius: 8, width: '100%' }}
           >
             <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>
               {CONTACT_LABEL[lang]}
