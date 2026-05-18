@@ -33,6 +33,7 @@ import HelpScreen                from './src/screens/HelpScreen';
 import DeleteAccountScreen       from './src/screens/DeleteAccountScreen';
 import AboutScreen               from './src/screens/AboutScreen';
 import NotificationCenterScreen  from './src/screens/NotificationCenterScreen';
+import EmailVerificationScreen   from './src/screens/EmailVerificationScreen';
 
 import { authService }                   from './src/api/AuthService';
 import { useAppStore }                   from './src/store';
@@ -75,8 +76,9 @@ export type RootStackParamList = {
   ChangePassword:  undefined;
   Help:            undefined;
   DeleteAccount:   undefined;
-  About:           undefined;
-  Settings:        undefined;
+  About:             undefined;
+  Settings:          undefined;
+  EmailVerification: { email: string };
   Verification:    undefined;
   ProfileEdit:     undefined;
   PrivacyPolicy:   undefined;
@@ -290,7 +292,8 @@ export default function App() {
         <Stack.Screen name="Help"             component={HelpScreen} />
         <Stack.Screen name="DeleteAccount"    component={DeleteAccountScreen} />
         <Stack.Screen name="About"            component={AboutScreen} />
-        <Stack.Screen name="Settings"         component={SettingsScreen} />
+        <Stack.Screen name="Settings"           component={SettingsScreen} />
+        <Stack.Screen name="EmailVerification"  component={EmailVerificationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -16,6 +16,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
 import { getErrorMessage } from '../api/ErrorHandler';
+import { verificationService } from '../api/VerificationService';
 import { RootStackParamList } from '../../App';
 
 type Props = {
@@ -97,12 +98,14 @@ export default function AuthScreen({ navigation, route }: Props) {
       setUser({ id: response.user_id, name: name.trim(), email: email.trim(), quizCompleted: false, userType: resolvedType });
 
       setError('');
-      Alert.alert(t('common.success'), t('auth.registerSuccess'));
-      if (resolvedType === 'landlord') {
-        navigation.replace('LandlordTabs');
-      } else {
-        navigation.replace('Quiz');
+
+      // E-posta doğrulama kodu gönder, doğrulama ekranına geç
+      try {
+        await verificationService.sendCode(email.trim());
+      } catch {
+        // Kod gönderilemese bile devam et (kullanıcı atla yapabilir)
       }
+      navigation.replace('EmailVerification', { email: email.trim() });
     } catch (err: any) {
       console.error('❌ Register error:', err);
 

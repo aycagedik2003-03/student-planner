@@ -156,7 +156,9 @@ export default function QuizScreen({ navigation }: Props) {
   };
 
   const q      = questions[idx];
-  const cat    = q ? (CATS[q.catIndex] ?? { label: 'Genel', icon: '❓' }) : CATS[0];
+  const cat    = q
+    ? { label: catLabels[q.catIndex] ?? 'Genel', icon: CAT_ICONS[q.catIndex] ?? '❓' }
+    : { label: catLabels[0], icon: CAT_ICONS[0] };
   const isLast = idx === questions.length - 1;
   const pct    = phase === 'city' ? 0 : (idx + 1) / questions.length;
 
