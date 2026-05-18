@@ -30,157 +30,111 @@ const C = {
   soft:    '#4B5563',
   mute:    '#9CA3AF',
   line:    'rgba(31,41,55,0.08)',
-  brandA:  '#00CFC8',
-  brandB:  '#FF9ACD',
-  tealBg:  '#E6FBFA',
-  tealTx:  '#00A8A2',
-  pinkBg:  '#FFF0F7',
-  pinkTx:  '#F06EB1',
-  darkBg:  '#1A1C22',
-  errorBg: 'rgba(239,68,68,0.08)',
+  turq:    '#00CFC8',
+  turq50:  '#E6FBFA',
+  turqTx:  '#00A8A2',
+  rose:    '#FF9ACD',
+  rose50:  '#FFF0F7',
+  green:   '#10B981',
+  greenBg: '#ECFDF5',
+  greenTx: '#059669',
   error:   '#EF4444',
 };
 
-// ── Trait türleri ─────────────────────────────────────────────────────────────
-type TraitColor = 'teal' | 'pink' | 'dark';
-interface Trait { icon: string; label: string; color: TraitColor }
-
-// Backend'den gelen trait string'lerini görsel Trait nesnesine çevirir
-const BACKEND_TRAIT_MAP: Record<string, Trait> = {
-  gece_kusu:     { icon: '🌙', label: 'Gece kuşu',      color: 'pink' },
-  erken_kalkan:  { icon: '☀️',  label: 'Erken kalkan',    color: 'teal' },
-  duzenli:       { icon: '✨',  label: 'Düzenli',         color: 'teal' },
-  rahat:         { icon: '😌', label: 'Rahat',            color: 'dark' },
-  sosyal:        { icon: '🤝', label: 'Sosyal',           color: 'pink' },
-  icedonuk:      { icon: '🧘', label: 'İçe dönük',        color: 'teal' },
-  remote:        { icon: '🏠', label: 'Remote',           color: 'teal' },
-  hybrid:        { icon: '💻', label: 'Hybrid',           color: 'dark' },
-  gece_calisir:  { icon: '🦉', label: 'Gece çalışır',    color: 'pink' },
-  evcil_hayvan:  { icon: '🐾', label: 'Evcil hayvanlı',  color: 'pink' },
-  hayvan_sever:  { icon: '🐾', label: 'Hayvan sever',     color: 'pink' },
-  sigara_icmez:  { icon: '🚭', label: 'Sigara içmez',    color: 'teal' },
-  sigara:        { icon: '🚬', label: 'Sigara içer',      color: 'dark' },
-  alkol_yok:     { icon: '🫖', label: 'Alkol almaz',      color: 'teal' },
-  sosyal_ici:    { icon: '🥂', label: 'Sosyal içici',     color: 'pink' },
-  nadir_ici:     { icon: '🍷', label: 'Nadir içer',       color: 'dark' },
-  ev_yemegi:     { icon: '🍳', label: 'Ev yemeği yapar', color: 'teal' },
+// ── Trait data ────────────────────────────────────────────────────────────────
+const BACKEND_TRAIT_MAP: Record<string, { icon: string; label: string }> = {
+  gece_kusu:    { icon: '🌙', label: 'Gece kuşu' },
+  erken_kalkan: { icon: '☀️', label: 'Erken kalkan' },
+  duzenli:      { icon: '✨', label: 'Düzenli' },
+  rahat:        { icon: '😌', label: 'Rahat' },
+  sosyal:       { icon: '🤝', label: 'Sosyal' },
+  icedonuk:     { icon: '🧘', label: 'İçe dönük' },
+  remote:       { icon: '🏠', label: 'Remote' },
+  hybrid:       { icon: '💻', label: 'Hybrid' },
+  gece_calisir: { icon: '🦉', label: 'Gece çalışır' },
+  evcil_hayvan: { icon: '🐾', label: 'Evcil hayvanlı' },
+  hayvan_sever: { icon: '🐾', label: 'Hayvan sever' },
+  sigara_icmez: { icon: '🚭', label: 'Sigara içmez' },
+  sigara:       { icon: '🚬', label: 'Sigara içer' },
+  alkol_yok:    { icon: '🫖', label: 'Alkol almaz' },
+  sosyal_ici:   { icon: '🥂', label: 'Sosyal içici' },
+  nadir_ici:    { icon: '🍷', label: 'Nadir içer' },
+  ev_yemegi:    { icon: '🍳', label: 'Ev yemeği yapar' },
 };
 
-/** Backend trait array'inden Trait[] üretir; bilinmeyen key'leri genel gösterimle ekler */
-function mapBackendTraits(keys: string[]): Trait[] {
-  return keys.map(k => {
-    const lower = k.toLowerCase().replace(/[- ]/g, '_');
-    return BACKEND_TRAIT_MAP[lower] ?? { icon: '✦', label: k, color: 'dark' as TraitColor };
-  });
-}
+const LABEL_TO_KEY: Record<string, string> = {
+  'gece kuşu': 'gece_kusu', 'erken kalkan': 'erken_kalkan', 'düzenli': 'duzenli',
+  'rahat': 'rahat', 'sosyal': 'sosyal', 'içe dönük': 'icedonuk', 'remote': 'remote',
+  'hybrid': 'hybrid', 'gece çalışır': 'gece_calisir', 'evcil hayvanlı': 'evcil_hayvan',
+  'hayvan sever': 'hayvan_sever', 'sigara içmez': 'sigara_icmez', 'sigara içer': 'sigara',
+  'alkol almaz': 'alkol_yok', 'sosyal içici': 'sosyal_ici', 'nadir içer': 'nadir_ici',
+  'ev yemeği yapar': 'ev_yemegi',
+};
 
-/** Quiz cevaplarından lokal trait çıkarımı — backend trait yoksa fallback */
-function deriveTraitsFromAnswers(a: (number | null)[]): Trait[] {
+function deriveTraitsFromAnswers(a: (number | null)[]): Array<{ icon: string; label: string }> {
   const get = (i: number) => a[i] ?? -1;
-  const traits: Trait[] = [];
-
-  if (get(0) === 1 || get(0) === 2)         traits.push({ icon: '🌙', label: 'Gece kuşu',      color: 'pink' });
-  else if (get(0) === 0)                     traits.push({ icon: '☀️',  label: 'Erken kalkan',    color: 'teal' });
-  if (get(3) === 0 || get(3) === 1)         traits.push({ icon: '✨',  label: 'Düzenli',         color: 'teal' });
-  else if (get(3) === 3)                    traits.push({ icon: '😌', label: 'Rahat',            color: 'dark' });
-  if (get(6) === 0 || get(6) === 1)        traits.push({ icon: '🤝', label: 'Sosyal',           color: 'pink' });
-  else if (get(6) === 2 || get(6) === 3)   traits.push({ icon: '🧘', label: 'İçe dönük',        color: 'teal' });
-  if (get(9) === 0)                         traits.push({ icon: '🏠', label: 'Remote',           color: 'teal' });
-  else if (get(9) === 3)                    traits.push({ icon: '💻', label: 'Hybrid',           color: 'dark' });
-  if (get(11) === 2 || get(11) === 3)      traits.push({ icon: '🦉', label: 'Gece çalışır',     color: 'pink' });
-  if (get(12) === 0)                        traits.push({ icon: '🐾', label: 'Evcil hayvanlı',  color: 'pink' });
-  if (get(13) === 1)                        traits.push({ icon: '🚭', label: 'Sigara içmez',    color: 'teal' });
-  else if (get(13) === 0)                   traits.push({ icon: '🚬', label: 'Sigara içer',      color: 'dark' });
-  if (get(14) === 3)                        traits.push({ icon: '🫖', label: 'Alkol almaz',      color: 'teal' });
-  else if (get(14) === 1)                   traits.push({ icon: '🥂', label: 'Sosyal içici',     color: 'pink' });
-  if (get(15) === 0 || get(15) === 1)      traits.push({ icon: '🍳', label: 'Ev yemeği yapar', color: 'teal' });
-
-  return traits;
+  const out: Array<{ icon: string; label: string }> = [];
+  if (get(0) === 1 || get(0) === 2) out.push({ icon: '🌙', label: 'Gece kuşu' });
+  else if (get(0) === 0)            out.push({ icon: '☀️', label: 'Erken kalkan' });
+  if (get(3) === 0 || get(3) === 1) out.push({ icon: '✨', label: 'Düzenli' });
+  else if (get(3) === 3)            out.push({ icon: '😌', label: 'Rahat' });
+  if (get(6) === 0 || get(6) === 1) out.push({ icon: '🤝', label: 'Sosyal' });
+  else if (get(6) >= 2)             out.push({ icon: '🧘', label: 'İçe dönük' });
+  if (get(9) === 0)                 out.push({ icon: '🏠', label: 'Remote' });
+  else if (get(9) === 3)            out.push({ icon: '💻', label: 'Hybrid' });
+  if (get(12) === 0)                out.push({ icon: '🐾', label: 'Evcil hayvanlı' });
+  if (get(13) === 1)                out.push({ icon: '🚭', label: 'Sigara içmez' });
+  else if (get(13) === 0)           out.push({ icon: '🚬', label: 'Sigara içer' });
+  if (get(14) === 3)                out.push({ icon: '🫖', label: 'Alkol almaz' });
+  else if (get(14) === 1)           out.push({ icon: '🥂', label: 'Sosyal içici' });
+  if (get(15) === 0 || get(15) === 1) out.push({ icon: '🍳', label: 'Ev yemeği yapar' });
+  return out;
 }
 
-// ── Trait kartı ───────────────────────────────────────────────────────────────
-function TraitCard({ trait }: { trait: Trait }) {
-  const bgMap:     Record<TraitColor, string> = { teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4' };
-  const txMap:     Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
-  const borderMap: Record<TraitColor, string> = {
-    teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4',
-  };
+// ── Trait pill — clean white, no gradient ────────────────────────────────────
+function TraitPill({ label, tFn }: { label: string; tFn: (k: string) => string }) {
+  const normalized  = label.toLowerCase().replace(/[- ]/g, '_');
+  const mapped      = BACKEND_TRAIT_MAP[normalized];
+  const icon        = mapped?.icon ?? '';
+  const key         = LABEL_TO_KEY[label.toLowerCase()] ?? normalized;
+  const translated  = tFn(`traits.${key}`);
+  const displayText = translated !== `traits.${key}` ? translated : (mapped?.label ?? label);
+
   return (
-    <View style={[st.traitCard, {
-      backgroundColor: bgMap[trait.color],
-      borderColor:     borderMap[trait.color],
-    }]}>
-      <Text style={st.traitIcon}>{trait.icon}</Text>
-      <Text style={[st.traitLabel, { color: txMap[trait.color] }]}>{trait.label}</Text>
+    <View style={st.pill} accessibilityLabel={displayText}>
+      {icon ? <Text style={st.pillIcon}>{icon}</Text> : null}
+      <Text style={st.pillTxt}>{displayText}</Text>
     </View>
   );
 }
 
-// Backend string → snake_case i18n key mapping
-const LABEL_TO_KEY: Record<string, string> = {
-  'gece kuşu':       'gece_kusu',
-  'erken kalkan':    'erken_kalkan',
-  'düzenli':         'duzenli',
-  'rahat':           'rahat',
-  'sosyal':          'sosyal',
-  'içe dönük':       'icedonuk',
-  'remote':          'remote',
-  'hybrid':          'hybrid',
-  'gece çalışır':    'gece_calisir',
-  'evcil hayvanlı':  'evcil_hayvan',
-  'hayvan sever':    'hayvan_sever',
-  'sigara içmez':    'sigara_icmez',
-  'sigara içer':     'sigara',
-  'alkol almaz':     'alkol_yok',
-  'sosyal içici':    'sosyal_ici',
-  'nadir içer':      'nadir_ici',
-  'ev yemeği yapar': 'ev_yemegi',
-};
-
-function getTraitKey(label: string): string {
-  const lower = label.toLowerCase().replace(/[- ]/g, '_');
-  return LABEL_TO_KEY[lower.replace(/_/g, ' ')] ?? BACKEND_TRAIT_MAP[lower] ? lower : label;
-}
-
-// ── Gradient trait pill ───────────────────────────────────────────────────────
-function TraitPill({ label, tFn }: { label: string; tFn: (k: string) => string }) {
-  const normalized = label.toLowerCase().replace(/[- ]/g, '_');
-  const mapped     = BACKEND_TRAIT_MAP[normalized];
-  const icon       = mapped?.icon ?? '✦';
-  const key        = LABEL_TO_KEY[label.toLowerCase()] ?? normalized;
-  const translated = tFn(`traits.${key}`);
-  const displayText = (translated !== `traits.${key}`) ? translated : label;
-
+// ── Stat column ───────────────────────────────────────────────────────────────
+function StatCol({ value, label }: { value: string; label: string }) {
   return (
-    <LinearGradient
-      colors={['rgba(0,188,212,0.15)', 'rgba(233,30,99,0.15)']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={st.traitPill}
-    >
-      <Text style={st.traitPillIcon}>{icon}</Text>
-      <Text style={st.traitPillTxt}>{displayText}</Text>
-    </LinearGradient>
+    <View style={st.statCol}>
+      <Text style={st.statValue}>{value}</Text>
+      <Text style={st.statLabel}>{label}</Text>
+    </View>
   );
 }
 
-// ── Ana bileşen ────────────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }: Props) {
-  const { t }        = useTranslation();
-  const quizAnswers  = useAppStore(s => s.quizAnswers);
-  const quizCity     = useAppStore(s => s.quizCity);
-  const isVerified   = useAppStore(s => s.isVerified);
-  const setVerified  = useAppStore(s => s.setVerified);
-  const storeProfile = useAppStore(s => s.profile);
-  const setProfile   = useAppStore(s => s.setProfile);
+  const { t }            = useTranslation();
+  const quizAnswers      = useAppStore(s => s.quizAnswers);
+  const quizCity         = useAppStore(s => s.quizCity);
+  const isVerified       = useAppStore(s => s.isVerified);
+  const setVerified      = useAppStore(s => s.setVerified);
+  const storeProfile     = useAppStore(s => s.profile);
+  const setProfile       = useAppStore(s => s.setProfile);
   const setQuizCompleted = useAppStore(s => s.setQuizCompleted);
-  const userType     = useAppStore(s => s.userType);
-  const isLandlord   = userType === 'landlord';
+  const activeMatches    = useAppStore(s => s.activeMatches);
+  const userType         = useAppStore(s => s.userType);
+  const isLandlord       = userType === 'landlord';
 
-  const [loading,  setLoading]  = useState(!storeProfile); // daha önce fetch'lendiyse skip
+  const [loading,  setLoading]  = useState(!storeProfile);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
 
-  // ── Profile fetch ──────────────────────────────────────────────────────────
   useEffect(() => {
     const loadProfile = async () => {
       if (storeProfile) return;
@@ -193,62 +147,53 @@ export default function ProfileScreen({ navigation }: Props) {
           setQuizCompleted(true);
         }
       } catch (error: any) {
-        console.error('Profile load error:', error);
-        const msg =
-          error?.response?.data?.message ||
-          error?.response?.data?.error   ||
-          'Profil yüklenemedi.';
+        const msg = error?.response?.data?.message || error?.response?.data?.error || 'Profil yüklenemedi.';
         setFetchErr(Array.isArray(msg) ? msg[0] : msg);
       } finally {
         setLoading(false);
       }
     };
-
-    const loadVerificationStatus = async () => {
+    const loadVerification = async () => {
       try {
         const status = await verificationService.getVerificationStatus();
         setVerified(status.isVerified === true || (status as any).verified === true);
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          console.log('Verify endpoint yok, atlanıyor');
-        } else {
-          console.error('Verify status error:', error);
-        }
+      } catch {
         setVerified(false);
       }
     };
-
     loadProfile();
-    loadVerificationStatus();
+    loadVerification();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Görüntülenecek değerler ─────────────────────────────────────────────────
-  const displayName       = storeProfile?.name       ?? 'Kullanıcı';
-  const displayAge        = storeProfile?.age        ?? null;
-  const displayCity       = storeProfile?.city       ?? quizCity ?? null;
-  const displayUniversity = storeProfile?.university ?? null;
-  const displayBio        = storeProfile?.bio        ?? null;
-  const avatarLetter      = displayName.charAt(0).toUpperCase();
-  // Backend camelCase veya snake_case avatar URL
-  const avatarUri         = storeProfile?.avatarUrl ?? storeProfile?.avatar_url ?? null;
+  // Display values
+  const displayName  = storeProfile?.name ?? 'Kullanıcı';
+  const displayAge   = storeProfile?.age ?? null;
+  const displayCity  = storeProfile?.city ?? quizCity ?? null;
+  const displayBio   = storeProfile?.bio ?? null;
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const avatarUri    = storeProfile?.avatarUrl ?? storeProfile?.avatar_url ?? null;
 
-  // Trait string listesi: önce backend (okunabilir etiket veya snake_case),
-  // sonra quiz cevaplarından türetilmiş Trait[] → label'a dönüştür
-  const traitLabels: string[] =
+  const traitItems =
     storeProfile?.traits && storeProfile.traits.length > 0
-      ? storeProfile.traits
-      : deriveTraitsFromAnswers(quizAnswers).map(t => t.label);
+      ? storeProfile.traits.map(label => ({
+          icon: BACKEND_TRAIT_MAP[label.toLowerCase().replace(/[- ]/g, '_')]?.icon ?? '',
+          label,
+        }))
+      : deriveTraitsFromAnswers(quizAnswers);
 
-  // Eski TraitCard bileşeni için — gerekirse hâlâ kullanılabilir
-  const traits: Trait[] = mapBackendTraits(traitLabels);
+  const traitCount = traitItems.length;
+  const matchCount = activeMatches.length;
 
-  // ── Loading durumu ─────────────────────────────────────────────────────────
+  const locationLine = [displayCity, displayAge ? String(displayAge) : null]
+    .filter(Boolean).join(' · ') || '—';
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <SafeAreaView style={st.root}>
         <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         <View style={st.loadingWrap}>
-          <ActivityIndicator size="large" color={C.brandA} />
+          <ActivityIndicator size="large" color={C.turq} />
           <Text style={st.loadingTxt}>{t('profile.loading')}</Text>
         </View>
       </SafeAreaView>
@@ -261,125 +206,137 @@ export default function ProfileScreen({ navigation }: Props) {
 
       {/* ── Header ── */}
       <View style={st.header}>
-        <TouchableOpacity style={st.hBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={st.hBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          accessibilityLabel="Geri"
+        >
           <Text style={st.hBtnTxt}>←</Text>
         </TouchableOpacity>
         <Text style={st.hTitle}>{t('profile.title')}</Text>
-        {/* Profil Düzenle — sağ üst köşe */}
         <TouchableOpacity
           style={st.hBtn}
           onPress={() => navigation.navigate('ProfileEdit')}
           activeOpacity={0.7}
+          accessibilityLabel={t('profile.editProfile')}
         >
-          <Text style={st.hEditTxt}>✏️</Text>
+          <Text style={st.hBtnTxt}>✏️</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.scroll}>
 
-        {/* ── Hata banner'ı (veri kısmen eksikse göster, engelleme) ── */}
+        {/* Error banner */}
         {fetchErr && (
           <View style={st.errBanner}>
-            <Text style={st.errBannerTxt}>⚠ {fetchErr} — yerel veriler gösteriliyor.</Text>
+            <Text style={st.errBannerTxt}>⚠ {fetchErr}</Text>
           </View>
         )}
 
         {/* ── Hero ── */}
         <View style={st.hero}>
-          <View style={st.heroBlob1} />
-          <View style={st.heroBlob2} />
 
-          {/* Avatar */}
+          {/* Single radial halo behind avatar */}
+          <View pointerEvents="none" style={st.haloWrap}>
+            <View style={st.halo} />
+          </View>
+
+          {/* Avatar: accent ring → white ring → avatar */}
           <View style={st.avatarWrap}>
-            {avatarUri ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={st.avatar}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={st.avatar}>
-                <Text style={st.avatarTxt}>{avatarLetter}</Text>
+            <View style={st.avatarAccent}>
+              <View style={st.avatarRing}>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={st.avatar} resizeMode="cover" />
+                ) : (
+                  <View style={st.avatar}>
+                    <Text style={st.avatarTxt}>{avatarLetter}</Text>
+                  </View>
+                )}
               </View>
-            )}
+            </View>
             {isVerified && (
-              <View style={st.avatarBadge}>
-                <Text style={st.avatarBadgeTxt}>✓</Text>
+              <View style={st.verifiedDot} accessibilityLabel="Doğrulanmış">
+                <Text style={st.verifiedDotTxt}>✓</Text>
               </View>
             )}
           </View>
 
-          {/* İsim */}
+          {/* Name */}
           <Text style={st.name}>{displayName}</Text>
 
-          {/* Yaş · Şehir */}
-          <Text style={st.sub}>
-            {[displayAge ? `${displayAge} yaşında` : null, displayCity]
-              .filter(Boolean)
-              .join(' · ') || 'Profil bilgisi yok'}
-          </Text>
+          {/* City · Age */}
+          <Text style={st.sub}>{locationLine}</Text>
 
-          {/* Rol badge */}
-          {isLandlord && (
-            <View style={[st.infoChip, { backgroundColor: '#FEF9C3', borderColor: '#F59E0B55', marginBottom: 4 }]}>
-              <Text style={{ color: '#854D0E', fontSize: 12, fontWeight: '700' }}>🏠 Ev Sahibi</Text>
+          {/* University chip */}
+          {!isLandlord && storeProfile?.university && (
+            <View style={[st.chip, { marginTop: 8 }]}>
+              <Text style={st.chipTxt}>🎓 {storeProfile.university}</Text>
             </View>
           )}
 
-          {/* Üniversite + doğrulama */}
-          <View style={st.infoRow}>
-            {!isLandlord && displayUniversity && (
-              <View style={st.infoChip}>
-                <Text style={st.infoChipTxt}>🎓 {displayUniversity}</Text>
-              </View>
-            )}
-            {!isLandlord && isVerified && (
-              <View style={[st.infoChip, st.verifiedChip]}>
-                <Text style={st.verifiedChipTxt}>✓ Doğrulanmış Öğrenci</Text>
-              </View>
-            )}
-            {isLandlord && storeProfile?.phone && (
-              <View style={st.infoChip}>
-                <Text style={st.infoChipTxt}>📞 {storeProfile.phone}</Text>
-              </View>
-            )}
-          </View>
+          {/* Landlord role badge */}
+          {isLandlord && (
+            <View style={[st.chip, { marginTop: 8 }]}>
+              <Text style={st.chipTxt}>🏠 {t('auth.landlord')}</Text>
+            </View>
+          )}
 
           {/* Bio */}
-          {displayBio ? (
-            <Text style={st.bio}>{displayBio}</Text>
-          ) : null}
+          {displayBio ? <Text style={st.bio}>{displayBio}</Text> : null}
 
-          {/* Trait sayısı pill */}
-          <View style={st.scorePill}>
-            <Text style={st.scoreTxt}>✦ {t('profile.quizDone')}</Text>
-            <View style={st.scoreDot} />
-            <Text style={st.scoreTxt}>{t('profile.features').replace('{0}', String(traits.length))}</Text>
+          {/* Quiz ✓ · trait count — two chips */}
+          <View style={st.chipRow}>
+            <View style={[st.chip, st.chipTeal]}>
+              <Text style={[st.chipTxt, st.chipTealTxt]}>✿ {t('profile.quizDone')}</Text>
+            </View>
+            <View style={st.chipSep} />
+            <View style={[st.chip, st.chipTeal]}>
+              <Text style={[st.chipTxt, st.chipTealTxt]}>{traitCount} özellik</Text>
+            </View>
           </View>
 
-          {/* Doğrulama butonu — sadece öğrenci */}
-          {!isLandlord && !isVerified && (
-            <TouchableOpacity
-              style={st.verifyBtn}
-              onPress={() => navigation.navigate('Verification')}
-              activeOpacity={0.85}
-            >
-              <Text style={st.verifyBtnTxt}>🎓 {t('settings.verifyStudent')}</Text>
-            </TouchableOpacity>
+          {/* Verify / Verified CTA */}
+          {!isLandlord && (
+            isVerified ? (
+              <View style={st.verifiedBanner}>
+                <Text style={st.verifiedBannerTxt}>✓ {t('settings.verifiedStudent')}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={st.verifyBtn}
+                onPress={() => navigation.navigate('Verification')}
+                activeOpacity={0.8}
+                accessibilityLabel={t('settings.verifyStudent')}
+              >
+                <Text style={st.verifyBtnTxt}>🎓 {t('settings.verifyStudent')}</Text>
+                <Text style={st.verifyBtnArrow}>→</Text>
+              </TouchableOpacity>
+            )
           )}
         </View>
 
-        {/* ── Özellikler bölümü ── */}
+        {/* ── Stats row ── */}
+        <View style={st.statsRow}>
+          <StatCol value={matchCount > 0 ? String(matchCount) : '—'} label="MATCHES" />
+          <View style={st.statDiv} />
+          <StatCol value="—" label="AVG FIT" />
+          <View style={st.statDiv} />
+          <StatCol value="—" label="RATING" />
+        </View>
+
+        {/* ── Traits section ── */}
         <View style={st.section}>
-          <Text style={st.sectionEyebrow}>{t('profile.traitsLabel')}</Text>
+          <Text style={st.eyebrow}>{t('profile.traitsLabel')}</Text>
           <Text style={st.sectionTitle}>{t('profile.traits')}</Text>
           <Text style={st.sectionSub}>{t('profile.traitsSub')}</Text>
         </View>
 
-        {/* ── Trait pills ── */}
         <View style={st.pillRow}>
-          {traitLabels.length > 0
-            ? traitLabels.map(label => <TraitPill key={label} label={label} tFn={t} />)
+          {traitItems.length > 0
+            ? traitItems.map((item, idx) => (
+                <TraitPill key={idx} label={item.label} tFn={t} />
+              ))
             : (
               <View style={st.emptyCard}>
                 <Text style={st.emptyTxt}>{t('profile.noTraits')}</Text>
@@ -388,16 +345,26 @@ export default function ProfileScreen({ navigation }: Props) {
           }
         </View>
 
-        {/* ── Footer CTA'lar ── */}
+        {/* ── Footer CTA ── */}
         <View style={st.footer}>
-          <TouchableOpacity
-            style={st.cta}
-            onPress={() => navigation.replace(isLandlord ? 'LandlordTabs' : 'MainTabs')}
-            activeOpacity={0.85}
+          <LinearGradient
+            colors={['#00CFC8', '#2BD9D2', '#FF9ACD']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={st.ctaGrad}
           >
-            <Text style={st.ctaTxt}>{isLandlord ? t('profile.myListings') : t('profile.seeMatches')}</Text>
-            <Text style={st.ctaArrow}>→</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={st.cta}
+              onPress={() => navigation.replace(isLandlord ? 'LandlordTabs' : 'MainTabs')}
+              activeOpacity={0.88}
+              accessibilityLabel={isLandlord ? t('profile.myListings') : t('profile.seeMatches')}
+            >
+              <Text style={st.ctaTxt}>
+                {isLandlord ? t('profile.myListings') : t('profile.seeMatches')}
+              </Text>
+              <Text style={st.ctaArrow}>→</Text>
+            </TouchableOpacity>
+          </LinearGradient>
 
           <TouchableOpacity
             style={st.editBtn}
@@ -407,91 +374,107 @@ export default function ProfileScreen({ navigation }: Props) {
             <Text style={st.editTxt}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
   root:        { flex: 1, backgroundColor: C.bg },
-  scroll:      { paddingBottom: 40 },
-
+  scroll:      { paddingBottom: 48 },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   loadingTxt:  { color: C.mute, fontSize: 14 },
 
+  // ── Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingTop: 14, paddingBottom: 10,
+    paddingHorizontal: 18, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: C.line,
   },
-  hBtn:     { width: 38, height: 38, borderRadius: 999, backgroundColor: C.bgSoft, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
-  hBtnTxt:  { color: C.ink, fontSize: 17 },
-  hEditTxt: { fontSize: 17 },
-  hTitle:   { color: C.ink, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+  hBtn:    { width: 44, height: 44, borderRadius: 999, backgroundColor: C.bgSoft, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
+  hBtnTxt: { color: C.ink, fontSize: 16 },
+  hTitle:  { color: C.ink, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
 
-  errBanner: {
-    marginHorizontal: 18, marginTop: 10,
-    backgroundColor: C.errorBg, borderRadius: 12,
-    borderWidth: 1, borderColor: C.error + '33',
-    paddingVertical: 10, paddingHorizontal: 14,
+  // ── Error
+  errBanner:    { marginHorizontal: 18, marginTop: 10, backgroundColor: 'rgba(239,68,68,0.06)', borderRadius: 12, borderWidth: 1, borderColor: '#EF444433', paddingVertical: 10, paddingHorizontal: 14 },
+  errBannerTxt: { color: C.error, fontSize: 12, fontWeight: '500' },
+
+  // ── Hero
+  hero: { alignItems: 'center', paddingTop: 32, paddingBottom: 24, paddingHorizontal: 24 },
+
+  // Halo container: absolute, spans full width, centers the glow circle
+  haloWrap: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
+  halo:     { width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(0,207,200,0.10)' },
+
+  // Avatar rings: turquoise accent → white ring → avatar
+  avatarWrap:   { position: 'relative', marginBottom: 16 },
+  avatarAccent: { width: 107, height: 107, borderRadius: 999, borderWidth: 1.5, borderColor: C.turq, alignItems: 'center', justifyContent: 'center' },
+  avatarRing:   { width: 102, height: 102, borderRadius: 999, borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  avatar:       { width: 96, height: 96, borderRadius: 999, backgroundColor: C.turq, alignItems: 'center', justifyContent: 'center' },
+  avatarTxt:    { color: '#fff', fontSize: 38, fontWeight: '800' },
+
+  // Verified tick — bottom-right of avatarWrap
+  verifiedDot:    { position: 'absolute', bottom: 1, right: 1, width: 24, height: 24, borderRadius: 999, backgroundColor: C.green, borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  verifiedDotTxt: { color: '#fff', fontSize: 10, fontWeight: '800' },
+
+  name: { color: C.ink, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  sub:  { color: C.mute, fontSize: 13, fontWeight: '500', marginTop: 4 },
+  bio:  { color: C.soft, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 10, paddingHorizontal: 12 },
+
+  // Chips
+  chipRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
+  chip:        { backgroundColor: C.bgSoft, borderRadius: 999, borderWidth: 1, borderColor: C.line, paddingVertical: 6, paddingHorizontal: 14 },
+  chipTeal:    { backgroundColor: C.turq50, borderColor: `${C.turq}55` },
+  chipTxt:     { color: C.soft, fontSize: 12, fontWeight: '600' },
+  chipTealTxt: { color: C.turqTx },
+  chipSep:     { width: 4, height: 4, borderRadius: 2, backgroundColor: C.mute },
+
+  // Verify ghost button
+  verifyBtn:      { flexDirection: 'row', alignItems: 'center', marginTop: 14, backgroundColor: '#fff', borderRadius: 999, borderWidth: 1, borderColor: C.line, paddingVertical: 13, paddingHorizontal: 20, minWidth: 260, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  verifyBtnTxt:   { color: C.ink, fontSize: 13, fontWeight: '600', flex: 1 },
+  verifyBtnArrow: { color: C.mute, fontSize: 16, marginLeft: 8 },
+
+  // Verified banner (green, shown when verified)
+  verifiedBanner:    { flexDirection: 'row', alignItems: 'center', marginTop: 14, backgroundColor: C.greenBg, borderRadius: 999, borderWidth: 1, borderColor: '#10B98155', paddingVertical: 10, paddingHorizontal: 20 },
+  verifiedBannerTxt: { color: C.greenTx, fontSize: 13, fontWeight: '700' },
+
+  // ── Stats row
+  statsRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 18, marginTop: 4, backgroundColor: C.bgSoft, borderRadius: 16, borderWidth: 1, borderColor: C.line, paddingVertical: 18 },
+  statCol:  { flex: 1, alignItems: 'center' },
+  statValue:{ color: C.ink, fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+  statLabel:{ color: C.mute, fontSize: 9, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 3 },
+  statDiv:  { width: 1, height: 32, backgroundColor: C.line },
+
+  // ── Section header
+  section:      { paddingHorizontal: 18, paddingTop: 24, paddingBottom: 12 },
+  eyebrow:      { color: C.mute, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 },
+  sectionTitle: { color: C.ink, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  sectionSub:   { color: C.soft, fontSize: 13, lineHeight: 20, marginTop: 4 },
+
+  // ── Trait pills — clean white, ink border
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, gap: 8 },
+  pill:    { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 999, borderWidth: 1, borderColor: C.line, paddingVertical: 8, paddingHorizontal: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
+  pillIcon:{ fontSize: 14 },
+  pillTxt: { fontSize: 13, fontWeight: '500', color: C.ink },
+
+  emptyCard: { width: '100%', padding: 24, alignItems: 'center', backgroundColor: C.bgSoft, borderRadius: 18, borderWidth: 1, borderColor: C.line },
+  emptyTxt:  { color: C.mute, fontSize: 14 },
+
+  // ── Footer CTA
+  footer:  { paddingHorizontal: 18, paddingTop: 28, gap: 14 },
+  ctaGrad: {
+    borderRadius: 999,
+    shadowColor: C.turq,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
+    elevation: 8,
   },
-  errBannerTxt: { color: C.error, fontSize: 12, fontWeight: '500', lineHeight: 18 },
-
-  hero: {
-    alignItems: 'center', paddingTop: 28, paddingBottom: 24,
-    paddingHorizontal: 24, overflow: 'hidden', position: 'relative',
-  },
-  heroBlob1: { position: 'absolute', width: 260, height: 260, borderRadius: 999, backgroundColor: C.brandA, top: -100, left: -80, opacity: 0.12 },
-  heroBlob2: { position: 'absolute', width: 260, height: 260, borderRadius: 999, backgroundColor: C.brandB, top: -80, right: -80, opacity: 0.12 },
-
-  avatarWrap: { position: 'relative', marginBottom: 14 },
-  avatar:     { width: 88, height: 88, borderRadius: 999, backgroundColor: C.brandA, alignItems: 'center', justifyContent: 'center', shadowColor: C.brandA, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 10 },
-  avatarTxt:  { color: '#fff', fontSize: 36, fontWeight: '800' },
-  avatarBadge:    { position: 'absolute', bottom: 2, right: 2, width: 24, height: 24, borderRadius: 999, backgroundColor: C.brandA, borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  avatarBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '800' },
-
-  name: { color: C.ink,  fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
-  sub:  { color: C.soft, fontSize: 13, marginTop: 3 },
-
-  infoRow:        { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' },
-  infoChip:       { backgroundColor: C.bgSoft, borderRadius: 999, borderWidth: 1, borderColor: C.line, paddingVertical: 5, paddingHorizontal: 12 },
-  infoChipTxt:    { color: C.soft, fontSize: 12, fontWeight: '500' },
-  verifiedChip:   { backgroundColor: '#ECFDF5', borderColor: '#10B98155' },
-  verifiedChipTxt:{ color: '#059669', fontSize: 12, fontWeight: '700' },
-
-  bio: { color: C.soft, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 12, paddingHorizontal: 8 },
-
-  scorePill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.tealBg, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 16, marginTop: 14 },
-  scoreDot:  { width: 4, height: 4, borderRadius: 999, backgroundColor: C.tealTx },
-  scoreTxt:  { color: C.tealTx, fontSize: 12, fontWeight: '600' },
-
-  verifyBtn:    { marginTop: 14, backgroundColor: '#FFF7E6', borderRadius: 999, borderWidth: 1.5, borderColor: '#F59E0B', paddingVertical: 11, paddingHorizontal: 22 },
-  verifyBtnTxt: { color: '#B45309', fontSize: 13, fontWeight: '700' },
-
-  section:         { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 12 },
-  sectionEyebrow:  { color: C.mute, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 },
-  sectionTitle:    { color: C.ink,  fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
-  sectionSub:      { color: C.soft, fontSize: 13, lineHeight: 20, marginTop: 4 },
-
-  grid:      { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 10 },
-  traitCard: { width: '47%', flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 14, gap: 10 },
-  traitIcon:  { fontSize: 20 },
-  traitLabel: { fontSize: 13, fontWeight: '600', flex: 1 },
-
-  // Pill variant (gradient chips)
-  pillRow:       { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, gap: 8 },
-  traitPill:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,188,212,0.3)', paddingVertical: 8, paddingHorizontal: 14 },
-  traitPillIcon: { fontSize: 14 },
-  traitPillTxt:  { fontSize: 13, fontWeight: '600', color: '#00BCD4' },
-
-  emptyCard:  { width: '100%', padding: 24, alignItems: 'center', backgroundColor: C.bgSoft, borderRadius: 18, borderWidth: 1, borderColor: C.line },
-  emptyTxt:   { color: C.mute, fontSize: 14 },
-
-  footer:    { paddingHorizontal: 20, paddingTop: 24, gap: 12 },
-  cta:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: C.brandA, borderRadius: 999, paddingVertical: 18, shadowColor: C.brandA, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.38, shadowRadius: 20, elevation: 8 },
-  ctaTxt:    { color: '#fff', fontSize: 16, fontWeight: '700' },
-  ctaArrow:  { color: '#fff', fontSize: 18, fontWeight: '700' },
-  editBtn:   { alignItems: 'center', paddingVertical: 10 },
-  editTxt:   { color: C.mute, fontSize: 13, fontWeight: '500' },
+  cta:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, gap: 10, borderRadius: 999 },
+  ctaTxt:   { color: '#fff', fontSize: 15, fontWeight: '600' },
+  ctaArrow: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  editBtn:  { alignItems: 'center', paddingVertical: 10 },
+  editTxt:  { color: C.mute, fontSize: 13, fontWeight: '500' },
 });
