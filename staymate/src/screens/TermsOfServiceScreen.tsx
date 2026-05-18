@@ -97,7 +97,7 @@ export const TermsOfServiceScreen = () => {
 
       <Section title="11. Rozwiązywanie sporów">
         • Najpierw spróbuj rozwiązać problem z drugą osobą{'\n'}
-        • Jeśli się nie powiedzie, skontaktuj się z nami: support@roomski.app{'\n'}
+        • Jeśli się nie powiedzie, skontaktuj się z nami: roomski.app@gmail.com{'\n'}
         • Ostatecznym forum jest sąd właściwy dla Poznania{'\n'}
         • Prawo polskie (Kodeks cywilny)
       </Section>
@@ -105,7 +105,7 @@ export const TermsOfServiceScreen = () => {
       <Section title="12. Kontakt">
         Roomski Sp. z o.o.{'\n'}
         ul. [ADRES], 61-000 Poznań, Polska{'\n'}
-        Email: support@roomski.app{'\n'}
+        Email: roomski.app@gmail.com{'\n'}
         Tel: +48 [NUMER]
       </Section>
 

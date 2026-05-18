@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
@@ -7,12 +7,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
-type Lang = 'tr' | 'pl' | 'en';
-
-const content: Record<Lang, {
-  title: string; version: string; subtitle: string;
-  sections: { title: string; text: string }[];
-}> = {
+const content = {
   pl: {
     title:    '🏘️ Roomski',
     version:  'v2026.1.0',
@@ -30,7 +25,7 @@ const content: Record<Lang, {
         title: 'Dlaczego Roomski?',
         text:  '✓ Algorytm AI opracowany dla polskich studentów\n✓ Szybkie dopasowanie\n✓ Bezpieczna komunikacja\n✓ Ochrona prywatności\n✓ Darmowe użytkowanie',
       },
-      { title: 'Kontakt', text: 'support@roomski.app' },
+      { title: 'Kontakt', text: 'roomski.app@gmail.com' },
     ],
   },
   tr: {
@@ -48,9 +43,9 @@ const content: Record<Lang, {
       },
       {
         title: 'Neden Roomski?',
-        text:  "✓ Polonyalı öğrenciler için AI\n✓ Hızlı sonuç\n✓ Güvenli iletişim\n✓ Gizlilik koruması\n✓ Tamamen ücretsiz",
+        text:  '✓ Polonyalı öğrenciler için AI\n✓ Hızlı sonuç\n✓ Güvenli iletişim\n✓ Gizlilik koruması\n✓ Tamamen ücretsiz',
       },
-      { title: 'İletişim', text: 'support@roomski.app' },
+      { title: 'İletişim', text: 'roomski.app@gmail.com' },
     ],
   },
   en: {
@@ -68,12 +63,14 @@ const content: Record<Lang, {
       },
       {
         title: 'Why Roomski?',
-        text:  "✓ AI built for Polish students\n✓ Fast matching\n✓ Secure messaging\n✓ Privacy protected\n✓ Completely free",
+        text:  '✓ AI built for Polish students\n✓ Fast matching\n✓ Secure messaging\n✓ Privacy protected\n✓ Completely free',
       },
-      { title: 'Contact', text: 'support@roomski.app' },
+      { title: 'Contact', text: 'roomski.app@gmail.com' },
     ],
   },
-};
+} as const;
+
+type Lang = keyof typeof content;
 
 const CONTACT_LABEL: Record<Lang, string> = {
   pl: 'Skontaktuj się z nami',
@@ -83,8 +80,8 @@ const CONTACT_LABEL: Record<Lang, string> = {
 
 export default function AboutScreen({ navigation }: Props) {
   const { language } = useTranslation();
-  const lang = (language as Lang) in content ? (language as Lang) : 'en';
-  const c = content[lang];
+  const lang: Lang = (language in content ? language : 'en') as Lang;
+  const current = content[lang];
 
   return (
     <SafeAreaView style={st.root}>
@@ -96,50 +93,52 @@ export default function AboutScreen({ navigation }: Props) {
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView contentContainerStyle={st.body} showsVerticalScrollIndicator={false}>
-        <View style={st.hero}>
-          <Text style={st.heroIcon}>🏘️</Text>
-          <Text style={st.heroTitle}>{c.title}</Text>
-          <Text style={st.heroVersion}>{c.version}</Text>
-          <Text style={st.heroSubtitle}>{c.subtitle}</Text>
+      <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{ padding: 24, alignItems: 'center' }}>
+          <Text style={{ fontSize: 48, marginBottom: 8 }}>🏘️</Text>
+          <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>
+            {current.title}
+          </Text>
+          <Text style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+            {current.version}
+          </Text>
+          <Text style={{ fontSize: 16, color: '#1D9E75', fontWeight: '600', textAlign: 'center', marginBottom: 32 }}>
+            {current.subtitle}
+          </Text>
+
+          {current.sections.map((section, idx) => (
+            <View key={idx} style={{ width: '100%', marginBottom: 24 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000', marginBottom: 8 }}>
+                {section.title}
+              </Text>
+              <Text style={{ fontSize: 14, color: '#666', lineHeight: 22 }}>
+                {section.text}
+              </Text>
+            </View>
+          ))}
+
+          <Pressable
+            onPress={() => Linking.openURL('mailto:roomski.app@gmail.com')}
+            style={{ marginTop: 32, padding: 12, backgroundColor: '#1D9E75', borderRadius: 8, width: '100%' }}
+          >
+            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>
+              {CONTACT_LABEL[lang]}
+            </Text>
+          </Pressable>
+
+          <Text style={{ fontSize: 12, color: '#ccc', marginTop: 32, textAlign: 'center' }}>
+            © 2026 Roomski. All rights reserved.
+          </Text>
         </View>
-
-        {c.sections.map((section, idx) => (
-          <View key={idx} style={st.section}>
-            <Text style={st.sectionTitle}>{section.title}</Text>
-            <Text style={st.sectionText}>{section.text}</Text>
-          </View>
-        ))}
-
-        <Pressable
-          style={st.contactBtn}
-          onPress={() => Linking.openURL('mailto:support@roomski.app')}
-        >
-          <Text style={st.contactBtnTxt}>{CONTACT_LABEL[lang]}</Text>
-        </Pressable>
-
-        <Text style={st.copyright}>© 2026 Roomski. All rights reserved.</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const st = StyleSheet.create({
-  root:       { flex: 1, backgroundColor: '#fff' },
-  header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  backBtn:    { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  backTxt:    { fontSize: 18, color: '#1F2937' },
-  headerTitle:{ fontSize: 18, fontWeight: '800', color: '#1F2937' },
-  body:       { padding: 24, paddingBottom: 48 },
-  hero:       { alignItems: 'center', marginBottom: 36 },
-  heroIcon:   { fontSize: 52, marginBottom: 10 },
-  heroTitle:  { fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 4 },
-  heroVersion:{ fontSize: 12, color: '#9CA3AF', marginBottom: 12 },
-  heroSubtitle:{ fontSize: 16, color: '#1D9E75', fontWeight: '600', textAlign: 'center' },
-  section:    { marginBottom: 24, backgroundColor: '#F9FAFB', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' },
-  sectionTitle:{ fontSize: 16, fontWeight: '800', color: '#1F2937', marginBottom: 10 },
-  sectionText: { fontSize: 14, color: '#4B5563', lineHeight: 22 },
-  contactBtn:  { backgroundColor: '#1D9E75', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 8, marginBottom: 32 },
-  contactBtnTxt:{ color: '#fff', fontSize: 16, fontWeight: '700' },
-  copyright:   { fontSize: 12, color: '#D1D5DB', textAlign: 'center' },
+  root:        { flex: 1, backgroundColor: '#fff' },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  backBtn:     { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  backTxt:     { fontSize: 18, color: '#1F2937' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
 });

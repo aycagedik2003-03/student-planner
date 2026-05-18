@@ -43,9 +43,9 @@ export default function HelpScreen({ navigation }: Props) {
         <Text style={st.sectionLabel}>İLETİŞİM</Text>
         <Pressable
           style={st.contactBtn}
-          onPress={() => Linking.openURL('mailto:support@roomski.app')}
+          onPress={() => Linking.openURL('mailto:roomski.app@gmail.com')}
         >
-          <Text style={st.contactBtnTxt}>✉️  support@roomski.app</Text>
+          <Text style={st.contactBtnTxt}>✉️  roomski.app@gmail.com</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
