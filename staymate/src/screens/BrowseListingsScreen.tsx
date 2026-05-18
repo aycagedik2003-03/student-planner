@@ -29,7 +29,7 @@ const C = {
   pink: '#FF9ACD', pinkBg: '#FFF0F7',
 };
 
-const CITIES = ['Tümü', 'Kraków', 'Warszawa', 'Wrocław', 'Gdańsk', 'Poznań'];
+const CITIES = ['Kraków', 'Warszawa', 'Wrocław', 'Gdańsk', 'Poznań'];
 
 export default function BrowseListingsScreen({ navigation }: Props) {
   const { t } = useTranslation();

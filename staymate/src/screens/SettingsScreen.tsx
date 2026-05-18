@@ -170,9 +170,9 @@ export default function SettingsScreen({ navigation }: Props) {
         <View style={[st.card, { paddingVertical: 14, paddingHorizontal: 16 }]}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {([
-              { code: 'pl' as const, label: 'Polski',  flag: '🇵🇱' },
-              { code: 'tr' as const, label: 'Türkçe',  flag: '🇹🇷' },
-              { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+              { code: 'pl' as const, short: 'PL', label: 'Polski'  },
+              { code: 'tr' as const, short: 'TR', label: 'Türkçe'  },
+              { code: 'en' as const, short: 'EN', label: 'English' },
             ]).map(lang => (
               <Pressable
                 key={lang.code}
@@ -187,7 +187,7 @@ export default function SettingsScreen({ navigation }: Props) {
                   borderColor: language === lang.code ? C.brandA : C.line,
                 }}
               >
-                <Text style={{ fontSize: 22, marginBottom: 4 }}>{lang.flag}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '800', marginBottom: 2, color: language === lang.code ? C.brandA : C.mute }}>{lang.short}</Text>
                 <Text style={{
                   fontSize: 11,
                   fontWeight: language === lang.code ? '700' : '400',

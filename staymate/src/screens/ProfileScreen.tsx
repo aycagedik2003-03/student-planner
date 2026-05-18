@@ -42,26 +42,65 @@ const C = {
 };
 
 // ── Trait data ────────────────────────────────────────────────────────────────
-const BACKEND_TRAIT_MAP: Record<string, { icon: string; label: string }> = {
-  gece_kusu:    { icon: '🌙', label: 'Gece kuşu' },
-  erken_kalkan: { icon: '☀️', label: 'Erken kalkan' },
-  duzenli:      { icon: '✨', label: 'Düzenli' },
-  rahat:        { icon: '😌', label: 'Rahat' },
-  sosyal:       { icon: '🤝', label: 'Sosyal' },
-  icedonuk:     { icon: '🧘', label: 'İçe dönük' },
-  remote:       { icon: '🏠', label: 'Remote' },
-  hybrid:       { icon: '💻', label: 'Hybrid' },
-  gece_calisir: { icon: '🦉', label: 'Gece çalışır' },
-  evcil_hayvan: { icon: '🐾', label: 'Evcil hayvanlı' },
-  hayvan_sever: { icon: '🐾', label: 'Hayvan sever' },
-  sigara_icmez: { icon: '🚭', label: 'Sigara içmez' },
-  sigara:       { icon: '🚬', label: 'Sigara içer' },
-  alkol_yok:    { icon: '🫖', label: 'Alkol almaz' },
-  sosyal_ici:   { icon: '🥂', label: 'Sosyal içici' },
-  nadir_ici:    { icon: '🍷', label: 'Nadir içer' },
-  ev_yemegi:    { icon: '🍳', label: 'Ev yemeği yapar' },
+
+// Icon lookup — backend key → emoji
+const TRAIT_ICON: Record<string, string> = {
+  gece_kusu: '🌙', erken_kalkan: '☀️', normal_uyku: '😴',
+  duzenli: '✨', orta_temizlik: '🧹', rahat: '😌', dagincik: '🎨',
+  sosyal: '🤝', sessiz: '🤫', gurultuye_acik: '🔊', sessiz_ortam: '🔇',
+  icedonuk: '🧘', remote: '🏠', hybrid: '💻', evde_calisir: '🏠',
+  kutuphanede_calisir: '📚', gece_calisir: '🦉',
+  evcil_hayvan: '🐾', evcil_hayvan_yok: '🚫', hayvan_sever: '🐾',
+  sigara_icmez: '🚭', sigara: '🚬',
+  alkol_yok: '🫖', sosyal_ici: '🥂', nadir_ici: '🍷',
+  ev_yemegi: '🍳', vegan: '🥦', vejeteryan: '🥗',
+  helal_beslenme: '🍖', kisitlama_yok: '🍽️',
 };
 
+// Multilingual labels — direct map (no t() needed, avoids raw key display)
+const TRAIT_LABELS: Record<string, Record<string, string>> = {
+  tr: {
+    gece_kusu: 'Gece kuşu', erken_kalkan: 'Erken kalkan', normal_uyku: 'Normal uyku',
+    duzenli: 'Düzenli', orta_temizlik: 'Orta temizlik', rahat: 'Rahat', dagincik: 'Rahat & dağınık',
+    sosyal: 'Sosyal', sessiz: 'Sessiz & sakin', gurultuye_acik: 'Gürültüye açık',
+    sessiz_ortam: 'Sessiz ortam sever', icedonuk: 'İçe dönük',
+    remote: 'Remote', hybrid: 'Hybrid', evde_calisir: 'Evde çalışır',
+    kutuphanede_calisir: 'Kütüphanede çalışır', gece_calisir: 'Gece çalışır',
+    evcil_hayvan: 'Evcil hayvanlı', evcil_hayvan_yok: 'Evcil hayvan yok',
+    hayvan_sever: 'Hayvan sever', sigara_icmez: 'Sigara içmez', sigara: 'Sigara içer',
+    alkol_yok: 'Alkol almaz', sosyal_ici: 'Sosyal içici', nadir_ici: 'Nadir içer',
+    ev_yemegi: 'Ev yemeği yapar', vegan: 'Vegan', vejeteryan: 'Vejetaryen',
+    helal_beslenme: 'Helal beslenme', kisitlama_yok: 'Kısıtlama yok',
+  },
+  pl: {
+    gece_kusu: 'Nocny marek', erken_kalkan: 'Ranny ptaszek', normal_uyku: 'Normalny rytm snu',
+    duzenli: 'Schludny', orta_temizlik: 'Średnia czystość', rahat: 'Luźny', dagincik: 'Swobodny',
+    sosyal: 'Towarzyski', sessiz: 'Spokojny', gurultuye_acik: 'Toleruje hałas',
+    sessiz_ortam: 'Lubi ciszę', icedonuk: 'Introwertyczny',
+    remote: 'Praca zdalna', hybrid: 'Hybrydowy', evde_calisir: 'Uczy się w domu',
+    kutuphanede_calisir: 'Uczy się w bibliotece', gece_calisir: 'Pracuje w nocy',
+    evcil_hayvan: 'Ma zwierzę', evcil_hayvan_yok: 'Bez zwierząt',
+    hayvan_sever: 'Lubi zwierzęta', sigara_icmez: 'Niepalący', sigara: 'Palący',
+    alkol_yok: 'Niepijący', sosyal_ici: 'Pije towarzysko', nadir_ici: 'Rzadko pije',
+    ev_yemegi: 'Gotuje w domu', vegan: 'Weganin', vejeteryan: 'Wegetarianin',
+    helal_beslenme: 'Dieta halal', kisitlama_yok: 'Brak ograniczeń',
+  },
+  en: {
+    gece_kusu: 'Night owl', erken_kalkan: 'Early bird', normal_uyku: 'Normal sleep',
+    duzenli: 'Tidy', orta_temizlik: 'Average cleanliness', rahat: 'Relaxed', dagincik: 'Relaxed & messy',
+    sosyal: 'Social', sessiz: 'Quiet & calm', gurultuye_acik: 'Noise tolerant',
+    sessiz_ortam: 'Prefers quiet', icedonuk: 'Introverted',
+    remote: 'Remote worker', hybrid: 'Hybrid', evde_calisir: 'Studies at home',
+    kutuphanede_calisir: 'Studies at library', gece_calisir: 'Night worker',
+    evcil_hayvan: 'Has a pet', evcil_hayvan_yok: 'No pets',
+    hayvan_sever: 'Pet lover', sigara_icmez: 'Non-smoker', sigara: 'Smoker',
+    alkol_yok: 'Non-drinker', sosyal_ici: 'Social drinker', nadir_ici: 'Rare drinker',
+    ev_yemegi: 'Home cook', vegan: 'Vegan', vejeteryan: 'Vegetarian',
+    helal_beslenme: 'Halal diet', kisitlama_yok: 'No restrictions',
+  },
+};
+
+// Readable label → snake_case key lookup
 const LABEL_TO_KEY: Record<string, string> = {
   'gece kuşu': 'gece_kusu', 'erken kalkan': 'erken_kalkan', 'düzenli': 'duzenli',
   'rahat': 'rahat', 'sosyal': 'sosyal', 'içe dönük': 'icedonuk', 'remote': 'remote',
@@ -91,14 +130,20 @@ function deriveTraitsFromAnswers(a: (number | null)[]): Array<{ icon: string; la
   return out;
 }
 
-// ── Trait pill — clean white, no gradient ────────────────────────────────────
-function TraitPill({ label, tFn }: { label: string; tFn: (k: string) => string }) {
-  const normalized  = label.toLowerCase().replace(/[- ]/g, '_');
-  const mapped      = BACKEND_TRAIT_MAP[normalized];
-  const icon        = mapped?.icon ?? '';
-  const key         = LABEL_TO_KEY[label.toLowerCase()] ?? normalized;
-  const translated  = tFn(`traits.${key}`);
-  const displayText = translated !== `traits.${key}` ? translated : (mapped?.label ?? label);
+// ── Trait pill — uses direct label map, never shows raw keys ─────────────────
+function TraitPill({ label, language }: { label: string; language: string }) {
+  // Normalize: strip leading underscore/spaces, lower, snake_case
+  const cleaned    = label.replace(/^_+/, '').trim();
+  const normalized = cleaned.toLowerCase().replace(/[\s-]+/g, '_');
+  // Resolve i18n key
+  const key        = LABEL_TO_KEY[cleaned.toLowerCase()] ?? normalized;
+  const icon       = TRAIT_ICON[key] ?? TRAIT_ICON[normalized] ?? '';
+  const lang       = (language in TRAIT_LABELS) ? language : 'tr';
+  const displayText =
+    TRAIT_LABELS[lang]?.[key] ??
+    TRAIT_LABELS['tr']?.[key] ??
+    TRAIT_LABELS['en']?.[key] ??
+    cleaned.replace(/_/g, ' ');  // last resort: snake → readable
 
   return (
     <View style={st.pill} accessibilityLabel={displayText}>
@@ -120,7 +165,7 @@ function StatCol({ value, label }: { value: string; label: string }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }: Props) {
-  const { t }            = useTranslation();
+  const { t, language }  = useTranslation();
   const quizAnswers      = useAppStore(s => s.quizAnswers);
   const quizCity         = useAppStore(s => s.quizCity);
   const isVerified       = useAppStore(s => s.isVerified);
@@ -335,7 +380,7 @@ export default function ProfileScreen({ navigation }: Props) {
         <View style={st.pillRow}>
           {traitItems.length > 0
             ? traitItems.map((item, idx) => (
-                <TraitPill key={idx} label={item.label} tFn={t} />
+                <TraitPill key={idx} label={item.label} language={language} />
               ))
             : (
               <View style={st.emptyCard}>

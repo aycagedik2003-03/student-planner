@@ -138,11 +138,11 @@ function StudentTabs() {
         ),
       })}
     >
-      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: t('tabs.discover')      }} />
-      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: t('tabs.listings')      }} />
-      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: t('tabs.messages')      }} />
-      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: t('tabs.notifications') }} />
-      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: t('tabs.profile')       }} />
+      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: () => t('tabs.discover')      }} />
+      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: () => t('tabs.listings')      }} />
+      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: () => t('tabs.messages')      }} />
+      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: () => t('tabs.notifications') }} />
+      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: () => t('tabs.profile')       }} />
     </StudentTab.Navigator>
   );
 }
@@ -173,11 +173,11 @@ function LandlordTabs() {
         ),
       })}
     >
-      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: t('tabs.myListings')    }} />
-      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}   options={{ tabBarLabel: t('tabs.students')       }} />
-      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}             options={{ tabBarLabel: t('tabs.messages')       }} />
-      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}   options={{ tabBarLabel: t('tabs.notifications')  }} />
-      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}      options={{ tabBarLabel: t('tabs.profile')        }} />
+      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: () => t('tabs.myListings')    }} />
+      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}   options={{ tabBarLabel: () => t('tabs.students')       }} />
+      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}             options={{ tabBarLabel: () => t('tabs.messages')       }} />
+      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}   options={{ tabBarLabel: () => t('tabs.notifications')  }} />
+      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}      options={{ tabBarLabel: () => t('tabs.profile')        }} />
     </LandlordTab.Navigator>
   );
 }
