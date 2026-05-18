@@ -33,7 +33,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       <View style={st.container}>
         {/* Marketing image — full-screen background */}
         <Image
-          source={require('../../assets/roomski-hero.png')}
+          source={require('../../assets/roomski-marketing.png')}
           style={st.marketing}
           resizeMode="cover"
         />
