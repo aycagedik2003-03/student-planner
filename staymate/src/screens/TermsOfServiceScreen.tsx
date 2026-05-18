@@ -12,7 +12,7 @@ export const TermsOfServiceScreen = () => {
       </Text>
 
       <Section title="1. Zakreś usług">
-        Staymate to platforma do łączenia osób poszukujących wspólnego wynajmu
+        Roomski to platforma do łączenia osób poszukujących wspólnego wynajmu
         mieszkań i pokojów. Nie jesteśmy wynajmującymi ani pośrednikami handlowymi,
         tylko połączeniem między użytkownikami.
       </Section>
@@ -47,8 +47,8 @@ export const TermsOfServiceScreen = () => {
         • Publikowanie treści dla dorosłych (porno, przemoc)
       </Section>
 
-      <Section title="5. Odpowiedzialność Staymate">
-        Staymate nie jest odpowiedzialny za:{'\n'}
+      <Section title="5. Odpowiedzialność Roomski">
+        Roomski nie jest odpowiedzialny za:{'\n'}
         • Transakcje między użytkownikami{'\n'}
         • Oszustwa lub kradzieże popełnione przez użytkowników{'\n'}
         • Uszkodzenia mienia lub osobowe{'\n'}
@@ -60,7 +60,7 @@ export const TermsOfServiceScreen = () => {
 
       <Section title="6. Wiadomości i komunikacja">
         • Wiadomości między użytkownikami nie są moderowane{'\n'}
-        • Staymate nie kontroluje zawartości rozmów{'\n'}
+        • Roomski nie kontroluje zawartości rozmów{'\n'}
         • Jeśli otrzymasz zagrażające wiadomości, zgłoś nas{'\n'}
         • Nie udostępniamy numerów telefonów bez zgody
       </Section>
@@ -77,13 +77,13 @@ export const TermsOfServiceScreen = () => {
       </Section>
 
       <Section title="8. Opłaty i rozliczenia">
-        Staymate jest bezpłatna dla wszystkich użytkowników.{'\n'}
+        Roomski jest bezpłatna dla wszystkich użytkowników.{'\n'}
         W przyszłości możemy wprowadzić opłaty za premium - zawsze
         z ostrzeżeniem z wyprzedzeniem.
       </Section>
 
       <Section title="9. Własność intelektualna">
-        • Staymate, logo, kod źródłowy - własność Staymate Sp. z o.o.{'\n'}
+        • Roomski, logo, kod źródłowy - własność Roomski Sp. z o.o.{'\n'}
         • Twoje zdjęcia i tekst profilu - Twoja własność{'\n'}
         • Przyznajemy prawo do używania Twojej zawartości do
           poprawy naszych usług
@@ -97,15 +97,15 @@ export const TermsOfServiceScreen = () => {
 
       <Section title="11. Rozwiązywanie sporów">
         • Najpierw spróbuj rozwiązać problem z drugą osobą{'\n'}
-        • Jeśli się nie powiedzie, skontaktuj się z nami: support@staymate.app{'\n'}
+        • Jeśli się nie powiedzie, skontaktuj się z nami: support@roomski.app{'\n'}
         • Ostatecznym forum jest sąd właściwy dla Poznania{'\n'}
         • Prawo polskie (Kodeks cywilny)
       </Section>
 
       <Section title="12. Kontakt">
-        Staymate Sp. z o.o.{'\n'}
+        Roomski Sp. z o.o.{'\n'}
         ul. [ADRES], 61-000 Poznań, Polska{'\n'}
-        Email: support@staymate.app{'\n'}
+        Email: support@roomski.app{'\n'}
         Tel: +48 [NUMER]
       </Section>
 

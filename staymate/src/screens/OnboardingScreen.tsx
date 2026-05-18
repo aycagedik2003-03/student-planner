@@ -15,6 +15,27 @@ const languageButtons = [
   { code: 'en' as const, label: 'English' },
 ];
 
+const motivationalTexts = {
+  pl: {
+    highlight:   '🏘️ Roomski - Polska innowacja',
+    subtitle:    'Znajdź współlokatora, który rozumie Ciebie',
+    description: 'Roomski zmienia sposób, w jaki polscy studenci szukają wspólnika. Niech algorytm AI robi pracę. Ty ciesz się życiem.',
+    cta:         'Dołącz do Roomski',
+  },
+  tr: {
+    highlight:   "🏘️ Roomski - Polonya'nın Yeni Çağı",
+    subtitle:    'Seni anlayan oda arkadaşını bul',
+    description: 'Roomski, yapay zeka ile öğrencileri ev sahipleriyle mükemmel şekilde eşleştirir. Kişiliğine, bütçene, yaşam tarzına uygun bulunuz.',
+    cta:         "Roomski'ye Katıl",
+  },
+  en: {
+    highlight:   "🏘️ Roomski - Poland's Innovation",
+    subtitle:    'Find a roommate who gets you',
+    description: "Roomski uses AI to match Polish students with perfect roommates. No more guessing games. Just smart matching.",
+    cta:         'Join Roomski',
+  },
+};
+
 export default function OnboardingScreen({ navigation }: Props) {
   const { t, language } = useTranslation();
   const setLanguage = useAppStore((state) => state.setLanguage);
@@ -22,10 +43,12 @@ export default function OnboardingScreen({ navigation }: Props) {
   const handleStart = () => navigation.navigate('Auth', { mode: 'register' });
   const handleLogin = () => navigation.navigate('Auth', { mode: 'login' });
 
+  const texts = motivationalTexts[language] ?? motivationalTexts.en;
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
 
-      {/* Dil seçeneği — EN ÜSTTE */}
+      {/* Dil seçeneği */}
       <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
         {languageButtons.map((lang) => (
           <Pressable
@@ -60,48 +83,45 @@ export default function OnboardingScreen({ navigation }: Props) {
         </View>
 
         <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 8 }}>
-          staymate
-        </Text>
-
-        <Text style={{ fontSize: 14, color: '#888', marginBottom: 40, textAlign: 'center' }}>
-          {language === 'pl'
-            ? 'Znajdź idealnego współlokatora na podstawie osobowości'
-            : language === 'en'
-            ? 'Find the perfect roommate based on personality'
-            : 'Kişilik uyumuna dayalı oda arkadaşı bul'}
+          Roomski
         </Text>
 
         {/* Hero image placeholder */}
         <View style={{
-          width: '100%', height: 300, backgroundColor: '#E1F5EE', borderRadius: 20,
-          marginBottom: 40, justifyContent: 'center', alignItems: 'center',
+          width: '100%', height: 260, backgroundColor: '#E1F5EE', borderRadius: 20,
+          marginBottom: 32, justifyContent: 'center', alignItems: 'center',
         }}>
           <Text style={{ fontSize: 60 }}>🏠</Text>
         </View>
 
-        {/* Title */}
-        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 12 }}>
-          {t('common.welcome')}
+        {/* Highlight badge */}
+        <Text style={{ fontSize: 14, color: '#1D9E75', marginBottom: 8, fontWeight: '600' }}>
+          {texts.highlight}
         </Text>
 
+        {/* Subtitle */}
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 12, textAlign: 'center' }}>
+          {texts.subtitle}
+        </Text>
+
+        {/* Description */}
         <Text style={{ fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
-          {language === 'pl'
-            ? 'W Polsce nie ma jeszcze takiej aplikacji. Ty możesz być pierwszym!'
-            : language === 'en'
-            ? "There's no app like this in Poland yet. Be the first!"
-            : "Polonya'da böyle bir app henüz yok. Sen ilk olabilirsin!"}
+          {texts.description}
         </Text>
 
-        {/* Başla button */}
+        {/* CTA butonu */}
         <Pressable
           onPress={handleStart}
           style={{
-            width: '100%', backgroundColor: '#1D9E75',
-            paddingVertical: 14, borderRadius: 12, marginBottom: 16,
+            width: '100%',
+            backgroundColor: '#1D9E75',
+            paddingVertical: 14,
+            borderRadius: 12,
+            marginBottom: 16,
           }}
         >
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
-            {t('common.start')} →
+            {texts.cta} →
           </Text>
         </Pressable>
 
@@ -114,11 +134,7 @@ export default function OnboardingScreen({ navigation }: Props) {
 
         {/* Footer */}
         <Text style={{ marginTop: 40, fontSize: 12, color: '#ccc', textAlign: 'center', marginBottom: 20 }}>
-          {language === 'pl'
-            ? 'Kontynuując, akceptujesz warunki użytkowania.'
-            : language === 'en'
-            ? 'By continuing, you accept the terms of service.'
-            : 'Devam ederek şartları kabul etmiş olursunuz.'}
+          {t('auth.continueText')}
         </Text>
       </View>
     </ScrollView>

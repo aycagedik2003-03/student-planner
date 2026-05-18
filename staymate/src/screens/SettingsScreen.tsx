@@ -86,8 +86,8 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const handleLogout = () => {
     Alert.alert(
-      'Çıkış Yap',
-      'Hesabından çıkmak istediğine emin misin?',
+      t('settings.logout'),
+      t('settings.logoutConfirm'),
       [
         { text: 'İptal', style: 'cancel' },
         {
@@ -113,18 +113,11 @@ export default function SettingsScreen({ navigation }: Props) {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Hesabı Sil',
-      'Bu işlem geri alınamaz. Tüm verilerini sileceğiz.',
-      [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'Sil', style: 'destructive', onPress: () => {} },
-      ],
-    );
+    navigation.navigate('DeleteAccount' as any);
   };
 
   const handlePlaceholder = (label: string) => {
-    Alert.alert(label, 'Bu özellik yakında kullanıma girecek.');
+    Alert.alert(label, t('settings.comingSoon'));
   };
 
   return (
@@ -132,10 +125,10 @@ export default function SettingsScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       <View style={st.header}>
-        <Text style={st.hTitle}>Ayarlar</Text>
+        <Text style={st.hTitle}>{t('settings.title')}</Text>
         {isVerified && (
           <View style={st.verifiedPill}>
-            <Text style={st.verifiedTxt}>✓ Doğrulanmış</Text>
+            <Text style={st.verifiedTxt}>{t('settings.verified')}</Text>
           </View>
         )}
       </View>
@@ -143,56 +136,57 @@ export default function SettingsScreen({ navigation }: Props) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.scroll}>
 
         {/* ── Profil ── */}
-        <SectionHeader label="PROFİL" />
+        <SectionHeader label={t('settings.sectionProfile')} />
         <View style={st.card}>
-          <Row icon="✏️" label="Profili Düzenle"
+          <Row icon="✏️" label={t('settings.editProfile')}
             onPress={() => navigation.navigate('ProfileEdit')} />
           <View style={st.rowDivider} />
-          <Row icon="🎓" label={isVerified ? 'Doğrulanmış Öğrenci ✓' : 'Öğrenci Kimliğini Doğrula'}
+          <Row icon="🎓"
+            label={isVerified ? t('settings.verifiedStudent') : t('settings.verifyStudent')}
             onPress={() => navigation.navigate('Verification')} />
         </View>
 
         {/* ── Bildirimler ── */}
-        <SectionHeader label="BİLDİRİMLER" />
+        <SectionHeader label={t('settings.sectionNotif')} />
         <View style={st.card}>
           <ToggleRow
-            icon="💞" label="Yeni Eşleşmeler"
-            sub="Yeni bir eşleşme gelince bildirim al"
+            icon="💞" label={t('settings.notifMatches')}
+            sub={t('settings.notifMatchesSub')}
             value={notifPrefs.matches}
             onChange={v => updateNotifPref('matches', v)}
           />
           <View style={st.rowDivider} />
           <ToggleRow
-            icon="💬" label="Mesajlar"
-            sub="Mesaj gelince bildirim al"
+            icon="💬" label={t('settings.notifMessages')}
+            sub={t('settings.notifMessagesSub')}
             value={notifPrefs.messages}
             onChange={v => updateNotifPref('messages', v)}
           />
           <View style={st.rowDivider} />
           <ToggleRow
-            icon="🏠" label="Yeni İlanlar"
-            sub="Tercihlerine uyan ilanlar için bildirim al"
+            icon="🏠" label={t('settings.notifListings')}
+            sub={t('settings.notifListingsSub')}
             value={notifPrefs.listings}
             onChange={v => updateNotifPref('listings', v)}
           />
         </View>
 
         {/* ── Gizlilik ── */}
-        <SectionHeader label="GİZLİLİK" />
+        <SectionHeader label={t('settings.sectionPrivacy')} />
         <View style={st.card}>
           <ToggleRow
-            icon="🔒" label="Profili Gizle"
-            sub="Profil eşleşme listesinde görünmez"
+            icon="🔒" label={t('settings.hideProfile')}
+            sub={t('settings.hideProfileSub')}
             value={appSettings.profileHidden}
             onChange={v => updateSetting('profileHidden', v)}
           />
           <View style={st.rowDivider} />
-          <Row icon="📄" label="Gizlilik Politikası"
-            onPress={() => handlePlaceholder('Gizlilik Politikası')} />
+          <Row icon="📄" label={t('settings.privacyPolicy')}
+            onPress={() => navigation.navigate('PrivacyPolicy')} />
         </View>
 
         {/* ── Dil ── */}
-        <SectionHeader label={t('settings.language').toUpperCase()} />
+        <SectionHeader label={t('settings.sectionLanguage')} />
         <View style={st.card}>
           <View style={st.row}>
             <View style={st.rowIconWrap}>
@@ -215,30 +209,30 @@ export default function SettingsScreen({ navigation }: Props) {
         </View>
 
         {/* ── Hesap ── */}
-        <SectionHeader label="HESAP" />
+        <SectionHeader label={t('settings.sectionAccount')} />
         <View style={st.card}>
-          <Row icon="✉️" label="E-posta Değiştir"
-            onPress={() => handlePlaceholder('E-posta Değiştir')} />
+          <Row icon="✉️" label={t('settings.changeEmail')}
+            onPress={() => navigation.navigate('ChangeEmail' as any)} />
           <View style={st.rowDivider} />
-          <Row icon="🔑" label="Şifre Değiştir"
-            onPress={() => handlePlaceholder('Şifre Değiştir')} />
+          <Row icon="🔑" label={t('settings.changePassword')}
+            onPress={() => navigation.navigate('ChangePassword' as any)} />
           <View style={st.rowDivider} />
-          <Row icon="🗑️" label="Hesabı Sil"
+          <Row icon="🗑️" label={t('settings.deleteAccount')}
             onPress={handleDeleteAccount} danger />
         </View>
 
         {/* ── Yardım ── */}
-        <SectionHeader label="YARDIM" />
+        <SectionHeader label={t('settings.sectionHelp')} />
         <View style={st.card}>
-          <Row icon="❓" label="Yardım & Destek"
-            onPress={() => handlePlaceholder('Yardım & Destek')} />
+          <Row icon="❓" label={t('settings.helpSupport')}
+            onPress={() => navigation.navigate('Help' as any)} />
           <View style={st.rowDivider} />
-          <Row icon="⭐" label="Uygulamayı Değerlendir"
-            onPress={() => handlePlaceholder('Değerlendirme')} />
+          <Row icon="⭐" label={t('settings.rateApp')}
+            onPress={() => handlePlaceholder(t('settings.rateApp'))} />
           <View style={st.rowDivider} />
-          <Row icon="ℹ️" label="Hakkında"
-            value="v1.0.0-beta"
-            onPress={() => {}} />
+          <Row icon="ℹ️" label={t('settings.about')}
+            value="v2026.1.0"
+            onPress={() => navigation.navigate('About' as any)} />
         </View>
 
         {/* ── Çıkış Yap ── */}

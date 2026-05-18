@@ -26,6 +26,11 @@ import MyListingsScreen          from './src/screens/MyListingsScreen';
 import LandlordProfileScreen     from './src/screens/LandlordProfileScreen';
 import InterestedStudentsScreen  from './src/screens/InterestedStudentsScreen';
 import BrowseListingsScreen      from './src/screens/BrowseListingsScreen';
+import ChangeEmailScreen         from './src/screens/ChangeEmailScreen';
+import ChangePasswordScreen      from './src/screens/ChangePasswordScreen';
+import HelpScreen                from './src/screens/HelpScreen';
+import DeleteAccountScreen       from './src/screens/DeleteAccountScreen';
+import AboutScreen               from './src/screens/AboutScreen';
 
 import { authService }                   from './src/api/AuthService';
 import { useAppStore }                   from './src/store';
@@ -64,6 +69,11 @@ export type RootStackParamList = {
   ListingDetail:   { listingId: string };
   CreateListing:   undefined;
   MyListings:      undefined;
+  ChangeEmail:     undefined;
+  ChangePassword:  undefined;
+  Help:            undefined;
+  DeleteAccount:   undefined;
+  About:           undefined;
   Verification:    undefined;
   ProfileEdit:     undefined;
   PrivacyPolicy:   undefined;
@@ -257,8 +267,13 @@ export default function App() {
         <Stack.Screen name="CompatibilityReport" component={CompatibilityReportScreen} />
         <Stack.Screen name="Verification"        component={VerificationScreen} />
         <Stack.Screen name="ProfileEdit"         component={ProfileEditScreen} />
-        <Stack.Screen name="PrivacyPolicy"       component={PrivacyPolicyScreen} />
-        <Stack.Screen name="TermsOfService"      component={TermsOfServiceScreen} />
+        <Stack.Screen name="PrivacyPolicy"    component={PrivacyPolicyScreen} />
+        <Stack.Screen name="TermsOfService"   component={TermsOfServiceScreen} />
+        <Stack.Screen name="ChangeEmail"      component={ChangeEmailScreen} />
+        <Stack.Screen name="ChangePassword"   component={ChangePasswordScreen} />
+        <Stack.Screen name="Help"             component={HelpScreen} />
+        <Stack.Screen name="DeleteAccount"    component={DeleteAccountScreen} />
+        <Stack.Screen name="About"            component={AboutScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

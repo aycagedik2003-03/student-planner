@@ -179,7 +179,7 @@ export default function AuthScreen({ navigation, route }: Props) {
 
       {/* Header: logo */}
       <View style={{ padding: 16 }}>
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: C.brand }}>staymate</Text>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: C.brand }}>🏘️ Roomski</Text>
       </View>
 
       {/* Form */}

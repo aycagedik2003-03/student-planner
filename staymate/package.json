@@ -1,6 +1,7 @@
 {
-  "name": "staymate",
-  "version": "1.0.0",
+  "name": "roomski",
+  "version": "2026.1.0",
+  "description": "Poland's first AI-powered roommate matching platform",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

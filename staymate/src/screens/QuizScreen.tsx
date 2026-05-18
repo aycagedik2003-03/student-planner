@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { POLISH_CITIES } from '../constants/cities';
 import { quizService, normalizeQuestion, type NormalizedQuestion } from '../api/QuizService';
+import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Quiz'>;
@@ -34,50 +35,45 @@ const C = {
   brandB: '#FF9ACD',
 };
 
-// ── Kategori yapılandırması ─────────────────────────────────────────────────────
-const CATS = [
-  { label: 'Uyku Düzeni', icon: '🌙' },
-  { label: 'Temizlik',    icon: '🧹' },
-  { label: 'Sosyallik',   icon: '🤝' },
-  { label: 'Çalışma',     icon: '💻' },
-  { label: 'Yaşam',       icon: '🌿' },
-];
+// ── Kategori ikonları (label'lar artık t() ile geliyor) ───────────────────────
+const CAT_ICONS = ['🌙', '🧹', '🤝', '💻', '🌿'];
 
-// ── Fallback: Hardcoded sorular (backend yanıt vermezse kullanılır) ─────────────
-const FALLBACK_QUESTIONS: NormalizedQuestion[] = [
-  // 0-2 Uyku
-  { id: 'f0',  catIndex: 0, question: 'Genellikle ne zaman uyursun?',            opts: ['22:00 – 00:00', '00:00 – 02:00', '02:00\'dan sonra', 'Her gece farklı'] },
-  { id: 'f1',  catIndex: 0, question: 'Sabah ne zaman uyanırsın?',               opts: ['06:00 – 07:00', '07:00 – 09:00', '09:00 – 11:00', '11:00\'den sonra'] },
-  { id: 'f2',  catIndex: 0, question: 'Uyurken ortam nasıl olsun?',              opts: ['Mutlak sessizlik', 'Hafif gürültüye dayanırım', 'Gürültüden etkilenmem', 'Kulaklıkla uyurum'] },
-  // 3-5 Temizlik
-  { id: 'f3',  catIndex: 1, question: 'Ev temizliğini ne sıklıkla yaparsın?',    opts: ['Her gün', 'Haftada birkaç kez', 'Haftada bir', 'İki haftada bir'] },
-  { id: 'f4',  catIndex: 1, question: 'Ortak alanlar için beklentin?',           opts: ['Kullanınca hemen temizle', 'Gün sonunda toparlanır', 'Haftalık düzen yeter', 'Çok takılmam'] },
-  { id: 'f5',  catIndex: 1, question: 'Bulaşık konusundaki tutumun?',            opts: ['Kullanınca hemen yıkarım', 'Gün sonunda yıkarım', 'Sıra ile yaparız', 'Bulaşık makinesi şart'] },
-  // 6-8 Sosyallik
-  { id: 'f6',  catIndex: 2, question: 'Evde misafir ağırlamayı ne kadar seversin?', opts: ['Çok sık, kapım açık', 'Haftada bir kadar', 'Ara sıra, önceden bildir', 'Neredeyse hiç istemem'] },
-  { id: 'f7',  catIndex: 2, question: 'Ev arkadaşınla ilişkin nasıl olsun?',    opts: ['Arkadaş gibi, birlikte vakit', 'İyi komşu gibi', 'Saygılı ama mesafeli', 'Sadece kurallar'] },
-  { id: 'f8',  catIndex: 2, question: 'Evdeki genel atmosfer nasıl olsun?',      opts: ['Canlı ve sosyal', 'Bazen sosyal, çoğunlukla sakin', 'Çoğunlukla sessiz', 'Tamamen sakin'] },
-  // 9-11 Çalışma
-  { id: 'f9',  catIndex: 3, question: 'Genellikle nereden çalışırsın?',          opts: ['Evden', 'Ofisten', 'Kafeden', 'Her yerden (hybrid)'] },
-  { id: 'f10', catIndex: 3, question: 'Evde çalışırken ortam nasıl olsun?',      opts: ['Tam sessizlik şart', 'Hafif ses olabilir', 'Gürültüden etkilenmem', 'Kulaklıkla çalışırım'] },
-  { id: 'f11', catIndex: 3, question: 'Çalışma saatlerini nasıl tanımlarsın?',   opts: ['Sabah erken başlarım', '09:00 – 18:00 arası', 'Akşam ve gece', 'Tamamen düzensiz'] },
-  // 12-15 Yaşam
-  { id: 'f12', catIndex: 4, question: 'Evcil hayvan konusundaki tutumun?',       opts: ['Seviyorum, bende de var', 'Seviyorum, benimki yok', 'Alerjim yok, sorun değil', 'Aynı evde istemem'] },
-  { id: 'f13', catIndex: 4, question: 'Sigara içiyor musun?',                    opts: ['Evet', 'Hayır', 'Bazen', 'Sadece dışarıda'] },
-  { id: 'f14', catIndex: 4, question: 'Alkol kullanıyor musun?',                 opts: ['Düzenli', 'Sosyal ortamlarda', 'Nadir', 'Hiç'] },
-  { id: 'f15', catIndex: 4, question: 'Yemek pişirme alışkanlığın?',             opts: ['Her gün evde pişiririm', 'Sık sık pişiririm', 'Nadiren pişiririm', 'Genelde dışarıda'] },
-];
+// ── Kategori segmentlerini hesapla (label artık dışarıdan veriliyor) ──────────
+// Fallback sorular locale'e göre dinamik üretilir — buildFallback() ile
+
+// ── Fallback sorular — locale'e göre dinamik ──────────────────────────────────
+function buildFallback(t: (k: string) => string): NormalizedQuestion[] {
+  return [
+    { id: 'f0',  catIndex: 0, question: t('quiz.q0'),  opts: [t('quiz.q0o0'), t('quiz.q0o1'), t('quiz.q0o2'), t('quiz.q0o3')] },
+    { id: 'f1',  catIndex: 0, question: t('quiz.q1'),  opts: [t('quiz.q1o0'), t('quiz.q1o1'), t('quiz.q1o2'), t('quiz.q1o3')] },
+    { id: 'f2',  catIndex: 0, question: t('quiz.q2'),  opts: [t('quiz.q2o0'), t('quiz.q2o1'), t('quiz.q2o2'), t('quiz.q2o3')] },
+    { id: 'f3',  catIndex: 1, question: t('quiz.q3'),  opts: [t('quiz.q3o0'), t('quiz.q3o1'), t('quiz.q3o2'), t('quiz.q3o3')] },
+    { id: 'f4',  catIndex: 1, question: t('quiz.q4'),  opts: [t('quiz.q4o0'), t('quiz.q4o1'), t('quiz.q4o2'), t('quiz.q4o3')] },
+    { id: 'f5',  catIndex: 1, question: t('quiz.q5'),  opts: [t('quiz.q5o0'), t('quiz.q5o1'), t('quiz.q5o2'), t('quiz.q5o3')] },
+    { id: 'f6',  catIndex: 2, question: t('quiz.q6'),  opts: [t('quiz.q6o0'), t('quiz.q6o1'), t('quiz.q6o2'), t('quiz.q6o3')] },
+    { id: 'f7',  catIndex: 2, question: t('quiz.q7'),  opts: [t('quiz.q7o0'), t('quiz.q7o1'), t('quiz.q7o2'), t('quiz.q7o3')] },
+    { id: 'f8',  catIndex: 2, question: t('quiz.q8'),  opts: [t('quiz.q8o0'), t('quiz.q8o1'), t('quiz.q8o2'), t('quiz.q8o3')] },
+    { id: 'f9',  catIndex: 3, question: t('quiz.q9'),  opts: [t('quiz.q9o0'), t('quiz.q9o1'), t('quiz.q9o2'), t('quiz.q9o3')] },
+    { id: 'f10', catIndex: 3, question: t('quiz.q10'), opts: [t('quiz.q10o0'), t('quiz.q10o1'), t('quiz.q10o2'), t('quiz.q10o3')] },
+    { id: 'f11', catIndex: 3, question: t('quiz.q11'), opts: [t('quiz.q11o0'), t('quiz.q11o1'), t('quiz.q11o2'), t('quiz.q11o3')] },
+    { id: 'f12', catIndex: 4, question: t('quiz.q12'), opts: [t('quiz.q12o0'), t('quiz.q12o1'), t('quiz.q12o2'), t('quiz.q12o3')] },
+    { id: 'f13', catIndex: 4, question: t('quiz.q13'), opts: [t('quiz.q13o0'), t('quiz.q13o1'), t('quiz.q13o2'), t('quiz.q13o3')] },
+    { id: 'f14', catIndex: 4, question: t('quiz.q14'), opts: [t('quiz.q14o0'), t('quiz.q14o1'), t('quiz.q14o2'), t('quiz.q14o3')] },
+    { id: 'f15', catIndex: 4, question: t('quiz.q15'), opts: [t('quiz.q15o0'), t('quiz.q15o1'), t('quiz.q15o2'), t('quiz.q15o3')] },
+  ];
+}
 
 // ── Kategori segmentlerini hesapla ────────────────────────────────────────────
-function buildSegments(questions: NormalizedQuestion[]) {
+function buildSegments(questions: NormalizedQuestion[], catLabels: string[]) {
   const segs: { label: string; icon: string; from: number; to: number }[] = [];
   questions.forEach((q, i) => {
-    const cat = CATS[q.catIndex] ?? { label: `Kategori ${q.catIndex + 1}`, icon: '❓' };
-    const last = segs[segs.length - 1];
-    if (last && last.label === cat.label) {
+    const label = catLabels[q.catIndex] ?? `Cat ${q.catIndex + 1}`;
+    const icon  = CAT_ICONS[q.catIndex] ?? '❓';
+    const last  = segs[segs.length - 1];
+    if (last && last.label === label) {
       last.to = i;
     } else {
-      segs.push({ label: cat.label, icon: cat.icon, from: i, to: i });
+      segs.push({ label, icon, from: i, to: i });
     }
   });
   return segs;
@@ -85,12 +81,17 @@ function buildSegments(questions: NormalizedQuestion[]) {
 
 // ── Ana bileşen ────────────────────────────────────────────────────────────────
 export default function QuizScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const setQuizAnswers = useAppStore(s => s.setQuizAnswers);
   const setQuizCity    = useAppStore(s => s.setQuizCity);
   const savedCity      = useAppStore(s => s.quizCity);
 
+  const catLabels = [
+    t('quiz.catSleep'), t('quiz.catClean'), t('quiz.catSocial'), t('quiz.catWork'), t('quiz.catLife'),
+  ];
+
   // ── Soru yükleme state'i ───────────────────────────────────────────────────
-  const [questions,   setQuestions]   = useState<NormalizedQuestion[]>(FALLBACK_QUESTIONS);
+  const [questions,   setQuestions]   = useState<NormalizedQuestion[]>(() => buildFallback(t));
   const [questionsLoading, setQLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
 
@@ -101,7 +102,7 @@ export default function QuizScreen({ navigation }: Props) {
 
   // ── Quiz state ─────────────────────────────────────────────────────────────
   const [idx, setIdx]         = useState(0);
-  const [answers, setAnswers] = useState<(number | null)[]>(Array(FALLBACK_QUESTIONS.length).fill(null));
+  const [answers, setAnswers] = useState<(number | null)[]>(Array(16).fill(null));
   const [picked, setPicked]   = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr]   = useState<string | null>(null);
@@ -121,9 +122,10 @@ export default function QuizScreen({ navigation }: Props) {
           return;
         }
 
-        // Her backend sorusunu normalize et; eksik alanlar için fallback kullan
+        // Her backend sorusunu normalize et; eksik alanlar için locale fallback kullan
+        const localFb = buildFallback(t);
         const normalized = rawQuestions.map((raw, i) => {
-          const fb = FALLBACK_QUESTIONS[i] ?? FALLBACK_QUESTIONS[0];
+          const fb = localFb[i] ?? localFb[0];
           return normalizeQuestion(raw, fb.question, fb.opts, fb.catIndex, i);
         });
 
@@ -142,7 +144,7 @@ export default function QuizScreen({ navigation }: Props) {
     return () => { cancelled = true; };
   }, []);
 
-  const segments = buildSegments(questions);
+  const segments = buildSegments(questions, catLabels);
   const shownCities = POLISH_CITIES.filter(c =>
     c.toLowerCase().includes(citySearch.toLowerCase()),
   );

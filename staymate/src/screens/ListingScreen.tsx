@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar,
-  FlatList, ScrollView, ActivityIndicator, Image, TextInput,
+  FlatList, ScrollView, ActivityIndicator, Image, TextInput, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -10,6 +10,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TabParamList, RootStackParamList } from '../../App';
 import { LISTINGS, type Listing } from '../data/listings';
 import { listingService } from '../api/ListingService';
+import { useTranslation } from '../i18n/useTranslation';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const NUM_COLS = SCREEN_W >= 480 ? 2 : 2; // her zaman 2, tablet'te de 2
+const CARD_W   = (SCREEN_W - 16 * 2 - 12) / 2;
 
 type NavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Listings'>,
@@ -34,13 +39,14 @@ const PRICE_FILTERS = [
 
 function isUrl(s: string) { return s.startsWith('http') || s.startsWith('/'); }
 
-// ── Listing card ──────────────────────────────────────────────────────────────
+// ── Listing card — 2-kolon grid ──────────────────────────────────────────────
 const ListingCard = React.memo(function ListingCard({
   item, onPress,
 }: { item: Listing; onPress: () => void }) {
   const photo = item.photos[0];
   return (
-    <TouchableOpacity style={st.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={[st.card, { width: CARD_W }]} onPress={onPress} activeOpacity={0.8}>
+      {/* Fotoğraf alanı */}
       <View style={st.photoWrap}>
         {isUrl(photo) ? (
           <Image source={{ uri: photo }} style={st.photoImg} resizeMode="cover" />
@@ -54,30 +60,29 @@ const ListingCard = React.memo(function ListingCard({
             <Text style={st.furnishedTxt}>Mobilyalı</Text>
           </View>
         )}
+        <View style={st.priceBadge}>
+          <Text style={st.priceBadgeTxt}>{item.price.toLocaleString('tr-TR')} PLN</Text>
+        </View>
       </View>
 
+      {/* Bilgi alanı */}
       <View style={st.cardInfo}>
-        <Text style={st.cardAddress} numberOfLines={1}>{item.address}</Text>
-        <Text style={st.cardDistrict}>
-          {[item.district, item.city].filter(Boolean).join(' · ') || '—'}
+        <Text style={st.cardAddress} numberOfLines={2}>{item.address}</Text>
+        <Text style={st.cardDistrict} numberOfLines={1}>
+          📍 {[item.district, item.city].filter(Boolean).join(', ') || '—'}
         </Text>
         <View style={st.cardMeta}>
           <View style={st.metaChip}><Text style={st.metaChipTxt}>{item.rooms} oda</Text></View>
-          {item.area > 0 && <View style={st.metaChip}><Text style={st.metaChipTxt}>{item.area} m²</Text></View>}
-          {item.wifi && <View style={st.metaChip}><Text style={st.metaChipTxt}>📶 WiFi</Text></View>}
+          {item.wifi && <View style={st.metaChip}><Text style={st.metaChipTxt}>WiFi</Text></View>}
         </View>
-        <Text style={st.cardPrice}>
-          {item.price.toLocaleString('tr-TR')} <Text style={st.cardPriceSub}>PLN/ay</Text>
-        </Text>
       </View>
-
-      <Text style={st.chevron}>›</Text>
     </TouchableOpacity>
   );
 });
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function ListingScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const [allListings, setAllListings] = useState<Listing[]>(LISTINGS);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
@@ -127,7 +132,7 @@ export default function ListingScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
       <View style={st.header}>
-        <Text style={st.hTitle}>İlanlar</Text>
+        <Text style={st.hTitle}>{t('listing.title')}</Text>
         <TouchableOpacity
           style={st.addBtn}
           onPress={() => navigation.navigate('CreateListing')}
@@ -141,7 +146,7 @@ export default function ListingScreen({ navigation }: Props) {
         <Text style={st.searchIcon}>🔍</Text>
         <TextInput
           style={st.searchInput}
-          placeholder="Adres veya şehir ara..."
+          placeholder={t('listing.search')}
           placeholderTextColor={C.mute}
           value={search}
           onChangeText={setSearch}
@@ -195,13 +200,15 @@ export default function ListingScreen({ navigation }: Props) {
       {loading ? (
         <View style={st.loadingWrap}>
           <ActivityIndicator size="large" color={C.brandA} />
-          <Text style={st.loadingTxt}>İlanlar yükleniyor…</Text>
+          <Text style={st.loadingTxt}>{t('common.loading')}</Text>
         </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={item => item.id}
           renderItem={renderItem}
+          numColumns={NUM_COLS}
+          columnWrapperStyle={st.columnWrapper}
           contentContainerStyle={st.list}
           showsVerticalScrollIndicator={false}
           initialNumToRender={10}
@@ -213,8 +220,8 @@ export default function ListingScreen({ navigation }: Props) {
           ListEmptyComponent={
             <View style={st.empty}>
               <Text style={st.emptyIcon}>🏠</Text>
-              <Text style={st.emptyTitle}>İlan bulunamadı</Text>
-              <Text style={st.emptySub}>Farklı filtreler deneyin.</Text>
+              <Text style={st.emptyTitle}>{t('listing.noResults')}</Text>
+              <Text style={st.emptySub}>{t('listing.noResultsSub')}</Text>
             </View>
           }
         />
@@ -274,35 +281,38 @@ const st = StyleSheet.create({
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   loadingTxt:  { color: C.mute, fontSize: 14 },
 
-  list: { paddingHorizontal: 16, paddingBottom: 16 },
+  list:          { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 4 },
+  columnWrapper: { gap: 12, marginBottom: 12 },
 
   card: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.bg, borderRadius: 20, borderWidth: 1, borderColor: C.line,
-    marginBottom: 10, overflow: 'hidden',
+    backgroundColor: C.bg, borderRadius: 16, borderWidth: 1, borderColor: C.line,
+    overflow: 'hidden',
     shadowColor: '#1F2937', shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+    shadowOpacity: 0.07, shadowRadius: 10, elevation: 3,
   },
-  photoWrap:    { width: 90, height: 90, position: 'relative', overflow: 'hidden' },
-  photoImg:     { width: 90, height: 90 },
-  photoSwatch:  { width: 90, height: 90, alignItems: 'center', justifyContent: 'center' },
-  photoIcon:    { fontSize: 28 },
+  photoWrap:   { width: '100%', height: 130, position: 'relative', overflow: 'hidden' },
+  photoImg:    { width: '100%', height: 130 },
+  photoSwatch: { width: '100%', height: 130, alignItems: 'center', justifyContent: 'center' },
+  photoIcon:   { fontSize: 36 },
   furnishedBadge: {
-    position: 'absolute', bottom: 4, left: 4,
-    backgroundColor: 'rgba(0,207,200,0.92)', borderRadius: 6,
-    paddingHorizontal: 5, paddingVertical: 2,
+    position: 'absolute', top: 8, left: 8,
+    backgroundColor: '#1D9E75', borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 3,
   },
-  furnishedTxt: { color: '#fff', fontSize: 8, fontWeight: '700' },
+  furnishedTxt: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  priceBadge: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingVertical: 5, paddingHorizontal: 10,
+  },
+  priceBadgeTxt: { color: '#fff', fontSize: 13, fontWeight: '800' },
 
-  cardInfo:     { flex: 1, paddingVertical: 10, paddingHorizontal: 12 },
-  cardAddress:  { color: C.ink, fontSize: 14, fontWeight: '700', letterSpacing: -0.2 },
-  cardDistrict: { color: C.mute, fontSize: 11, marginTop: 2, marginBottom: 6 },
-  cardMeta:     { flexDirection: 'row', gap: 5, flexWrap: 'wrap', marginBottom: 6 },
-  metaChip:     { backgroundColor: C.bgSoft, borderRadius: 6, borderWidth: 1, borderColor: C.line, paddingHorizontal: 6, paddingVertical: 2 },
-  metaChipTxt:  { color: C.soft, fontSize: 10.5, fontWeight: '500' },
-  cardPrice:    { color: C.brandA, fontSize: 16, fontWeight: '800' },
-  cardPriceSub: { color: C.mute, fontSize: 11, fontWeight: '400' },
-  chevron:      { color: C.mute, fontSize: 22, paddingRight: 12 },
+  cardInfo:     { padding: 10 },
+  cardAddress:  { color: C.ink, fontSize: 13, fontWeight: '700', marginBottom: 3, lineHeight: 18 },
+  cardDistrict: { color: C.mute, fontSize: 11, marginBottom: 6 },
+  cardMeta:     { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  metaChip:     { backgroundColor: '#E1F5EE', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  metaChipTxt:  { color: '#1D9E75', fontSize: 10, fontWeight: '600' },
 
   empty:      { alignItems: 'center', paddingTop: 60 },
   emptyIcon:  { fontSize: 40, marginBottom: 12 },

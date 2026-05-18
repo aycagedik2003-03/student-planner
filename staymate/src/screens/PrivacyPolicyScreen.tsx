@@ -42,7 +42,7 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
         <Text style={st.lastUpdated}>Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</Text>
 
         <Section title="1. Veri Sorumlusu">
-          {`Staymate, ul. [ADRES], Poznań, Polska\nİletişim: privacy@staymate.app`}
+          {`Roomski, ul. [ADRES], Poznań, Polska\nİletişim: privacy@roomski.app`}
         </Section>
 
         <Section title="2. Toplanan Veriler">
@@ -58,7 +58,7 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
         </Section>
 
         <Section title="5. Haklarınız">
-          {`• Verilere erişim hakkı (GDPR Md. 15)\n• Düzeltme hakkı (Md. 16)\n• Silme hakkı (Md. 17)\n• İşlemeyi kısıtlama hakkı (Md. 18)\n• Veri taşınabilirliği hakkı (Md. 20)\n• Rızanızı geri çekme hakkı (Md. 7/3)\n\nTalepleriniz için: privacy@staymate.app`}
+          {`• Verilere erişim hakkı (GDPR Md. 15)\n• Düzeltme hakkı (Md. 16)\n• Silme hakkı (Md. 17)\n• İşlemeyi kısıtlama hakkı (Md. 18)\n• Veri taşınabilirliği hakkı (Md. 20)\n• Rızanızı geri çekme hakkı (Md. 7/3)\n\nTalepleriniz için: privacy@roomski.app`}
         </Section>
 
         <Section title="6. Veri Güvenliği">
@@ -69,7 +69,7 @@ export default function PrivacyPolicyScreen({ navigation }: Props) {
           {`Değişiklik hakkımızı saklı tutarız.\nGüncelleme durumunda e-posta ile bildirilirsiniz.`}
         </Section>
 
-        <Text style={st.footer}>Sorularınız için: privacy@staymate.app</Text>
+        <Text style={st.footer}>Sorularınız için: privacy@roomski.app</Text>
       </ScrollView>
     </SafeAreaView>
   );

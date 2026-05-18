@@ -98,10 +98,10 @@ function deriveTraitsFromAnswers(a: (number | null)[]): Trait[] {
 
 // ── Trait kartı ───────────────────────────────────────────────────────────────
 function TraitCard({ trait }: { trait: Trait }) {
-  const bgMap:     Record<TraitColor, string> = { teal: C.darkBg, pink: C.darkBg, dark: '#111318' };
-  const txMap:     Record<TraitColor, string> = { teal: C.brandA, pink: C.brandB, dark: C.mute };
+  const bgMap:     Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
+  const txMap:     Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
   const borderMap: Record<TraitColor, string> = {
-    teal: C.brandA + '30', pink: C.brandB + '30', dark: 'rgba(255,255,255,0.06)',
+    teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75',
   };
   return (
     <View style={[st.traitCard, {
@@ -122,10 +122,10 @@ function TraitPill({ label }: { label: string }) {
   const icon  = mapped?.icon  ?? '✦';
   const color = mapped?.color ?? ('dark' as TraitColor);
 
-  const bgMap:     Record<TraitColor, string> = { teal: C.tealBg, pink: C.pinkBg, dark: C.bgSoft };
-  const txMap:     Record<TraitColor, string> = { teal: C.tealTx, pink: C.pinkTx, dark: C.soft };
+  const bgMap:     Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
+  const txMap:     Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
   const borderMap: Record<TraitColor, string> = {
-    teal: C.brandA + '55', pink: C.brandB + '55', dark: C.line,
+    teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75',
   };
 
   return (
