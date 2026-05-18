@@ -1,7 +1,9 @@
 import React from 'react';
 import {
-  View, Text, ScrollView, Pressable, Dimensions, StatusBar, StyleSheet,
+  View, Text, Pressable, Image, Dimensions,
+  StatusBar, StyleSheet, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
@@ -14,223 +16,189 @@ type Props = {
 
 const { width, height } = Dimensions.get('window');
 
-const TEXTS = {
-  pl: {
-    subtitle:          'Find your people.',
-    subtitleHighlight: 'Feel at home.',
-    description:       "The easiest way to find a roommate and a place you'll love.",
-    cta:               'Get started',
-    loginLink:         'I have an account',
-  },
-  tr: {
-    subtitle:          'Seni anlayan insanları bul.',
-    subtitleHighlight: 'Evinizi hissedin.',
-    description:       'Oda arkadaşı ve yalnızca sevdiğiniz bir yer bulmanın en kolay yolu.',
-    cta:               'Başla',
-    loginLink:         'Hesabım var',
-  },
-  en: {
-    subtitle:          'Find your people.',
-    subtitleHighlight: 'Feel at home.',
-    description:       "The easiest way to find a roommate and a place you'll love.",
-    cta:               'Get started',
-    loginLink:         'I have an account',
-  },
+// Logo path (kök assets/ klasöründe)
+const LOGO = require('../../assets/roomski-logo.png');
+
+// Hero image — assets/roomski-hero.png dosyasını eklediğinde
+// aşağıdaki satırı uncomment et ve HeroPlaceholder bileşenini kaldır:
+// const HERO = require('../../assets/roomski-hero.png');
+
+const CONTENT = {
+  pl: { cta: 'Zacznij',      loginLink: 'Mam już konto'    },
+  tr: { cta: 'Başla',        loginLink: 'Hesabım var'       },
+  en: { cta: 'Get started',  loginLink: 'I have an account' },
 } as const;
 
-type Lang = keyof typeof TEXTS;
+type Lang = keyof typeof CONTENT;
 
+// ── Placeholder hero (roomski-hero.png eklenince kaldır) ─────────────────────
+function HeroPlaceholder() {
+  return (
+    <LinearGradient
+      colors={['#E0F7FA', '#FCE4EC']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[st.hero, { justifyContent: 'center', alignItems: 'center' }]}
+    >
+      {/* Dekoratif bubbles */}
+      <View style={st.bubbleWrap} pointerEvents="none">
+        <View style={[st.bubble, st.bubbleBlue]} />
+        <View style={[st.bubble, st.bubblePink]} />
+        <View style={[st.bubble, st.bubbleSmall]} />
+      </View>
+
+      {/* Chat cards */}
+      <View style={st.chatCard}>
+        <Text style={st.chatName}>Mia, 22 🇵🇱</Text>
+        <Text style={st.chatMsg}>Hey! Are you still looking for a roommate?</Text>
+        <View style={st.matchPill}>
+          <Text style={st.matchPillTxt}>✦ 94% match</Text>
+        </View>
+      </View>
+
+      <View style={[st.chatCard, st.chatCardRight]}>
+        <Text style={st.chatName}>Bartek, 23 🇵🇱</Text>
+        <Text style={st.chatMsg}>Found a great place in Kraków!</Text>
+        <View style={[st.matchPill, st.matchPillPink]}>
+          <Text style={[st.matchPillTxt, { color: '#E91E63' }]}>📍 Kraków Stare Miasto</Text>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 export default function OnboardingScreen({ navigation }: Props) {
   const { language } = useTranslation();
   const setLanguage  = useAppStore(s => s.setLanguage);
 
-  const lang    = (language in TEXTS ? language : 'en') as Lang;
-  const content = TEXTS[lang];
+  const lang    = (language in CONTENT ? language : 'en') as Lang;
+  const current = CONTENT[lang];
 
   return (
-    <ScrollView style={st.root} scrollEnabled={false} bounces={false}>
+    <SafeAreaView style={st.root} edges={['bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* ── Diagonal split hero ─────────────────────────────────────────────── */}
-      <View style={[st.hero, { height: height - 220 }]}>
+      <View style={st.container}>
+        {/* ── HERO IMAGE (veya placeholder) ─────────────────────────────────── */}
+        {/* Hero image aktifken:
+        <Image source={HERO} style={st.hero} resizeMode="cover" />
+        */}
+        <HeroPlaceholder />
 
-        {/* Left white panel */}
-        <View style={st.leftPanel} />
-
-        {/* Right soft gradient panel */}
-        <LinearGradient
-          colors={['rgba(0,188,212,0.08)', 'rgba(233,30,99,0.12)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={st.rightPanel}
-        />
-
-        {/* Diagonal skew accent */}
-        <View style={st.skewWrap} pointerEvents="none">
-          <View style={[st.skew, { width: width * 0.6 }]} />
-        </View>
-
-        {/* ── LEFT: Logo + text ──────────────────────────────────────────────── */}
-        <View style={st.leftContent}>
-          {/* Logo mark */}
+        {/* ── BOTTOM PANEL ──────────────────────────────────────────────────── */}
+        <View style={st.bottom}>
+          {/* Logo + wordmark */}
           <View style={st.logoRow}>
-            <LinearGradient
-              colors={['#00BCD4', '#E91E63']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={st.logoGradient}
-            >
-              <Text style={st.logoEmoji}>🏘️</Text>
-            </LinearGradient>
+            <Image source={LOGO} style={st.logoImg} resizeMode="contain" />
             <Text style={st.logoWord}>roomski</Text>
           </View>
 
-          {/* Headline */}
-          <View style={st.headlineWrap}>
-            <Text style={st.headline}>{content.subtitle}</Text>
-            <Text style={[st.headline, st.headlineAccent]}>
-              {content.subtitleHighlight}
-            </Text>
-          </View>
+          {/* Tagline */}
+          <Text style={st.tagline}>Find your people.</Text>
+          <Text style={[st.tagline, st.taglineAccent]}>Feel at home.</Text>
 
           {/* Description */}
-          <Text style={st.description}>{content.description}</Text>
-        </View>
+          <Text style={st.desc}>
+            The easiest way to find a roommate{'\n'}and a place you'll love.
+          </Text>
 
-        {/* ── RIGHT: Chat bubbles + location badge ───────────────────────────── */}
-        <View style={st.rightContent} pointerEvents="none">
-
-          {/* Location badge */}
-          <View style={[st.badge, st.badgeTop]}>
-            <Text style={st.badgeEmoji}>📍</Text>
-            <Text style={st.badgeTxt}>Kraków</Text>
-          </View>
-
-          {/* Chat bubble — incoming */}
-          <View style={[st.bubble, st.bubbleIn, st.bubbleFirst]}>
-            <Text style={st.bubbleLabel}>Hey! 👋</Text>
-            <Text style={st.bubbleSub}>Looking for a roommate?</Text>
-            <Text style={st.bubbleTime}>10:24</Text>
-          </View>
-
-          {/* Match badge */}
-          <View style={[st.badge, st.badgeMid]}>
-            <Text style={st.badgeEmoji}>✦</Text>
-            <Text style={[st.badgeTxt, { color: '#E91E63' }]}>92% uyum</Text>
-          </View>
-
-          {/* Chat bubble — outgoing */}
-          <View style={[st.bubble, st.bubbleOut, st.bubbleSecond]}>
-            <Text style={[st.bubbleSub, { color: '#555' }]}>
-              Hi! 😊 Yes, looking too!
-            </Text>
-            <Text style={[st.bubbleTime, { textAlign: 'right' }]}>10:26 ✓✓</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ── Bottom CTA section ──────────────────────────────────────────────── */}
-      <View style={st.bottom}>
-
-        {/* Gradient CTA */}
-        <LinearGradient
-          colors={['#00BCD4', '#E91E63']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={st.ctaGradient}
-        >
-          <Pressable
-            onPress={() => navigation.navigate('Auth', { mode: 'register' })}
-            style={st.ctaBtn}
+          {/* CTA — gradient pill */}
+          <LinearGradient
+            colors={['#00BCD4', '#E91E63']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={st.ctaGrad}
           >
-            <Text style={st.ctaTxt}>{content.cta}</Text>
-          </Pressable>
-        </LinearGradient>
-
-        {/* Login link */}
-        <Pressable
-          onPress={() => navigation.navigate('Auth', { mode: 'login' })}
-          style={st.loginBtn}
-        >
-          <Text style={st.loginTxt}>{content.loginLink}</Text>
-        </Pressable>
-
-        {/* Language selector */}
-        <View style={st.langWrap}>
-          {(['pl', 'tr', 'en'] as const).map(l => (
             <Pressable
-              key={l}
-              onPress={() => setLanguage(l)}
-              style={[st.langBtn, lang === l && st.langBtnActive]}
+              onPress={() => navigation.navigate('Auth', { mode: 'register' })}
+              style={st.ctaBtn}
             >
-              <Text style={[st.langTxt, lang === l && st.langTxtActive]}>
-                {l === 'pl' ? 'PL' : l === 'tr' ? 'TR' : 'EN'}
-              </Text>
+              <Text style={st.ctaTxt}>{current.cta}</Text>
             </Pressable>
-          ))}
+          </LinearGradient>
+
+          {/* Login link */}
+          <Pressable
+            onPress={() => navigation.navigate('Auth', { mode: 'login' })}
+            style={st.loginBtn}
+          >
+            <Text style={st.loginTxt}>{current.loginLink}</Text>
+          </Pressable>
+
+          {/* Language selector */}
+          <View style={st.langRow}>
+            {(['pl', 'tr', 'en'] as const).map(l => (
+              <Pressable
+                key={l}
+                onPress={() => setLanguage(l)}
+                style={[st.langBtn, lang === l && st.langBtnActive]}
+              >
+                <Text style={[st.langTxt, lang === l && st.langTxtActive]}>
+                  {l === 'pl' ? 'PL' : l === 'tr' ? 'TR' : 'EN'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
+const HERO_H = height * 0.52;
+
 const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
+  root:      { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1 },
 
-  // ── Hero ──────────────────────────────────────────────────────────────────
-  hero:       { position: 'relative', overflow: 'hidden' },
-  leftPanel:  { position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', backgroundColor: '#fff' },
-  rightPanel: { position: 'absolute', right: 0, top: 0, width: '50%', height: '100%' },
-  skewWrap:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  skew:       { position: 'absolute', top: 0, right: 0, height: '100%', backgroundColor: 'rgba(233,30,99,0.04)', transform: [{ skewX: '-12deg' }] },
+  // Hero
+  hero: { width, height: HERO_H, overflow: 'hidden', position: 'relative' },
 
-  // ── Left content ──────────────────────────────────────────────────────────
-  leftContent: {
-    position: 'absolute', left: 0, top: 0, width: '58%', height: '100%',
-    paddingTop: 56, paddingLeft: 22, paddingRight: 12, zIndex: 4,
-  },
-  logoRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 36 },
-  logoGradient: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  logoEmoji:    { fontSize: 22 },
-  logoWord:     { fontSize: 24, fontWeight: '800', color: '#000', letterSpacing: -0.5 },
-  headlineWrap: { marginBottom: 16 },
-  headline:     { fontSize: 26, fontWeight: '800', color: '#000', lineHeight: 34, letterSpacing: -0.4 },
-  headlineAccent: { color: '#E91E63' },
-  description:  { fontSize: 13, color: '#999', lineHeight: 20 },
+  // Placeholder decorations
+  bubbleWrap:  { ...StyleSheet.absoluteFillObject },
+  bubble:      { position: 'absolute', borderRadius: 999, opacity: 0.35 },
+  bubbleBlue:  { width: 220, height: 220, backgroundColor: '#00BCD4', top: -60, right: -60 },
+  bubblePink:  { width: 180, height: 180, backgroundColor: '#E91E63', bottom: -40, left: -40 },
+  bubbleSmall: { width: 100, height: 100, backgroundColor: '#9C27B0', top: '40%', left: '40%' },
 
-  // ── Right content ─────────────────────────────────────────────────────────
-  rightContent: {
-    position: 'absolute', right: 0, top: 0, width: '46%', height: '100%',
-    paddingTop: 40, paddingRight: 12, zIndex: 4,
-  },
+  // Chat cards in placeholder
+  chatCard:      { backgroundColor: '#fff', borderRadius: 16, padding: 14, marginHorizontal: 24, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
+  chatCardRight: { marginLeft: 48 },
+  chatName:      { fontSize: 13, fontWeight: '700', color: '#1F2937', marginBottom: 4 },
+  chatMsg:       { fontSize: 12, color: '#6B7280', lineHeight: 18 },
+  matchPill:     { alignSelf: 'flex-start', marginTop: 8, backgroundColor: '#E0F7FA', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  matchPillPink: { backgroundColor: '#FCE4EC' },
+  matchPillTxt:  { fontSize: 11, fontWeight: '700', color: '#00BCD4' },
 
-  // Badges
-  badge:     { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  badgeTop:  { marginBottom: 14, marginTop: 10 },
-  badgeMid:  { marginTop: 10, marginBottom: 10 },
-  badgeEmoji:{ fontSize: 13 },
-  badgeTxt:  { fontSize: 12, fontWeight: '700', color: '#1F2937', marginLeft: 4 },
+  // Bottom panel
+  bottom:    { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: Platform.OS === 'android' ? 16 : 8, backgroundColor: '#fff' },
 
-  // Bubbles
-  bubble:       { borderRadius: 12, padding: 10, maxWidth: 180, marginBottom: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 2 },
-  bubbleIn:     { backgroundColor: '#fff', alignSelf: 'flex-start' },
-  bubbleOut:    { backgroundColor: '#F0F0F0', alignSelf: 'flex-end' },
-  bubbleFirst:  {},
-  bubbleSecond: {},
-  bubbleLabel:  { fontSize: 13, fontWeight: '700', color: '#000', marginBottom: 3 },
-  bubbleSub:    { fontSize: 12, color: '#666' },
-  bubbleTime:   { fontSize: 10, color: '#ccc', marginTop: 4 },
+  // Logo
+  logoRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  logoImg:   { width: 44, height: 44, marginRight: 10 },
+  logoWord:  { fontSize: 30, fontWeight: '800', color: '#000', letterSpacing: -1 },
 
-  // ── Bottom ────────────────────────────────────────────────────────────────
-  bottom:      { paddingHorizontal: 24, paddingVertical: 28, backgroundColor: '#fff' },
-  ctaGradient: { borderRadius: 28, marginBottom: 14 },
-  ctaBtn:      { paddingVertical: 17, alignItems: 'center' },
-  ctaTxt:      { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
-  loginBtn:    { paddingVertical: 12, alignItems: 'center', marginBottom: 24 },
-  loginTxt:    { color: '#999', fontSize: 14, fontWeight: '500' },
-  langWrap:    { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  langBtn:     { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16, backgroundColor: '#F3F4F6' },
-  langBtnActive:{ backgroundColor: '#00BCD4' },
-  langTxt:     { fontSize: 12, fontWeight: '500', color: '#666' },
-  langTxtActive:{ color: '#fff', fontWeight: '700' },
+  // Tagline
+  tagline:       { fontSize: 26, fontWeight: '800', color: '#000', lineHeight: 34, letterSpacing: -0.4 },
+  taglineAccent: { color: '#E91E63', marginBottom: 10 },
+
+  // Description
+  desc: { fontSize: 13, color: '#6B7280', lineHeight: 20, marginBottom: 24 },
+
+  // CTA
+  ctaGrad: { borderRadius: 30, marginBottom: 12 },
+  ctaBtn:  { paddingVertical: 16, alignItems: 'center' },
+  ctaTxt:  { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
+
+  // Login
+  loginBtn: { paddingVertical: 10, alignItems: 'center', marginBottom: 16 },
+  loginTxt: { color: '#999', fontSize: 14, fontWeight: '500' },
+
+  // Lang
+  langRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  langBtn:       { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16, backgroundColor: '#F3F4F6' },
+  langBtnActive: { backgroundColor: '#00BCD4' },
+  langTxt:       { fontSize: 12, fontWeight: '500', color: '#666' },
+  langTxtActive: { color: '#fff', fontWeight: '700' },
 });
