@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, Linking, StyleSheet } from 'react-native';
+import { View, Text, Image, ScrollView, Pressable, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
@@ -9,7 +9,7 @@ type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
 const content = {
   pl: {
-    title:    '🏘️ Roomski',
+    title:    'Roomski',
     version:  'v2026.1.0',
     subtitle: "Poland's First AI Roommate Matching Platform",
     sections: [
@@ -29,7 +29,7 @@ const content = {
     ],
   },
   tr: {
-    title:    '🏘️ Roomski',
+    title:    'Roomski',
     version:  'v2026.1.0',
     subtitle: "Polonya'nın İlk AI Oda Arkadaşı Platformu",
     sections: [
@@ -49,7 +49,7 @@ const content = {
     ],
   },
   en: {
-    title:    '🏘️ Roomski',
+    title:    'Roomski',
     version:  'v2026.1.0',
     subtitle: "Poland's First AI Roommate Matching Platform",
     sections: [
@@ -95,7 +95,11 @@ export default function AboutScreen({ navigation }: Props) {
 
       <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
         <View style={{ padding: 24, alignItems: 'center' }}>
-          <Text style={{ fontSize: 48, marginBottom: 8 }}>🏘️</Text>
+          <Image
+            source={require('../../assets/roomski-logo.png')}
+            style={{ width: 80, height: 80, marginBottom: 8 }}
+            resizeMode="contain"
+          />
           <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>
             {current.title}
           </Text>

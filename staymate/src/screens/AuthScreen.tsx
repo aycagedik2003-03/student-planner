@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Checkbox from 'expo-checkbox';
@@ -182,8 +183,13 @@ export default function AuthScreen({ navigation, route }: Props) {
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
 
       {/* Header: logo */}
-      <View style={{ padding: 16 }}>
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: C.brand }}>🏘️ Roomski</Text>
+      <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}>
+        <Image
+          source={require('../../assets/roomski-logo.png')}
+          style={{ width: 28, height: 28, marginRight: 8 }}
+          resizeMode="contain"
+        />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: C.brand }}>Roomski</Text>
       </View>
 
       {/* Form */}
