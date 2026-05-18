@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert, Pressable,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -92,7 +93,7 @@ export default function ProfileTabScreen({ navigation }: Props) {
             store.clearFilteredMatches();
             store.setProfile(null);
             store.setActiveMatches([]);
-            navigation.navigate('Auth' as any);
+            navigation.reset({ index: 0, routes: [{ name: 'Auth' as any }] });
           },
         },
       ],
@@ -193,10 +194,16 @@ export default function ProfileTabScreen({ navigation }: Props) {
           <View style={st.grid}>
             {traits.length > 0 ? (
               traits.map((trait, i) => (
-                <View key={i} style={[st.traitCard, { backgroundColor: bgMap[trait.color], borderColor: bdMap[trait.color] }]}>
+                <LinearGradient
+                  key={i}
+                  colors={['rgba(0,188,212,0.15)', 'rgba(233,30,99,0.15)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={st.traitCard}
+                >
                   <Text style={st.traitIcon}>{trait.icon}</Text>
-                  <Text style={[st.traitLabel, { color: txMap[trait.color] }]}>{trait.label}</Text>
-                </View>
+                  <Text style={st.traitLabel}>{t(`traits.${trait.label.toLowerCase().replace(/[- ]/g,'_')}`) || trait.label}</Text>
+                </LinearGradient>
               ))
             ) : (
               <View style={st.emptyCard}>
@@ -287,9 +294,9 @@ const st = StyleSheet.create({
   section:      { paddingHorizontal: 18, paddingTop: 20 },
   sectionLabel: { color: C.mute, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 12 },
   grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  traitCard:    { width: '47%', flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 12, gap: 8 },
+  traitCard:    { width: '47%', flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(0,188,212,0.3)', paddingVertical: 12, paddingHorizontal: 12, gap: 8 },
   traitIcon:    { fontSize: 18 },
-  traitLabel:   { fontSize: 13, fontWeight: '600', flex: 1 },
+  traitLabel:   { fontSize: 13, fontWeight: '600', flex: 1, color: '#00BCD4' },
   emptyCard:    { width: '100%', padding: 20, alignItems: 'center', backgroundColor: C.bgSoft, borderRadius: 16, borderWidth: 1, borderColor: C.line },
   emptyTxt:     { color: C.mute, fontSize: 14 },
 

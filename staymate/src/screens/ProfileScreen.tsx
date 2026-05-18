@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
@@ -115,25 +116,51 @@ function TraitCard({ trait }: { trait: Trait }) {
   );
 }
 
-// ── Trait pill (hafif / renkli chip — doğrudan label string alır) ─────────────
-function TraitPill({ label }: { label: string }) {
-  // Label'den icon bul — hem snake_case hem okunabilir string dene
-  const normalized = label.toLowerCase().replace(/[- ]/g, '_');
-  const mapped = BACKEND_TRAIT_MAP[normalized];
-  const icon  = mapped?.icon  ?? '✦';
-  const color = mapped?.color ?? ('dark' as TraitColor);
+// Backend string → snake_case i18n key mapping
+const LABEL_TO_KEY: Record<string, string> = {
+  'gece kuşu':       'gece_kusu',
+  'erken kalkan':    'erken_kalkan',
+  'düzenli':         'duzenli',
+  'rahat':           'rahat',
+  'sosyal':          'sosyal',
+  'içe dönük':       'icedonuk',
+  'remote':          'remote',
+  'hybrid':          'hybrid',
+  'gece çalışır':    'gece_calisir',
+  'evcil hayvanlı':  'evcil_hayvan',
+  'hayvan sever':    'hayvan_sever',
+  'sigara içmez':    'sigara_icmez',
+  'sigara içer':     'sigara',
+  'alkol almaz':     'alkol_yok',
+  'sosyal içici':    'sosyal_ici',
+  'nadir içer':      'nadir_ici',
+  'ev yemeği yapar': 'ev_yemegi',
+};
 
-  const bgMap:     Record<TraitColor, string> = { teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4' };
-  const txMap:     Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
-  const borderMap: Record<TraitColor, string> = {
-    teal: '#00BCD4', pink: '#00BCD4', dark: '#00BCD4',
-  };
+function getTraitKey(label: string): string {
+  const lower = label.toLowerCase().replace(/[- ]/g, '_');
+  return LABEL_TO_KEY[lower.replace(/_/g, ' ')] ?? BACKEND_TRAIT_MAP[lower] ? lower : label;
+}
+
+// ── Gradient trait pill ───────────────────────────────────────────────────────
+function TraitPill({ label, tFn }: { label: string; tFn: (k: string) => string }) {
+  const normalized = label.toLowerCase().replace(/[- ]/g, '_');
+  const mapped     = BACKEND_TRAIT_MAP[normalized];
+  const icon       = mapped?.icon ?? '✦';
+  const key        = LABEL_TO_KEY[label.toLowerCase()] ?? normalized;
+  const translated = tFn(`traits.${key}`);
+  const displayText = (translated !== `traits.${key}`) ? translated : label;
 
   return (
-    <View style={[st.traitPill, { backgroundColor: bgMap[color], borderColor: borderMap[color] }]}>
+    <LinearGradient
+      colors={['rgba(0,188,212,0.15)', 'rgba(233,30,99,0.15)']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={st.traitPill}
+    >
       <Text style={st.traitPillIcon}>{icon}</Text>
-      <Text style={[st.traitPillTxt, { color: txMap[color] }]}>{label}</Text>
-    </View>
+      <Text style={st.traitPillTxt}>{displayText}</Text>
+    </LinearGradient>
   );
 }
 
@@ -352,7 +379,7 @@ export default function ProfileScreen({ navigation }: Props) {
         {/* ── Trait pills ── */}
         <View style={st.pillRow}>
           {traitLabels.length > 0
-            ? traitLabels.map(label => <TraitPill key={label} label={label} />)
+            ? traitLabels.map(label => <TraitPill key={label} label={label} tFn={t} />)
             : (
               <View style={st.emptyCard}>
                 <Text style={st.emptyTxt}>{t('profile.noTraits')}</Text>
@@ -452,11 +479,11 @@ const st = StyleSheet.create({
   traitIcon:  { fontSize: 20 },
   traitLabel: { fontSize: 13, fontWeight: '600', flex: 1 },
 
-  // Pill variant (light colored chips)
+  // Pill variant (gradient chips)
   pillRow:       { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, gap: 8 },
-  traitPill:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 1.5, paddingVertical: 8, paddingHorizontal: 14 },
+  traitPill:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(0,188,212,0.3)', paddingVertical: 8, paddingHorizontal: 14 },
   traitPillIcon: { fontSize: 14 },
-  traitPillTxt:  { fontSize: 13, fontWeight: '600' },
+  traitPillTxt:  { fontSize: 13, fontWeight: '600', color: '#00BCD4' },
 
   emptyCard:  { width: '100%', padding: 24, alignItems: 'center', backgroundColor: C.bgSoft, borderRadius: 18, borderWidth: 1, borderColor: C.line },
   emptyTxt:   { color: C.mute, fontSize: 14 },

@@ -1,9 +1,8 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, StatusBar,
+  View, Text, TouchableOpacity, Pressable, StyleSheet, StatusBar,
   ScrollView, Switch, Alert,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -93,7 +92,6 @@ export default function SettingsScreen({ navigation }: Props) {
           onPress: async () => {
             // 1. SecureStore token'ı sil
             await authService.logout();
-            // 2. Zustand store'u tamamen sıfırla
             const store = useAppStore.getState();
             store.clearUser();
             store.resetFilters();
@@ -102,8 +100,7 @@ export default function SettingsScreen({ navigation }: Props) {
             store.clearFilteredMatches();
             store.setProfile(null);
             store.setActiveMatches([]);
-            // 3. Auth ekranına git (stack resetlenir)
-            navigation.navigate('Auth' as any);
+            navigation.reset({ index: 0, routes: [{ name: 'Auth' as any }] });
           },
         },
       ],
@@ -160,24 +157,36 @@ export default function SettingsScreen({ navigation }: Props) {
 
         {/* ── Dil ── */}
         <SectionHeader label={t('settings.sectionLanguage')} />
-        <View style={st.card}>
-          <View style={st.row}>
-            <View style={st.rowIconWrap}>
-              <Text style={st.rowIcon}>🌐</Text>
-            </View>
-            <Text style={[st.rowLabel, { flex: 0, marginRight: 8 }]}>{t('settings.language')}</Text>
-            <View style={st.pickerWrap}>
-              <Picker
-                selectedValue={language}
-                onValueChange={v => setLanguage(v as 'tr' | 'pl' | 'en')}
-                style={st.picker}
-                dropdownIconColor={C.mute}
+        <View style={[st.card, { paddingVertical: 14, paddingHorizontal: 16 }]}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {([
+              { code: 'pl' as const, label: 'Polski',  flag: '🇵🇱' },
+              { code: 'tr' as const, label: 'Türkçe',  flag: '🇹🇷' },
+              { code: 'en' as const, label: 'English', flag: '🇬🇧' },
+            ]).map(lang => (
+              <Pressable
+                key={lang.code}
+                onPress={() => setLanguage(lang.code)}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  backgroundColor: language === lang.code ? C.tealBg : C.bgSoft,
+                  borderWidth: language === lang.code ? 2 : 1,
+                  borderColor: language === lang.code ? C.brandA : C.line,
+                }}
               >
-                <Picker.Item label="🇹🇷  Türkçe" value="tr" />
-                <Picker.Item label="🇵🇱  Polski" value="pl" />
-                <Picker.Item label="🇬🇧  English" value="en" />
-              </Picker>
-            </View>
+                <Text style={{ fontSize: 22, marginBottom: 4 }}>{lang.flag}</Text>
+                <Text style={{
+                  fontSize: 11,
+                  fontWeight: language === lang.code ? '700' : '400',
+                  color: language === lang.code ? C.tealTx : C.mute,
+                }}>
+                  {lang.label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
 
@@ -282,10 +291,4 @@ const st = StyleSheet.create({
   },
   logoutTxt:  { color: C.red, fontSize: 15, fontWeight: '700' },
 
-  pickerWrap: {
-    flex: 1, borderWidth: 1, borderColor: C.line,
-    borderRadius: 12, overflow: 'hidden',
-    backgroundColor: C.bgSoft,
-  },
-  picker: { height: 44, color: C.ink },
 });

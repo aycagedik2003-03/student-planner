@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet,
-  TextInput, ActivityIndicator, RefreshControl, Alert,
+  TextInput, ActivityIndicator, RefreshControl, Alert, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,6 +17,9 @@ type Props = {
     NativeStackNavigationProp<RootStackParamList>
   >;
 };
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const CARD_W = (SCREEN_W - 16 * 2 - 12) / 2;
 
 const C = {
   bg: '#FFFFFF', bgSoft: '#FAFAFA', ink: '#1F2937', soft: '#4B5563',
@@ -86,58 +89,35 @@ export default function BrowseListingsScreen({ navigation }: Props) {
 
     return (
       <Pressable
-        style={st.card}
+        style={[st.card, { width: CARD_W }]}
         onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
-        activeOpacity={0.85}
       >
         {/* Fotoğraf / renk banner */}
-        <View style={[st.photo, { backgroundColor: isColor ? photo : C.brandBg }]}>
-          {!isColor && photo && (
-            <Text style={st.photoPlaceholder}>🏠</Text>
-          )}
-          {isColor && <Text style={st.photoPlaceholder}>🏠</Text>}
+        <View style={[st.photo, { backgroundColor: isColor ? photo : C.brandBg, height: CARD_W * 0.75 }]}>
+          <Text style={st.photoPlaceholder}>🏠</Text>
 
-          {/* Favori butonu */}
           <Pressable
             style={st.favBtn}
             onPress={() => handleFavorite(item)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={{ fontSize: 18 }}>{isFav ? '♥' : '♡'}</Text>
+            <Text style={{ fontSize: 14 }}>{isFav ? '♥' : '♡'}</Text>
           </Pressable>
 
-          {/* Fiyat badge */}
           <View style={st.priceBadge}>
-            <Text style={st.priceTxt}>{item.price} PLN/ay</Text>
+            <Text style={st.priceTxt}>{item.price} PLN</Text>
           </View>
         </View>
 
         <View style={st.cardBody}>
           <Text style={st.cardTitle} numberOfLines={1}>{item.address}</Text>
-          <Text style={st.cardSub}>
-            📍 {item.city}{item.district ? ` · ${item.district}` : ''}
+          <Text style={st.cardSub} numberOfLines={1}>
+            📍 {item.city}
           </Text>
-
           <View style={st.tagRow}>
             <View style={st.tag}><Text style={st.tagTxt}>{item.rooms} oda</Text></View>
-            {item.furnished && <View style={st.tag}><Text style={st.tagTxt}>Eşyalı</Text></View>}
-            {item.wifi      && <View style={st.tag}><Text style={st.tagTxt}>WiFi</Text></View>}
-            {item.petsAllowed && <View style={st.tag}><Text style={st.tagTxt}>Evcil hayvanlı</Text></View>}
+            {item.wifi && <View style={st.tag}><Text style={st.tagTxt}>WiFi</Text></View>}
           </View>
-
-          {/* Ev sahibine mesaj */}
-          <Pressable
-            style={st.msgBtn}
-            onPress={() => {
-              if (item.owner?.matchId) {
-                navigation.navigate('Chat', { matchId: item.owner.matchId });
-              } else {
-                navigation.navigate('ListingDetail', { listingId: item.id });
-              }
-            }}
-          >
-            <Text style={st.msgBtnTxt}>💬 Ev Sahibine Mesaj</Text>
-          </Pressable>
         </View>
       </Pressable>
     );
@@ -220,7 +200,9 @@ export default function BrowseListingsScreen({ navigation }: Props) {
           data={listings}
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16, gap: 16 }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
+          contentContainerStyle={{ paddingVertical: 16 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.brand} />
           }
@@ -251,18 +233,16 @@ const st = StyleSheet.create({
   errorTxt:   { color: C.soft, fontSize: 15, textAlign: 'center', marginBottom: 20 },
   retryBtn:   { backgroundColor: C.brandBg, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 20 },
   retryTxt:   { color: C.brand, fontWeight: '700', fontSize: 14 },
-  card:      { backgroundColor: C.bg, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: 'hidden', shadowColor: '#1F2937', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
-  photo:     { height: 160, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  photoPlaceholder: { fontSize: 48 },
-  favBtn:    { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 20, width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  priceBadge:{ position: 'absolute', bottom: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10 },
-  priceTxt:  { color: '#fff', fontSize: 13, fontWeight: '700' },
-  cardBody:  { padding: 14 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: C.ink, marginBottom: 4 },
-  cardSub:   { fontSize: 13, color: C.mute, marginBottom: 10 },
-  tagRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  tag:       { backgroundColor: C.brandBg, borderRadius: 8, paddingVertical: 3, paddingHorizontal: 9 },
-  tagTxt:    { fontSize: 12, color: C.brandTx, fontWeight: '600' },
-  msgBtn:    { backgroundColor: C.brandBg, borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: C.brand + '55' },
-  msgBtnTxt: { color: C.brand, fontSize: 13, fontWeight: '700' },
+  card:      { backgroundColor: C.bg, borderRadius: 14, borderWidth: 1, borderColor: C.line, overflow: 'hidden', shadowColor: '#1F2937', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3, marginBottom: 12 },
+  photo:     { alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  photoPlaceholder: { fontSize: 32 },
+  favBtn:    { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 16, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  priceBadge:{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.55)', paddingVertical: 4, paddingHorizontal: 8 },
+  priceTxt:  { color: '#fff', fontSize: 11, fontWeight: '800' },
+  cardBody:  { padding: 10 },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: C.ink, marginBottom: 2 },
+  cardSub:   { fontSize: 11, color: C.mute, marginBottom: 6 },
+  tagRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  tag:       { backgroundColor: C.brandBg, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 6 },
+  tagTxt:    { fontSize: 10, color: C.brandTx, fontWeight: '600' },
 });
