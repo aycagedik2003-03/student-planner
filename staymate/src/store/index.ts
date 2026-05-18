@@ -124,6 +124,8 @@ type AppStore = {
   getMessages: (matchId: string) => ChatMessage[];
 
   // ── Quiz ─────────────────────────────────────────────────────────────────────
+  quizCompleted: boolean;
+  setQuizCompleted: (v: boolean) => void;
   quizAnswers: (number | null)[];
   setQuizAnswers: (answers: (number | null)[]) => void;
   quizCity: string | null;
@@ -161,7 +163,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ── User ─────────────────────────────────────────────────────────────────────
   user: null,
   setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null, token: null, profile: null }),
+  clearUser: () => set({ user: null, token: null, profile: null, quizCompleted: false }),
 
   // ── Profile ──────────────────────────────────────────────────────────────────
   profile: null,
@@ -192,6 +194,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   getMessages: (matchId) => get().messages[matchId] ?? [],
 
   // ── Quiz ─────────────────────────────────────────────────────────────────────
+  quizCompleted: false,
+  setQuizCompleted: (quizCompleted) => set({ quizCompleted }),
   quizAnswers: [],
   setQuizAnswers: (answers) => set({ quizAnswers: answers }),
   quizCity: null,

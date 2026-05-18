@@ -36,7 +36,9 @@ import NotificationCenterScreen  from './src/screens/NotificationCenterScreen';
 import EmailVerificationScreen   from './src/screens/EmailVerificationScreen';
 
 import { authService }                   from './src/api/AuthService';
+import { profileService }                from './src/api/ProfileService';
 import { useAppStore }                   from './src/store';
+import { useTranslation }                from './src/i18n/useTranslation';
 import { registerForPushNotifications }  from './src/services/NotificationService';
 import { navigationRef }                 from './src/utils/navigationRef';
 
@@ -114,6 +116,7 @@ const LANDLORD_ICONS: Record<string, string> = {
 const StudentTab = createBottomTabNavigator<TabParamList>();
 
 function StudentTabs() {
+  const { t } = useTranslation();
   return (
     <StudentTab.Navigator
       screenOptions={({ route }) => ({
@@ -134,11 +137,11 @@ function StudentTabs() {
         ),
       })}
     >
-      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: 'Keşfet'      }} />
-      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: 'İlanlar'     }} />
-      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: 'Mesajlar'    }} />
-      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: 'Bildirimler' }} />
-      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: 'Profil'      }} />
+      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: t('tabs.discover')      }} />
+      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: t('tabs.listings')      }} />
+      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: t('tabs.messages')      }} />
+      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: t('tabs.notifications') }} />
+      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: t('tabs.profile')       }} />
     </StudentTab.Navigator>
   );
 }
@@ -147,6 +150,7 @@ function StudentTabs() {
 const LandlordTab = createBottomTabNavigator<LandlordTabParamList>();
 
 function LandlordTabs() {
+  const { t } = useTranslation();
   return (
     <LandlordTab.Navigator
       screenOptions={({ route }) => ({
@@ -167,11 +171,11 @@ function LandlordTabs() {
         ),
       })}
     >
-      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: 'İlanlarım'   }} />
-      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}  options={{ tabBarLabel: 'Öğrenciler'  }} />
-      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}            options={{ tabBarLabel: 'Mesajlar'    }} />
-      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}  options={{ tabBarLabel: 'Bildirimler' }} />
-      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}     options={{ tabBarLabel: 'Profil'      }} />
+      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: t('tabs.myListings')    }} />
+      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}   options={{ tabBarLabel: t('tabs.students')       }} />
+      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}             options={{ tabBarLabel: t('tabs.messages')       }} />
+      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}   options={{ tabBarLabel: t('tabs.notifications')  }} />
+      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}      options={{ tabBarLabel: t('tabs.profile')        }} />
     </LandlordTab.Navigator>
   );
 }
@@ -212,7 +216,7 @@ const splash = StyleSheet.create({
 
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const { setToken, setUserType } = useAppStore();
+  const { setToken, setUserType, setProfile, setQuizCompleted } = useAppStore();
 
   const [isReady,      setIsReady]      = useState(false);
   const [initialRoute, setInitialRoute] =
@@ -227,12 +231,22 @@ export default function App() {
         if (token) {
           setToken(token);
 
-          // user_type'ı storage'dan oku ve store'a yaz
           const storedType = await authService.getUserType();
           setUserType(storedType);
 
-          // user_type'a göre başlangıç ekranını belirle
-          setInitialRoute(storedType === 'landlord' ? 'LandlordTabs' : 'Onboarding');
+          if (storedType === 'landlord') {
+            setInitialRoute('LandlordTabs');
+          } else {
+            try {
+              const profile = await profileService.getProfile();
+              setProfile(profile);
+              const done = !!(profile.quizCompleted || (profile.traits && profile.traits.length > 0));
+              setQuizCompleted(done);
+              setInitialRoute(done ? 'MainTabs' : 'Onboarding');
+            } catch {
+              setInitialRoute('Onboarding');
+            }
+          }
         } else {
           setInitialRoute('Auth');
         }
@@ -244,7 +258,7 @@ export default function App() {
     };
 
     bootstrap();
-  }, [setToken, setUserType]);
+  }, [setToken, setUserType, setProfile, setQuizCompleted]);
 
   if (!isReady) {
     if (Platform.OS === 'web') {

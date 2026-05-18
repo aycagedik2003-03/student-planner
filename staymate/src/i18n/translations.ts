@@ -67,6 +67,9 @@ export const translations = {
       message:       'Mesaj Gönder',
     },
     quiz: {
+      notCompleted:    'Quiz henüz tamamlanmadı',
+      notCompletedDesc:'Quiz tamamlanmamış',
+      takeQuiz:        'Quizi Doldur',
       catSleep:  'Uyku Düzeni',
       catClean:  'Temizlik',
       catSocial: 'Sosyallik',
@@ -155,6 +158,7 @@ export const translations = {
     },
     profile: {
       title:        'Senin Profilin',
+      edit:         'Düzenle',
       traits:       'Öne çıkan özellikler',
       traitsSub:    'Ev arkadaşı adayları bu özelliklere göre eşleştirilecek.',
       traitsLabel:  'SENİN PROFİLİN',
@@ -178,6 +182,15 @@ export const translations = {
       rooms:       '{0} oda',
       pricePerMonth:'{0} PLN/ay',
       wifi:        'WiFi',
+    },
+    tabs: {
+      discover:      'Keşfet',
+      listings:      'İlanlar',
+      messages:      'Mesajlar',
+      notifications: 'Bildirimler',
+      profile:       'Profil',
+      myListings:    'İlanlarım',
+      students:      'Öğrenciler',
     },
   },
 
@@ -249,6 +262,9 @@ export const translations = {
       message:       'Wyślij wiadomość',
     },
     quiz: {
+      notCompleted:    'Quiz nie ukończony',
+      notCompletedDesc:'Quiz nie został ukończony',
+      takeQuiz:        'Wypełnij quiz',
       catSleep:  'Rytm snu',
       catClean:  'Czystość',
       catSocial: 'Towarzyskość',
@@ -334,6 +350,7 @@ export const translations = {
     },
     profile: {
       title:       'Twój profil',
+      edit:        'Edytuj',
       traits:      'Wyróżniające cechy',
       traitsSub:   'Potencjalni współlokatorzy będą dopasowywani na podstawie tych cech.',
       traitsLabel: 'TWÓJ PROFIL',
@@ -357,6 +374,15 @@ export const translations = {
       rooms:        '{0} pokoje',
       pricePerMonth:'{0} PLN/mies.',
       wifi:         'WiFi',
+    },
+    tabs: {
+      discover:      'Odkryj',
+      listings:      'Ogłoszenia',
+      messages:      'Wiadomości',
+      notifications: 'Powiadomienia',
+      profile:       'Profil',
+      myListings:    'Moje oferty',
+      students:      'Studenci',
     },
   },
 
@@ -428,6 +454,9 @@ export const translations = {
       message:       'Send Message',
     },
     quiz: {
+      notCompleted:    'Quiz not completed',
+      notCompletedDesc:'Quiz not yet completed',
+      takeQuiz:        'Take Quiz',
       catSleep:  'Sleep Pattern',
       catClean:  'Cleanliness',
       catSocial: 'Sociability',
@@ -513,6 +542,7 @@ export const translations = {
     },
     profile: {
       title:       'Your Profile',
+      edit:        'Edit',
       traits:      'Highlighted traits',
       traitsSub:   'Potential roommates will be matched based on these traits.',
       traitsLabel: 'YOUR PROFILE',
@@ -536,6 +566,15 @@ export const translations = {
       rooms:        '{0} rooms',
       pricePerMonth:'{0} PLN/mo',
       wifi:         'WiFi',
+    },
+    tabs: {
+      discover:      'Discover',
+      listings:      'Listings',
+      messages:      'Messages',
+      notifications: 'Notifications',
+      profile:       'Profile',
+      myListings:    'My Listings',
+      students:      'Students',
     },
   },
 } as const;

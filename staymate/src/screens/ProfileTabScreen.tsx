@@ -47,7 +47,7 @@ function deriveTraits(a: (number | null)[]): Trait[] {
 }
 
 export default function ProfileTabScreen({ navigation }: Props) {
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const setLanguage  = useAppStore(s => s.setLanguage);
   const quizAnswers  = useAppStore(s => s.quizAnswers);
   const quizCity     = useAppStore(s => s.quizCity);
@@ -76,12 +76,12 @@ export default function ProfileTabScreen({ navigation }: Props) {
 
   const handleLogout = () => {
     Alert.alert(
-      'Çıkış Yap',
-      'Hesabından çıkmak istediğine emin misin?',
+      t('settings.logout'),
+      t('settings.logoutConfirm'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Çıkış Yap', style: 'destructive',
+          text: t('settings.logout'), style: 'destructive',
           onPress: async () => {
             await authService.logout();
             const store = useAppStore.getState();
@@ -100,10 +100,10 @@ export default function ProfileTabScreen({ navigation }: Props) {
   };
 
   const SETTINGS = [
-    { icon: '⚙️',  label: 'Ayarlar',       onPress: () => navigation.navigate('Settings' as any) },
-    { icon: '🔒', label: 'Gizlilik',       onPress: () => navigation.navigate('Settings' as any) },
-    { icon: '💬', label: 'Yardım & Destek',onPress: () => navigation.navigate('Help' as any) },
-    { icon: '🚪', label: 'Çıkış Yap',     onPress: handleLogout },
+    { icon: '⚙️',  label: t('settings.title'),      onPress: () => navigation.navigate('Settings' as any), danger: false },
+    { icon: '🔒', label: t('settings.privacy'),     onPress: () => navigation.navigate('Settings' as any), danger: false },
+    { icon: '💬', label: t('settings.helpSupport'), onPress: () => navigation.navigate('Help' as any),     danger: false },
+    { icon: '🚪', label: t('settings.logout'),      onPress: handleLogout,                                 danger: true  },
   ];
 
   return (
@@ -112,13 +112,13 @@ export default function ProfileTabScreen({ navigation }: Props) {
 
       {/* Header */}
       <View style={st.header}>
-        <Text style={st.hTitle}>Profil</Text>
+        <Text style={st.hTitle}>{t('tabs.profile')}</Text>
         <TouchableOpacity
           style={st.editBtn}
           onPress={() => navigation.navigate('ProfileEdit')}
           activeOpacity={0.7}
         >
-          <Text style={st.editTxt}>Düzenle</Text>
+          <Text style={st.editTxt}>{t('profile.edit')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -155,7 +155,7 @@ export default function ProfileTabScreen({ navigation }: Props) {
           </View>
 
           <View style={st.scorePill}>
-            <Text style={st.scoreTxt}>✦ {traits.length} özellik · Quiz tamamlandı</Text>
+            <Text style={st.scoreTxt}>✦ {traits.length} {t('profile.traits')} · {t('profile.quizDone')}</Text>
           </View>
 
           {!isVerified && (
@@ -164,7 +164,7 @@ export default function ProfileTabScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Verification')}
               activeOpacity={0.85}
             >
-              <Text style={st.verifyBtnTxt}>🎓 Öğrenci Kimliğini Doğrula</Text>
+              <Text style={st.verifyBtnTxt}>🎓 {t('settings.verifyStudent')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -189,18 +189,18 @@ export default function ProfileTabScreen({ navigation }: Props) {
 
         {/* Traits */}
         <View style={st.section}>
-          <Text style={st.sectionLabel}>ÖZELLİKLER</Text>
+          <Text style={st.sectionLabel}>{t('profile.traitsLabel')}</Text>
           <View style={st.grid}>
             {traits.length > 0 ? (
-              traits.map((t, i) => (
-                <View key={i} style={[st.traitCard, { backgroundColor: bgMap[t.color], borderColor: bdMap[t.color] }]}>
-                  <Text style={st.traitIcon}>{t.icon}</Text>
-                  <Text style={[st.traitLabel, { color: txMap[t.color] }]}>{t.label}</Text>
+              traits.map((trait, i) => (
+                <View key={i} style={[st.traitCard, { backgroundColor: bgMap[trait.color], borderColor: bdMap[trait.color] }]}>
+                  <Text style={st.traitIcon}>{trait.icon}</Text>
+                  <Text style={[st.traitLabel, { color: txMap[trait.color] }]}>{trait.label}</Text>
                 </View>
               ))
             ) : (
               <View style={st.emptyCard}>
-                <Text style={st.emptyTxt}>Quiz henüz tamamlanmadı.</Text>
+                <Text style={st.emptyTxt}>{t('quiz.notCompleted')}</Text>
               </View>
             )}
           </View>
@@ -208,16 +208,16 @@ export default function ProfileTabScreen({ navigation }: Props) {
 
         {/* Settings */}
         <View style={st.settingsSection}>
-          <Text style={st.sectionLabel}>HESAP</Text>
+          <Text style={st.sectionLabel}>{t('settings.sectionAccount')}</Text>
           {SETTINGS.map((item, i) => (
             <TouchableOpacity
               key={i}
-              style={[st.settingsRow, item.label === 'Çıkış Yap' && st.logoutRow]}
+              style={[st.settingsRow, item.danger && st.logoutRow]}
               onPress={item.onPress}
               activeOpacity={0.7}
             >
               <Text style={st.settingsIcon}>{item.icon}</Text>
-              <Text style={[st.settingsLabel, item.label === 'Çıkış Yap' && st.logoutLabel]}>
+              <Text style={[st.settingsLabel, item.danger && st.logoutLabel]}>
                 {item.label}
               </Text>
               <Text style={st.settingsChevron}>›</Text>

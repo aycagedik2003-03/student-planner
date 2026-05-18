@@ -15,6 +15,7 @@ import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { profileService } from '../api/ProfileService';
 import { verificationService } from '../api/VerificationService';
+import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -138,12 +139,14 @@ function TraitPill({ label }: { label: string }) {
 
 // ── Ana bileşen ────────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }: Props) {
-  const quizAnswers = useAppStore(s => s.quizAnswers);
-  const quizCity    = useAppStore(s => s.quizCity);
-  const isVerified  = useAppStore(s => s.isVerified);
+  const { t }        = useTranslation();
+  const quizAnswers  = useAppStore(s => s.quizAnswers);
+  const quizCity     = useAppStore(s => s.quizCity);
+  const isVerified   = useAppStore(s => s.isVerified);
   const setVerified  = useAppStore(s => s.setVerified);
   const storeProfile = useAppStore(s => s.profile);
   const setProfile   = useAppStore(s => s.setProfile);
+  const setQuizCompleted = useAppStore(s => s.setQuizCompleted);
   const userType     = useAppStore(s => s.userType);
   const isLandlord   = userType === 'landlord';
 
@@ -159,6 +162,9 @@ export default function ProfileScreen({ navigation }: Props) {
       try {
         const profile = await profileService.getProfile();
         setProfile(profile);
+        if (profile.quizCompleted || (profile.traits && profile.traits.length > 0)) {
+          setQuizCompleted(true);
+        }
       } catch (error: any) {
         console.error('Profile load error:', error);
         const msg =
@@ -216,7 +222,7 @@ export default function ProfileScreen({ navigation }: Props) {
         <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         <View style={st.loadingWrap}>
           <ActivityIndicator size="large" color={C.brandA} />
-          <Text style={st.loadingTxt}>Profil yükleniyor…</Text>
+          <Text style={st.loadingTxt}>{t('profile.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -231,7 +237,7 @@ export default function ProfileScreen({ navigation }: Props) {
         <TouchableOpacity style={st.hBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Text style={st.hBtnTxt}>←</Text>
         </TouchableOpacity>
-        <Text style={st.hTitle}>Senin Profilin</Text>
+        <Text style={st.hTitle}>{t('profile.title')}</Text>
         {/* Profil Düzenle — sağ üst köşe */}
         <TouchableOpacity
           style={st.hBtn}
@@ -319,9 +325,9 @@ export default function ProfileScreen({ navigation }: Props) {
 
           {/* Trait sayısı pill */}
           <View style={st.scorePill}>
-            <Text style={st.scoreTxt}>✦ Quiz tamamlandı</Text>
+            <Text style={st.scoreTxt}>✦ {t('profile.quizDone')}</Text>
             <View style={st.scoreDot} />
-            <Text style={st.scoreTxt}>{traits.length} özellik belirlendi</Text>
+            <Text style={st.scoreTxt}>{t('profile.features').replace('{0}', String(traits.length))}</Text>
           </View>
 
           {/* Doğrulama butonu — sadece öğrenci */}
@@ -331,18 +337,16 @@ export default function ProfileScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Verification')}
               activeOpacity={0.85}
             >
-              <Text style={st.verifyBtnTxt}>🎓 Öğrenci Kimliğini Doğrula</Text>
+              <Text style={st.verifyBtnTxt}>🎓 {t('settings.verifyStudent')}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* ── Özellikler bölümü ── */}
         <View style={st.section}>
-          <Text style={st.sectionEyebrow}>SENİN PROFİLİN</Text>
-          <Text style={st.sectionTitle}>Öne çıkan özellikler</Text>
-          <Text style={st.sectionSub}>
-            Ev arkadaşı adayları bu özelliklere göre eşleştirilecek.
-          </Text>
+          <Text style={st.sectionEyebrow}>{t('profile.traitsLabel')}</Text>
+          <Text style={st.sectionTitle}>{t('profile.traits')}</Text>
+          <Text style={st.sectionSub}>{t('profile.traitsSub')}</Text>
         </View>
 
         {/* ── Trait pills ── */}
@@ -351,7 +355,7 @@ export default function ProfileScreen({ navigation }: Props) {
             ? traitLabels.map(label => <TraitPill key={label} label={label} />)
             : (
               <View style={st.emptyCard}>
-                <Text style={st.emptyTxt}>Quiz cevapları henüz yok.</Text>
+                <Text style={st.emptyTxt}>{t('profile.noTraits')}</Text>
               </View>
             )
           }
@@ -364,7 +368,7 @@ export default function ProfileScreen({ navigation }: Props) {
             onPress={() => navigation.replace(isLandlord ? 'LandlordTabs' : 'MainTabs')}
             activeOpacity={0.85}
           >
-            <Text style={st.ctaTxt}>{isLandlord ? 'İlanlarıma Git' : 'Eşleşmeleri Gör'}</Text>
+            <Text style={st.ctaTxt}>{isLandlord ? t('profile.myListings') : t('profile.seeMatches')}</Text>
             <Text style={st.ctaArrow}>→</Text>
           </TouchableOpacity>
 
@@ -373,7 +377,7 @@ export default function ProfileScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('ProfileEdit')}
             activeOpacity={0.7}
           >
-            <Text style={st.editTxt}>Profili düzenle</Text>
+            <Text style={st.editTxt}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
