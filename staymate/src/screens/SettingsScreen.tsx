@@ -76,8 +76,6 @@ function ToggleRow({
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function SettingsScreen({ navigation }: Props) {
   const isVerified      = useAppStore(s => s.isVerified);
-  const notifPrefs      = useAppStore(s => s.notificationPreferences);
-  const updateNotifPref = useAppStore(s => s.updateNotificationPref);
   const appSettings     = useAppStore(s => s.appSettings);
   const updateSetting   = useAppStore(s => s.updateSetting);
   const language        = useAppStore(s => s.language);
@@ -144,31 +142,6 @@ export default function SettingsScreen({ navigation }: Props) {
           <Row icon="🎓"
             label={isVerified ? t('settings.verifiedStudent') : t('settings.verifyStudent')}
             onPress={() => navigation.navigate('Verification')} />
-        </View>
-
-        {/* ── Bildirimler ── */}
-        <SectionHeader label={t('settings.sectionNotif')} />
-        <View style={st.card}>
-          <ToggleRow
-            icon="💞" label={t('settings.notifMatches')}
-            sub={t('settings.notifMatchesSub')}
-            value={notifPrefs.matches}
-            onChange={v => updateNotifPref('matches', v)}
-          />
-          <View style={st.rowDivider} />
-          <ToggleRow
-            icon="💬" label={t('settings.notifMessages')}
-            sub={t('settings.notifMessagesSub')}
-            value={notifPrefs.messages}
-            onChange={v => updateNotifPref('messages', v)}
-          />
-          <View style={st.rowDivider} />
-          <ToggleRow
-            icon="🏠" label={t('settings.notifListings')}
-            sub={t('settings.notifListingsSub')}
-            value={notifPrefs.listings}
-            onChange={v => updateNotifPref('listings', v)}
-          />
         </View>
 
         {/* ── Gizlilik ── */}

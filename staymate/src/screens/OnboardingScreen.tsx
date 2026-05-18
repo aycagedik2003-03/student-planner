@@ -48,25 +48,27 @@ export default function OnboardingScreen({ navigation }: Props) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }}>
 
-      {/* Dil seçeneği */}
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
-        {languageButtons.map((lang) => (
+      {/* Modern dil seçici */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24, marginTop: 16, paddingHorizontal: 20 }}>
+        {(['pl', 'tr', 'en'] as const).map(lang => (
           <Pressable
-            key={lang.code}
-            onPress={() => setLanguage(lang.code)}
+            key={lang}
+            onPress={() => setLanguage(lang)}
             style={{
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: 16,
-              backgroundColor: language === lang.code ? '#1D9E75' : '#E1F5EE',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: language === lang ? '#1D9E75' : '#E1F5EE',
+              borderWidth: 1,
+              borderColor: '#1D9E75',
             }}
           >
             <Text style={{
-              color: language === lang.code ? '#fff' : '#085041',
-              fontSize: 11,
-              fontWeight: '500',
+              color: language === lang ? '#fff' : '#1D9E75',
+              fontWeight: language === lang ? '700' : '500',
+              fontSize: 14,
             }}>
-              {lang.label}
+              {lang === 'pl' ? 'Polski' : lang === 'tr' ? 'Türkçe' : 'English'}
             </Text>
           </Pressable>
         ))}
@@ -77,7 +79,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         {/* Logo */}
         <View style={{
           width: 80, height: 80, backgroundColor: '#1D9E75', borderRadius: 20,
-          justifyContent: 'center', alignItems: 'center', marginBottom: 16, marginTop: 20,
+          justifyContent: 'center', alignItems: 'center', marginBottom: 16, marginTop: 0,
         }}>
           <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#fff' }}>s</Text>
         </View>

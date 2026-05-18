@@ -71,6 +71,12 @@ export type NotificationPreferences = {
   listings: boolean;
 };
 
+export type NotificationSettings = {
+  newMatch:   boolean;
+  newMessage: boolean;
+  system:     boolean;
+};
+
 export type AppSettings = {
   profileHidden: boolean;
 };
@@ -137,6 +143,8 @@ type AppStore = {
   setVerified: (v: boolean) => void;
   notificationPreferences: NotificationPreferences;
   updateNotificationPref: (key: keyof NotificationPreferences, val: boolean) => void;
+  notificationSettings: NotificationSettings;
+  updateNotificationSetting: (key: keyof NotificationSettings, val: boolean) => void;
   appSettings: AppSettings;
   updateSetting: (key: keyof AppSettings, val: boolean) => void;
   language: 'tr' | 'pl' | 'en';
@@ -204,6 +212,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   language: 'pl',
   setLanguage: (language) => set({ language }),
   notificationPreferences: { matches: true, messages: true, listings: false },
+  notificationSettings: { newMatch: true, newMessage: true, system: true },
+  updateNotificationSetting: (key, val) =>
+    set((s) => ({
+      notificationSettings: { ...s.notificationSettings, [key]: val },
+    })),
   updateNotificationPref: (key, val) =>
     set((s) => ({
       notificationPreferences: { ...s.notificationPreferences, [key]: val },

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Alert, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TabParamList, RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
+import { useTranslation } from '../i18n/useTranslation';
 
 type NavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'ProfileTab'>,
@@ -46,6 +47,8 @@ function deriveTraits(a: (number | null)[]): Trait[] {
 }
 
 export default function ProfileTabScreen({ navigation }: Props) {
+  const { language } = useTranslation();
+  const setLanguage  = useAppStore(s => s.setLanguage);
   const quizAnswers  = useAppStore(s => s.quizAnswers);
   const quizCity     = useAppStore(s => s.quizCity);
   const isVerified   = useAppStore(s => s.isVerified);
@@ -67,9 +70,9 @@ export default function ProfileTabScreen({ navigation }: Props) {
         }))
       : deriveTraits(quizAnswers);
 
-  const bgMap: Record<TraitColor, string> = { teal: C.darkBg, pink: C.darkBg, dark: '#111318' };
-  const txMap: Record<TraitColor, string> = { teal: C.brandA, pink: C.brandB, dark: C.mute };
-  const bdMap: Record<TraitColor, string> = { teal: C.brandA + '30', pink: C.brandB + '30', dark: 'rgba(255,255,255,0.06)' };
+  const bgMap: Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
+  const txMap: Record<TraitColor, string> = { teal: '#fff',    pink: '#fff',    dark: '#fff'    };
+  const bdMap: Record<TraitColor, string> = { teal: '#1D9E75', pink: '#1D9E75', dark: '#1D9E75' };
 
   const handleLogout = () => {
     Alert.alert(
@@ -97,10 +100,10 @@ export default function ProfileTabScreen({ navigation }: Props) {
   };
 
   const SETTINGS = [
-    { icon: '🔔', label: 'Bildirimler', onPress: () => navigation.navigate('Settings' as any) },
-    { icon: '🔒', label: 'Gizlilik',    onPress: () => navigation.navigate('Settings' as any) },
-    { icon: '💬', label: 'Yardım & Destek', onPress: () => Alert.alert('Yardım', 'Yakında kullanıma girecek.') },
-    { icon: '🚪', label: 'Çıkış Yap',   onPress: handleLogout },
+    { icon: '⚙️',  label: 'Ayarlar',       onPress: () => navigation.navigate('Settings' as any) },
+    { icon: '🔒', label: 'Gizlilik',       onPress: () => navigation.navigate('Settings' as any) },
+    { icon: '💬', label: 'Yardım & Destek',onPress: () => navigation.navigate('Help' as any) },
+    { icon: '🚪', label: 'Çıkış Yap',     onPress: handleLogout },
   ];
 
   return (
@@ -164,6 +167,24 @@ export default function ProfileTabScreen({ navigation }: Props) {
               <Text style={st.verifyBtnTxt}>🎓 Öğrenci Kimliğini Doğrula</Text>
             </TouchableOpacity>
           )}
+        </View>
+
+        {/* Dil seçici */}
+        <View style={st.langCard}>
+          <Text style={st.langTitle}>🌐 Dil</Text>
+          <View style={st.langRow}>
+            {(['pl', 'tr', 'en'] as const).map(lang => (
+              <Pressable
+                key={lang}
+                onPress={() => setLanguage(lang)}
+                style={[st.langBtn, language === lang && st.langBtnActive]}
+              >
+                <Text style={[st.langBtnTxt, language === lang && st.langBtnTxtActive]}>
+                  {lang === 'pl' ? 'PL' : lang === 'tr' ? 'TR' : 'EN'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* Traits */}
@@ -272,6 +293,13 @@ const st = StyleSheet.create({
   emptyCard:    { width: '100%', padding: 20, alignItems: 'center', backgroundColor: C.bgSoft, borderRadius: 16, borderWidth: 1, borderColor: C.line },
   emptyTxt:     { color: C.mute, fontSize: 14 },
 
+  langCard:       { marginHorizontal: 18, marginTop: 20, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(31,41,55,0.08)' },
+  langTitle:      { fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
+  langRow:        { flexDirection: 'row', gap: 10 },
+  langBtn:        { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  langBtnActive:  { backgroundColor: '#1D9E75', borderColor: '#1D9E75' },
+  langBtnTxt:     { fontSize: 14, fontWeight: '600', color: '#1F2937' },
+  langBtnTxtActive:{ color: '#fff' },
   settingsSection: { paddingHorizontal: 18, paddingTop: 24 },
   settingsRow:     { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: C.bgSoft, borderRadius: 14, borderWidth: 1, borderColor: C.line, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8 },
   logoutRow:       { backgroundColor: '#FEF2F2', borderColor: '#EF444433' },

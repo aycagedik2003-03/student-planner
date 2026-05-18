@@ -31,6 +31,7 @@ import ChangePasswordScreen      from './src/screens/ChangePasswordScreen';
 import HelpScreen                from './src/screens/HelpScreen';
 import DeleteAccountScreen       from './src/screens/DeleteAccountScreen';
 import AboutScreen               from './src/screens/AboutScreen';
+import NotificationCenterScreen  from './src/screens/NotificationCenterScreen';
 
 import { authService }                   from './src/api/AuthService';
 import { useAppStore }                   from './src/store';
@@ -39,11 +40,11 @@ import { navigationRef }                 from './src/utils/navigationRef';
 
 // ── Student tab param list ─────────────────────────────────────────────────────
 export type TabParamList = {
-  Match:          undefined;
-  BrowseListings: undefined;
-  ChatListTab:    undefined;
-  ProfileTab:     undefined;
-  Settings:       undefined;
+  Match:         undefined;
+  BrowseListings:undefined;
+  ChatListTab:   undefined;
+  Notifications: undefined;
+  ProfileTab:    undefined;
 };
 
 // ── Landlord tab param list ────────────────────────────────────────────────────
@@ -51,8 +52,8 @@ export type LandlordTabParamList = {
   MyListings:         undefined;
   InterestedStudents: undefined;
   ChatListTab:        undefined;
+  Notifications:      undefined;
   LandlordProfile:    undefined;
-  Settings:           undefined;
 };
 
 // ── Root stack param list ──────────────────────────────────────────────────────
@@ -74,6 +75,7 @@ export type RootStackParamList = {
   Help:            undefined;
   DeleteAccount:   undefined;
   About:           undefined;
+  Settings:        undefined;
   Verification:    undefined;
   ProfileEdit:     undefined;
   PrivacyPolicy:   undefined;
@@ -91,18 +93,18 @@ export type RootStackParamList = {
 
 // ── Tab icon maps ──────────────────────────────────────────────────────────────
 const STUDENT_ICONS: Record<string, string> = {
-  Match:          '✦',
-  BrowseListings: '🏠',
-  ChatListTab:    '💬',
-  ProfileTab:     '◉',
-  Settings:       '⚙',
+  Match:         '✦',
+  BrowseListings:'🏠',
+  ChatListTab:   '💬',
+  Notifications: '🔔',
+  ProfileTab:    '◉',
 };
 const LANDLORD_ICONS: Record<string, string> = {
   MyListings:         '🏠',
   InterestedStudents: '🎓',
   ChatListTab:        '💬',
+  Notifications:      '🔔',
   LandlordProfile:    '◉',
-  Settings:           '⚙',
 };
 
 // ── Student tabs ───────────────────────────────────────────────────────────────
@@ -129,11 +131,11 @@ function StudentTabs() {
         ),
       })}
     >
-      <StudentTab.Screen name="Match"          component={MatchScreen}          options={{ tabBarLabel: 'Keşfet'  }} />
-      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen} options={{ tabBarLabel: 'İlanlar' }} />
-      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}       options={{ tabBarLabel: 'Mesajlar'}} />
-      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}     options={{ tabBarLabel: 'Profil'  }} />
-      <StudentTab.Screen name="Settings"       component={SettingsScreen}       options={{ tabBarLabel: 'Ayarlar' }} />
+      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: 'Keşfet'      }} />
+      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: 'İlanlar'     }} />
+      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: 'Mesajlar'    }} />
+      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: 'Bildirimler' }} />
+      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: 'Profil'      }} />
     </StudentTab.Navigator>
   );
 }
@@ -162,11 +164,11 @@ function LandlordTabs() {
         ),
       })}
     >
-      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}        options={{ tabBarLabel: 'İlanlarım'  }} />
-      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen} options={{ tabBarLabel: 'Öğrenciler' }} />
-      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}          options={{ tabBarLabel: 'Mesajlar'   }} />
-      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}   options={{ tabBarLabel: 'Profil'     }} />
-      <LandlordTab.Screen name="Settings"           component={SettingsScreen}          options={{ tabBarLabel: 'Ayarlar'    }} />
+      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: 'İlanlarım'   }} />
+      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}  options={{ tabBarLabel: 'Öğrenciler'  }} />
+      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}            options={{ tabBarLabel: 'Mesajlar'    }} />
+      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}  options={{ tabBarLabel: 'Bildirimler' }} />
+      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}     options={{ tabBarLabel: 'Profil'      }} />
     </LandlordTab.Navigator>
   );
 }
@@ -274,6 +276,7 @@ export default function App() {
         <Stack.Screen name="Help"             component={HelpScreen} />
         <Stack.Screen name="DeleteAccount"    component={DeleteAccountScreen} />
         <Stack.Screen name="About"            component={AboutScreen} />
+        <Stack.Screen name="Settings"         component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
