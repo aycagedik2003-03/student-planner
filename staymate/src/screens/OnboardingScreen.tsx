@@ -1,13 +1,12 @@
 import React from 'react';
 import {
-  View, Text, Pressable, Image, Dimensions,
-  StatusBar, StyleSheet, Platform,
+  View, Image, Pressable, Text,
+  Dimensions, StatusBar, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useTranslation } from '../i18n/useTranslation';
 import { useAppStore } from '../store';
 
 type Props = {
@@ -16,53 +15,33 @@ type Props = {
 
 const { width, height } = Dimensions.get('window');
 
-// Logo path (kök assets/ klasöründe)
-const LOGO = require('../../assets/roomski-logo.png');
+const CTA: Record<string, string> = {
+  pl: 'Zacznij', tr: 'Başla', en: 'Get started',
+};
+const LOGIN: Record<string, string> = {
+  pl: 'Mam już konto', tr: 'Hesabım var', en: 'I have an account',
+};
 
-const HERO = require('../../assets/roomski-hero.png');
-
-const CONTENT = {
-  pl: { cta: 'Zacznij',      loginLink: 'Mam już konto'    },
-  tr: { cta: 'Başla',        loginLink: 'Hesabım var'       },
-  en: { cta: 'Get started',  loginLink: 'I have an account' },
-} as const;
-
-type Lang = keyof typeof CONTENT;
-
-// ── Main screen ───────────────────────────────────────────────────────────────
 export default function OnboardingScreen({ navigation }: Props) {
-  const { language } = useTranslation();
-  const setLanguage  = useAppStore(s => s.setLanguage);
-
-  const lang    = (language in CONTENT ? language : 'en') as Lang;
-  const current = CONTENT[lang];
+  const language    = useAppStore(s => s.language);
+  const setLanguage = useAppStore(s => s.setLanguage);
 
   return (
     <SafeAreaView style={st.root} edges={['bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={st.container}>
-        {/* ── HERO IMAGE ────────────────────────────────────────────────────── */}
-        <Image source={HERO} style={st.hero} resizeMode="cover" />
+        {/* Marketing image — full-screen background */}
+        <Image
+          source={require('../../assets/roomski-marketing.png')}
+          style={st.marketing}
+          resizeMode="cover"
+        />
 
-        {/* ── BOTTOM PANEL ──────────────────────────────────────────────────── */}
+        {/* Bottom button strip */}
         <View style={st.bottom}>
-          {/* Logo + wordmark */}
-          <View style={st.logoRow}>
-            <Image source={LOGO} style={st.logoImg} resizeMode="contain" />
-            <Text style={st.logoWord}>roomski</Text>
-          </View>
 
-          {/* Tagline */}
-          <Text style={st.tagline}>Find your people.</Text>
-          <Text style={[st.tagline, st.taglineAccent]}>Feel at home.</Text>
-
-          {/* Description */}
-          <Text style={st.desc}>
-            The easiest way to find a roommate{'\n'}and a place you'll love.
-          </Text>
-
-          {/* CTA — gradient pill */}
+          {/* Gradient CTA */}
           <LinearGradient
             colors={['#00BCD4', '#E91E63']}
             start={{ x: 0, y: 0.5 }}
@@ -73,7 +52,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Auth', { mode: 'register' })}
               style={st.ctaBtn}
             >
-              <Text style={st.ctaTxt}>{current.cta}</Text>
+              <Text style={st.ctaTxt}>{CTA[language] ?? 'Get started'}</Text>
             </Pressable>
           </LinearGradient>
 
@@ -82,7 +61,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Auth', { mode: 'login' })}
             style={st.loginBtn}
           >
-            <Text style={st.loginTxt}>{current.loginLink}</Text>
+            <Text style={st.loginTxt}>{LOGIN[language] ?? 'I have an account'}</Text>
           </Pressable>
 
           {/* Language selector */}
@@ -91,9 +70,9 @@ export default function OnboardingScreen({ navigation }: Props) {
               <Pressable
                 key={l}
                 onPress={() => setLanguage(l)}
-                style={[st.langBtn, lang === l && st.langBtnActive]}
+                style={[st.langBtn, language === l && st.langBtnActive]}
               >
-                <Text style={[st.langTxt, lang === l && st.langTxtActive]}>
+                <Text style={[st.langTxt, language === l && st.langTxtActive]}>
                   {l === 'pl' ? 'PL' : l === 'tr' ? 'TR' : 'EN'}
                 </Text>
               </Pressable>
@@ -105,42 +84,34 @@ export default function OnboardingScreen({ navigation }: Props) {
   );
 }
 
-const HERO_H = height * 0.52;
-
 const st = StyleSheet.create({
   root:      { flex: 1, backgroundColor: '#fff' },
-  container: { flex: 1 },
+  container: { flex: 1, justifyContent: 'flex-end' },
 
-  // Hero
-  hero: { width, height: HERO_H, overflow: 'hidden', position: 'relative' },
+  // Full-screen marketing image
+  marketing: {
+    position: 'absolute',
+    top: 0, left: 0,
+    width, height: height * 0.85,
+  },
 
-  // Bottom panel
-  bottom:    { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: Platform.OS === 'android' ? 16 : 8, backgroundColor: '#fff' },
+  // Button strip at bottom
+  bottom: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
 
-  // Logo
-  logoRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  logoImg:   { width: 44, height: 44, marginRight: 10 },
-  logoWord:  { fontSize: 30, fontWeight: '800', color: '#000', letterSpacing: -1 },
-
-  // Tagline
-  tagline:       { fontSize: 26, fontWeight: '800', color: '#000', lineHeight: 34, letterSpacing: -0.4 },
-  taglineAccent: { color: '#E91E63', marginBottom: 10 },
-
-  // Description
-  desc: { fontSize: 13, color: '#6B7280', lineHeight: 20, marginBottom: 24 },
-
-  // CTA
   ctaGrad: { borderRadius: 30, marginBottom: 12 },
   ctaBtn:  { paddingVertical: 16, alignItems: 'center' },
-  ctaTxt:  { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.2 },
+  ctaTxt:  { color: '#fff', fontSize: 16, fontWeight: '700' },
 
-  // Login
-  loginBtn: { paddingVertical: 10, alignItems: 'center', marginBottom: 16 },
+  loginBtn: { alignItems: 'center', paddingVertical: 10 },
   loginTxt: { color: '#999', fontSize: 14, fontWeight: '500' },
 
-  // Lang
-  langRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  langBtn:       { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16, backgroundColor: '#F3F4F6' },
+  langRow:       { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 12 },
+  langBtn:       { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F0F0F0' },
   langBtnActive: { backgroundColor: '#00BCD4' },
   langTxt:       { fontSize: 12, fontWeight: '500', color: '#666' },
   langTxtActive: { color: '#fff', fontWeight: '700' },
