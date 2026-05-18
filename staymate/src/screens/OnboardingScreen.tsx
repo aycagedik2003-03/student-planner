@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   View, Image, Pressable, Text,
-  Dimensions, StatusBar, StyleSheet,
+  StatusBar, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,8 +12,6 @@ import { useAppStore } from '../store';
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 };
-
-const { width, height } = Dimensions.get('window');
 
 const CTA: Record<string, string> = {
   pl: 'Zacznij', tr: 'Başla', en: 'Get started',
@@ -31,12 +29,14 @@ export default function OnboardingScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <View style={st.container}>
-        {/* Marketing image — full-screen background */}
-        <Image
-          source={require('../../assets/roomski-marketing.png')}
-          style={st.marketing}
-          resizeMode="cover"
-        />
+        {/* Marketing image — fills remaining space */}
+        <View style={st.imageWrap}>
+          <Image
+            source={require('../../assets/roomski-marketing.png')}
+            style={st.marketing}
+            resizeMode="cover"
+          />
+        </View>
 
         {/* Bottom button strip */}
         <View style={st.bottom}>
@@ -86,14 +86,11 @@ export default function OnboardingScreen({ navigation }: Props) {
 
 const st = StyleSheet.create({
   root:      { flex: 1, backgroundColor: '#fff' },
-  container: { flex: 1, justifyContent: 'flex-end' },
+  container: { flex: 1 },
 
-  // Full-screen marketing image
-  marketing: {
-    position: 'absolute',
-    top: 0, left: 0,
-    width, height: height * 0.85,
-  },
+  // Image fills all space above the buttons
+  imageWrap: { flex: 1 },
+  marketing: { width: '100%', height: '100%' },
 
   // Button strip at bottom
   bottom: {
