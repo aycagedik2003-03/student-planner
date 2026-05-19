@@ -11,6 +11,7 @@ import { CompositeNavigationProp } from '@react-navigation/native';
 import { RootStackParamList, TabParamList } from '../../App';
 import { listingService } from '../api/ListingService';
 import type { Listing } from '../data/listings';
+import { useAppStore } from '../store';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -29,10 +30,10 @@ const C = {
   pink: '#FF9ACD', pinkBg: '#FFF0F7',
 };
 
-const CITIES = ['Kraków', 'Warszawa', 'Wrocław', 'Gdańsk', 'Poznań'];
-
 export default function BrowseListingsScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const userCity = useAppStore(s => s.profile?.city ?? '');
+
   const [listings,   setListings]   = useState<Listing[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,23 +41,21 @@ export default function BrowseListingsScreen({ navigation }: Props) {
   const [favorites,  setFavorites]  = useState<Set<string>>(new Set());
 
   // Filtreler
-  const [selectedCity, setSelectedCity] = useState('');
-  const [maxPrice,     setMaxPrice]     = useState('');
-  const [minRooms,     setMinRooms]     = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [minRooms, setMinRooms] = useState('');
 
   const buildFilters = useCallback(() => ({
-    ...(selectedCity ? { city: selectedCity } : {}),
-  }), [selectedCity]);
+    ...(userCity ? { city: userCity } : {}),
+  }), [userCity]);
 
   // Client-side filter for price + rooms (instant, no network)
   const displayListings = useMemo(() => {
     return listings.filter(l => {
-      if (selectedCity && l.city !== selectedCity) return false;
       if (maxPrice && l.price > Number(maxPrice)) return false;
       if (minRooms && l.rooms < Number(minRooms)) return false;
       return true;
     });
-  }, [listings, selectedCity, maxPrice, minRooms]);
+  }, [listings, maxPrice, minRooms]);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -72,7 +71,7 @@ export default function BrowseListingsScreen({ navigation }: Props) {
     }
   }, [buildFilters]);
 
-  useEffect(() => { load(); }, [selectedCity]);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [userCity]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -143,28 +142,15 @@ export default function BrowseListingsScreen({ navigation }: Props) {
         </Text>
       </View>
 
-      {/* Şehir filtresi */}
-      <FlatList
-        data={[null, ...CITIES]}
-        keyExtractor={(c) => c ?? '__all__'}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={st.cityStrip}
-        renderItem={({ item }) => {
-          const isAll = item === null;
-          const active = isAll ? selectedCity === '' : selectedCity === item;
-          return (
-            <Pressable
-              style={[st.cityChip, active && st.cityChipActive]}
-              onPress={() => setSelectedCity(isAll ? '' : item!)}
-            >
-              <Text style={[st.cityTxt, active && st.cityTxtActive]}>
-                {isAll ? t('listing.allCities') : item}
-              </Text>
-            </Pressable>
-          );
-        }}
-      />
+      {/* Şehir badge */}
+      {userCity !== '' && (
+        <View style={st.cityBadgeRow}>
+          <View style={st.cityBadge}>
+            <Text style={{ fontSize: 14 }}>📍</Text>
+            <Text style={st.cityBadgeTxt}>{userCity}</Text>
+          </View>
+        </View>
+      )}
 
       {/* Fiyat + oda filtresi */}
       <View style={st.filterRow}>
@@ -228,11 +214,9 @@ const st = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line },
   title:  { fontSize: 22, fontWeight: '800', color: C.ink },
   count:  { fontSize: 14, color: C.mute },
-  cityStrip: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: 'row' },
-  cityChip:  { borderRadius: 20, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: C.line },
-  cityChipActive: { backgroundColor: C.brandBg, borderColor: C.brand },
-  cityTxt:        { fontSize: 13, fontWeight: '600', color: C.mute },
-  cityTxtActive:  { color: C.brand },
+  cityBadgeRow: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
+  cityBadge:    { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#E0F7FA', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 },
+  cityBadgeTxt: { color: C.brand, fontWeight: '600', fontSize: 14 },
   filterRow:  { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 10, gap: 8 },
   filterInput:{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: C.ink, backgroundColor: C.bgSoft },
   center:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },

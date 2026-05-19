@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { POLISH_CITIES } from '../constants/cities';
 import { quizService, normalizeQuestion, type NormalizedQuestion } from '../api/QuizService';
+import { profileService } from '../api/ProfileService';
 import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
@@ -82,9 +83,11 @@ function buildSegments(questions: NormalizedQuestion[], catLabels: string[]) {
 // ── Ana bileşen ────────────────────────────────────────────────────────────────
 export default function QuizScreen({ navigation }: Props) {
   const { t } = useTranslation();
-  const setQuizAnswers = useAppStore(s => s.setQuizAnswers);
-  const setQuizCity    = useAppStore(s => s.setQuizCity);
-  const savedCity      = useAppStore(s => s.quizCity);
+  const setQuizAnswers   = useAppStore(s => s.setQuizAnswers);
+  const setQuizCity      = useAppStore(s => s.setQuizCity);
+  const savedCity        = useAppStore(s => s.quizCity);
+  const setQuizCompleted = useAppStore(s => s.setQuizCompleted);
+  const setProfile       = useAppStore(s => s.setProfile);
 
   const catLabels = [
     t('quiz.catSleep'), t('quiz.catClean'), t('quiz.catSocial'), t('quiz.catWork'), t('quiz.catLife'),
@@ -225,7 +228,19 @@ export default function QuizScreen({ navigation }: Props) {
       console.log('Submitting quiz answers:', validAnswers);
       await quizService.submitAnswers(validAnswers);
       console.log('Quiz submitted successfully');
-      navigation.replace('Profile');
+
+      // Store'a quiz tamamlandı olarak kaydet
+      setQuizCompleted(true);
+
+      // Profili yeniden yükle (traits backend'den gelecek)
+      try {
+        const updatedProfile = await profileService.getProfile();
+        setProfile(updatedProfile);
+      } catch {
+        // Profil alınamazsa devam et
+      }
+
+      navigation.replace('MainTabs');
     } catch (err: any) {
       console.error('Quiz submit error:', err.response?.data);
       const errorMsg =

@@ -16,6 +16,7 @@ import { RouteProp } from '@react-navigation/native';
 import { useTranslation } from '../i18n/useTranslation';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
+import { profileService } from '../api/ProfileService';
 import { getErrorMessage } from '../api/ErrorHandler';
 import { verificationService } from '../api/VerificationService';
 import { RootStackParamList } from '../../App';
@@ -38,9 +39,11 @@ const C = {
 export default function AuthScreen({ navigation, route }: Props) {
   const { t, language } = useTranslation();
   const setLanguage     = useAppStore((s) => s.setLanguage);
-  const setToken        = useAppStore((s) => s.setToken);
-  const setUser         = useAppStore((s) => s.setUser);
-  const setUserType     = useAppStore((s) => s.setUserType);
+  const setToken         = useAppStore((s) => s.setToken);
+  const setUser          = useAppStore((s) => s.setUser);
+  const setUserType      = useAppStore((s) => s.setUserType);
+  const setProfile       = useAppStore((s) => s.setProfile);
+  const setQuizCompleted = useAppStore((s) => s.setQuizCompleted);
 
   const initialMode = route.params?.mode ?? 'register';
 
@@ -146,10 +149,27 @@ export default function AuthScreen({ navigation, route }: Props) {
       setUserType(resolvedType);
       setUser({ id: response.user_id, name: '', email: email.trim(), quizCompleted: false, userType: resolvedType });
 
-      Alert.alert(t('common.success'), t('auth.loginSuccess'));
       if (resolvedType === 'landlord') {
+        Alert.alert(t('common.success'), t('auth.loginSuccess'));
         navigation.replace('LandlordTabs');
-      } else {
+        return;
+      }
+
+      // Student: backend'den quiz durumunu kontrol et
+      try {
+        const profileData = await profileService.getProfile();
+        setProfile(profileData);
+        const quizDone = !!(
+          (profileData as any)?.quiz_completed ||
+          profileData?.quizCompleted ||
+          (profileData?.traits && profileData.traits.length > 0)
+        );
+        setQuizCompleted(quizDone);
+        Alert.alert(t('common.success'), t('auth.loginSuccess'));
+        navigation.replace(quizDone ? 'MainTabs' : 'Quiz');
+      } catch {
+        // Profil alınamazsa güvenli fallback: MainTabs
+        Alert.alert(t('common.success'), t('auth.loginSuccess'));
         navigation.replace('MainTabs');
       }
     } catch (err: any) {
@@ -163,7 +183,7 @@ export default function AuthScreen({ navigation, route }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [email, password, setToken, setUser, navigation, t]);
+  }, [email, password, setToken, setUser, setProfile, setQuizCompleted, navigation, t]);
 
   const handleSubmit = isLogin ? handleLogin : handleRegister;
 
