@@ -197,8 +197,8 @@ export default function QuizScreen({ navigation }: Props) {
     const incompleteIdx = finalAnswers.findIndex(ans => ans === null || ans === undefined);
     if (incompleteIdx !== -1) {
       Alert.alert(
-        'Eksik Cevap',
-        `Soru ${incompleteIdx + 1}'i cevaplamadın. Tüm soruları cevaplaman gerekiyor.`,
+        t('quiz.notCompleted'),
+        t('quiz.progress').replace('{0}', String(incompleteIdx + 1)).replace('{1}', String(questions.length)),
       );
       setIdx(incompleteIdx);
       setPicked(finalAnswers[incompleteIdx] as number | null);
@@ -206,13 +206,13 @@ export default function QuizScreen({ navigation }: Props) {
     }
 
     if (finalAnswers.length < 8) {
-      Alert.alert('Eksik Cevap', 'En az 8 soruyu cevaplamalısın. Lütfen devam et.');
+      Alert.alert(t('quiz.notCompleted'), t('quiz.notCompletedDesc'));
       return;
     }
 
     const validAnswers = finalAnswers.map(ans => parseInt(String(ans), 10));
     if (validAnswers.some(a => isNaN(a))) {
-      Alert.alert('Hata', 'Cevaplarda geçersiz değer var');
+      Alert.alert(t('common.error'), t('quiz.submitError'));
       return;
     }
 
@@ -232,10 +232,10 @@ export default function QuizScreen({ navigation }: Props) {
         err?.response?.data?.detail  ||
         err?.response?.data?.message ||
         err?.response?.data?.error   ||
-        'Quiz gönderilemedi';
+        t('quiz.submitError');
       const msg = Array.isArray(errorMsg) ? errorMsg[0] : String(errorMsg);
       setSubmitErr(msg);
-      Alert.alert('Hata', msg);
+      Alert.alert(t('common.error'), msg);
     } finally {
       setSubmitting(false);
     }
@@ -254,7 +254,7 @@ export default function QuizScreen({ navigation }: Props) {
         <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         <View style={st.loadingWrap}>
           <ActivityIndicator size="large" color={C.brandA} />
-          <Text style={st.loadingTxt}>Sorular yükleniyor…</Text>
+          <Text style={st.loadingTxt}>{t('common.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -307,16 +307,16 @@ export default function QuizScreen({ navigation }: Props) {
         <View style={st.body}>
           <View style={st.catChip}>
             <Text style={st.catIco}>📍</Text>
-            <Text style={st.catLabel}>Konum</Text>
+            <Text style={st.catLabel}>{t('quiz.categories.location')}</Text>
           </View>
-          <Text style={st.eyebrow}>vibe quiz · konum seç</Text>
-          <Text style={st.question}>Hangi şehirde ev arıyorsun?</Text>
+          <Text style={st.eyebrow}>vibe quiz · {t('quiz.selectCity').toLowerCase()}</Text>
+          <Text style={st.question}>{t('quiz.cityQuestion')}</Text>
 
           <View style={st.citySearchWrap}>
             <Text style={st.citySearchIcon}>🔍</Text>
             <TextInput
               style={st.citySearchInput}
-              placeholder="Şehir ara..."
+              placeholder={t('quiz.citySearch')}
               placeholderTextColor={C.mute}
               value={citySearch}
               onChangeText={setCitySearch}
@@ -356,7 +356,7 @@ export default function QuizScreen({ navigation }: Props) {
             activeOpacity={0.85}
           >
             <Text style={[st.ctaTxt, !selectedCity && st.ctaTxtOff]}>
-              {selectedCity ? `${selectedCity} · Devam Et` : 'Şehir Seçin'}
+              {selectedCity ? `${selectedCity} · ${t('quiz.continue').replace(' →', '')}` : t('quiz.selectCityButton')}
             </Text>
             <Text style={[st.ctaArrow, !selectedCity && st.ctaTxtOff]}>→</Text>
           </TouchableOpacity>
@@ -425,7 +425,7 @@ export default function QuizScreen({ navigation }: Props) {
           ) : (
             <>
               <Text style={[st.ctaTxt, picked === null && st.ctaTxtOff]}>
-                {isLast ? 'Tamamla' : 'Devam Et'}
+                {isLast ? t('quiz.complete').replace(' ✓', '') : t('quiz.continue').replace(' →', '')}
               </Text>
               <Text style={[st.ctaArrow, picked === null && st.ctaTxtOff]}>
                 {isLast ? '✓' : '→'}

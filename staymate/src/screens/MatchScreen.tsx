@@ -11,6 +11,7 @@ import { RootStackParamList, TabParamList } from '../../App';
 import { useAppStore, isFiltersActive } from '../store';
 import { scheduleMatchNotification } from '../services/NotificationService';
 import { matchService, type ApiSuggestion } from '../api/MatchService';
+import { useTranslation } from '../i18n/useTranslation';
 
 const { width: W, height: H } = Dimensions.get('window');
 const SWIPE_THRESHOLD = W * 0.30;
@@ -90,11 +91,7 @@ function mapSuggestion(raw: ApiSuggestion): MatchUser {
 
 // FALLBACK_USERS kaldırıldı — gerçek API zorunlu
 
-const COMPAT_LABELS: { key: keyof Compat; label: string }[] = [
-  { key: 'sleep', label: 'Uyku düzeni' }, { key: 'clean', label: 'Temizlik' },
-  { key: 'social', label: 'Sosyallik' }, { key: 'work', label: 'Çalışma' },
-  { key: 'lifestyle', label: 'Yaşam tarzı' },
-];
+// COMPAT_LABELS built dynamically inside component using t()
 
 const DIET_MAP: Record<string, MatchUser['diet']> = {
   Vegan: 'vegan', Vejeteryan: 'vegetarian', Helal: 'halal', Normal: 'normal',
@@ -102,6 +99,7 @@ const DIET_MAP: Record<string, MatchUser['diet']> = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function MatchScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const filters         = useAppStore(s => s.filters);
   const setMatches      = useAppStore(s => s.setMatches);
   const filteredMatches = useAppStore(s => s.filteredMatches); // API-filtered results
@@ -118,7 +116,7 @@ export default function MatchScreen({ navigation }: Props) {
       try {
         const data = await matchService.getSuggestions();
         if (!data || data.length === 0) {
-          setFetchError('Henüz yeterli öneri yok. Başka kullanıcılar quiz doldurduğunda görebileceksin.');
+          setFetchError(t('discover.noSuggestionsDesc'));
           setAllUsers([]);
           setMatches([]);
         } else {
@@ -129,13 +127,13 @@ export default function MatchScreen({ navigation }: Props) {
       } catch (error: any) {
         console.error('❌ Match load error:', error.response?.data || error.message);
         if (error.response?.status === 400) {
-          setFetchError("Öneri görmek için quiz'i tamamla!");
+          setFetchError(t('discover.completeQuiz'));
         } else {
           const errorMsg =
             error.response?.data?.detail ||
             error.response?.data?.message ||
             error.message ||
-            'Öneriler yüklenemedi';
+            t('discover.noSuggestions');
           setFetchError(String(errorMsg));
         }
         setAllUsers([]);
@@ -332,12 +330,27 @@ export default function MatchScreen({ navigation }: Props) {
   const done = currentIndex >= filteredUsers.length;
   const currentUser = !done ? filteredUsers[currentIndex] : null;
 
+  const cardLabels = { aiReport: t('match.aiReport') };
+  const detailLabels = {
+    compatDetail: t('match.compatDetail'),
+    about: t('match.about'),
+    pass: `✕ ${t('match.pass')}`,
+    like: `♥ ${t('match.like')}`,
+    compatLabels: [
+      { key: 'sleep'     as keyof Compat, label: t('match.compat.sleep') },
+      { key: 'clean'     as keyof Compat, label: t('match.compat.clean') },
+      { key: 'social'    as keyof Compat, label: t('match.compat.social') },
+      { key: 'work'      as keyof Compat, label: t('match.compat.work') },
+      { key: 'lifestyle' as keyof Compat, label: t('match.compat.lifestyle') },
+    ],
+  };
+
   const renderStack = () => {
     if (loadingUsers) {
       return (
         <View style={st.emptyWrap}>
           <ActivityIndicator size="large" color={C.brandA} />
-          <Text style={[st.emptySub, { marginTop: 14 }]}>Profiller yükleniyor…</Text>
+          <Text style={[st.emptySub, { marginTop: 14 }]}>{t('discover.loading')}</Text>
         </View>
       );
     }
@@ -347,17 +360,17 @@ export default function MatchScreen({ navigation }: Props) {
         <View style={st.emptyWrap}>
           <Text style={st.emptyIcon}>{fetchError ? '⚠' : '✿'}</Text>
           <Text style={st.emptyTitle}>
-            {fetchError ? 'Öneriler yüklenemedi' : filterActive ? 'Filtre sonucu yok' : 'Hepsi bu kadar!'}
+            {fetchError ? t('discover.noSuggestions') : filterActive ? t('discover.filterNoResults') : t('discover.allDone')}
           </Text>
           <Text style={st.emptySub}>
-            {fetchError ?? (filterActive ? 'Filtreleri genişletmeyi dene.' : 'Tüm profilleri gördün.\nYeni eşleşmeler yakında.')}
+            {fetchError ?? (filterActive ? t('match.filterResultsSub') : t('discover.allDoneSub'))}
           </Text>
           <TouchableOpacity
             style={st.emptyBtn}
             onPress={() => filterActive ? navigation.navigate('Filter') : navigation.goBack()}
             activeOpacity={0.8}
           >
-            <Text style={st.emptyBtnTxt}>{filterActive ? 'Filtreleri Düzenle' : '← Geri Dön'}</Text>
+            <Text style={st.emptyBtnTxt}>{filterActive ? t('discover.editFilters') : t('discover.goBack')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -365,7 +378,7 @@ export default function MatchScreen({ navigation }: Props) {
 
     const backCard = currentIndex + 1 < filteredUsers.length ? (
       <Animated.View key={filteredUsers[currentIndex + 1].id} style={[st.card, { transform: [{ scale: nextScale }], zIndex: 1 }]}>
-        <CardContent user={filteredUsers[currentIndex + 1]} />
+        <CardContent user={filteredUsers[currentIndex + 1]} labels={cardLabels} />
       </Animated.View>
     ) : null;
 
@@ -376,13 +389,14 @@ export default function MatchScreen({ navigation }: Props) {
         {...panResponder.panHandlers}
       >
         <Animated.View style={[st.likeLabel, { opacity: likeOpacity }]}>
-          <Text style={st.likeLabelTxt}>BEĞENDİM ♥</Text>
+          <Text style={st.likeLabelTxt}>{t('match.liked')}</Text>
         </Animated.View>
         <Animated.View style={[st.passLabel, { opacity: passOpacity }]}>
-          <Text style={st.passLabelTxt}>✕ GEÇ</Text>
+          <Text style={st.passLabelTxt}>{t('match.passed')}</Text>
         </Animated.View>
         <CardContent
           user={filteredUsers[currentIndex]}
+          labels={cardLabels}
           onAIReport={() => navigation.navigate('CompatibilityReport', {
             userId: filteredUsers[currentIndex].id,
             userName: filteredUsers[currentIndex].name,
@@ -409,12 +423,12 @@ export default function MatchScreen({ navigation }: Props) {
           <Text style={st.hBtnTxt}>←</Text>
         </TouchableOpacity>
         <View style={st.hCenter}>
-          <Text style={st.hTitle}>Keşfet</Text>
+          <Text style={st.hTitle}>{t('discover.title')}</Text>
           {fetchError && <View style={st.offlineDot} />}
           {!done && !loadingUsers && (
             <>
               <View style={st.hDot} />
-              <Text style={st.hSub}>{filteredUsers.length - currentIndex} profil kaldı</Text>
+              <Text style={st.hSub}>{filteredUsers.length - currentIndex} {t('discover.profilesLeft')}</Text>
             </>
           )}
         </View>
@@ -478,20 +492,20 @@ export default function MatchScreen({ navigation }: Props) {
         <View style={st.overlay}>
           <Animated.View style={[st.matchCard, { opacity: matchAlpha, transform: [{ scale: matchScale }] }]}>
             <View style={st.mBlob1} /><View style={st.mBlob2} />
-            <Text style={st.mEyebrow}>✦ yeni eşleşme</Text>
-            <Text style={st.mTitle}>Eşleştiniz! 🎉</Text>
+            <Text style={st.mEyebrow}>{t('match.newMatchBadge')}</Text>
+            <Text style={st.mTitle}>{t('match.matched')}</Text>
             {matchedUser && (
               <>
                 <View style={[st.mAvatar, { backgroundColor: matchedUser.avatarColor }]}>
                   <Text style={st.mAvatarTxt}>{matchedUser.initial}</Text>
                 </View>
-                <Text style={st.mName}>{matchedUser.name} ve sen</Text>
+                <Text style={st.mName}>{matchedUser.name} {t('match.andYou')}</Text>
                 <View style={st.mMatchBadge}><Text style={st.mMatchBadgeTxt}>✦ {matchedUser.match}% uyum</Text></View>
-                <Text style={st.mSub}>{matchedUser.name} de seni beğendi! Artık mesajlaşabilirsiniz.</Text>
+                <Text style={st.mSub}>{matchedUser.name} {t('match.alsoLiked')}</Text>
               </>
             )}
             <TouchableOpacity style={st.mCta} onPress={closeMatchModal} activeOpacity={0.85}>
-              <Text style={st.mCtaTxt}>Keşfetmeye Devam Et</Text>
+              <Text style={st.mCtaTxt}>{t('match.continueDiscovering')}</Text>
             </TouchableOpacity>
             {/* "Mesaj Gönder" → ChatListScreen */}
             <TouchableOpacity
@@ -502,7 +516,7 @@ export default function MatchScreen({ navigation }: Props) {
               }}
               activeOpacity={0.7}
             >
-              <Text style={st.mGhostTxt}>Mesaj Gönder →</Text>
+              <Text style={st.mGhostTxt}>{t('match.sendMessage')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -513,7 +527,7 @@ export default function MatchScreen({ navigation }: Props) {
         <Animated.View style={[st.detailOverlay, { opacity: detailAlpha }]}>
           <TouchableOpacity style={st.detailBackdrop} onPress={closeDetail} activeOpacity={1} />
           <Animated.View style={[st.detailSheet, { transform: [{ translateY: detailSlide }] }]}>
-            {detailUser && <DetailContent user={detailUser} onLike={() => detailSwipe('right')} onPass={() => detailSwipe('left')} />}
+            {detailUser && <DetailContent user={detailUser} onLike={() => detailSwipe('right')} onPass={() => detailSwipe('left')} labels={detailLabels} />}
           </Animated.View>
         </Animated.View>
       </Modal>
@@ -522,7 +536,7 @@ export default function MatchScreen({ navigation }: Props) {
 }
 
 // ── CardContent ───────────────────────────────────────────────────────────────
-function CardContent({ user, onAIReport }: { user: MatchUser; onAIReport?: () => void }) {
+function CardContent({ user, onAIReport, labels }: { user: MatchUser; onAIReport?: () => void; labels?: { aiReport: string } }) {
   return (
     <View style={st.cardInner}>
       <View style={st.cardTop}>
@@ -565,7 +579,7 @@ function CardContent({ user, onAIReport }: { user: MatchUser; onAIReport?: () =>
       {onAIReport && (
         <TouchableOpacity style={st.aiReportBtn} onPress={onAIReport} activeOpacity={0.8}>
           <Text style={st.aiReportIcon}>🤖</Text>
-          <Text style={st.aiReportTxt}>AI Uyumluluk Raporu</Text>
+          <Text style={st.aiReportTxt}>{labels?.aiReport ?? 'AI Report'}</Text>
           <Text style={st.aiReportArrow}>→</Text>
         </TouchableOpacity>
       )}
@@ -574,7 +588,7 @@ function CardContent({ user, onAIReport }: { user: MatchUser; onAIReport?: () =>
 }
 
 // ── DetailContent ─────────────────────────────────────────────────────────────
-function DetailContent({ user, onLike, onPass }: { user: MatchUser; onLike: () => void; onPass: () => void }) {
+function DetailContent({ user, onLike, onPass, labels }: { user: MatchUser; onLike: () => void; onPass: () => void; labels?: { compatDetail: string; about: string; pass: string; like: string; compatLabels: { key: keyof Compat; label: string }[] } }) {
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.detailScroll}>
       <View style={st.detailHandle} />
@@ -592,8 +606,8 @@ function DetailContent({ user, onLike, onPass }: { user: MatchUser; onLike: () =
         </View>
       </View>
       <View style={st.compatCard}>
-        <Text style={st.compatTitle}>Uyumluluk Detayı</Text>
-        {COMPAT_LABELS.map(({ key, label }) => {
+        <Text style={st.compatTitle}>{labels?.compatDetail ?? 'Compatibility'}</Text>
+        {(labels?.compatLabels ?? []).map(({ key, label }) => {
           const pct = user.compat[key];
           return (
             <View key={key} style={st.compatRow}>
@@ -610,7 +624,7 @@ function DetailContent({ user, onLike, onPass }: { user: MatchUser; onLike: () =
       </View>
       {user.bio ? (
         <View style={st.detailBioCard}>
-          <Text style={st.detailBioLabel}>Hakkında</Text>
+          <Text style={st.detailBioLabel}>{labels?.about ?? 'About'}</Text>
           <Text style={st.detailBio}>{user.bio}</Text>
         </View>
       ) : null}
@@ -623,10 +637,10 @@ function DetailContent({ user, onLike, onPass }: { user: MatchUser; onLike: () =
       </View>
       <View style={st.detailActions}>
         <TouchableOpacity style={[st.detailActionBtn, st.detailPassBtn]} onPress={onPass} activeOpacity={0.8}>
-          <Text style={st.detailPassTxt}>✕ Geç</Text>
+          <Text style={st.detailPassTxt}>{labels?.pass ?? '✕'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[st.detailActionBtn, st.detailLikeBtn]} onPress={onLike} activeOpacity={0.8}>
-          <Text style={st.detailLikeTxt}>♥ Beğen</Text>
+          <Text style={st.detailLikeTxt}>{labels?.like ?? '♥'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -86,9 +86,9 @@ export default function SettingsScreen({ navigation }: Props) {
       t('settings.logout'),
       t('settings.logoutConfirm'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Çıkış Yap', style: 'destructive',
+          text: t('settings.logout'), style: 'destructive',
           onPress: async () => {
             // 1. SecureStore token'ı sil
             await authService.logout();

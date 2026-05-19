@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../App';
 import { verificationService, isVerifiedResponse } from '../api/VerificationService';
 import { useAppStore } from '../store';
+import { useTranslation } from '../i18n/useTranslation';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'EmailVerification'>;
@@ -21,6 +22,7 @@ const RESEND_SECONDS = 60;
 export default function EmailVerificationScreen({ navigation, route }: Props) {
   const email       = route.params?.email ?? '';
   const userType    = useAppStore(s => s.userType);
+  const { t }       = useTranslation();
 
   const [code,          setCode]          = useState('');
   const [loading,       setLoading]       = useState(false);
@@ -28,7 +30,6 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
   const [timer,         setTimer]         = useState(RESEND_SECONDS);
   const [error,         setError]         = useState('');
 
-  // Geri sayım
   useEffect(() => {
     if (timer <= 0) return;
     const id = setInterval(() => setTimer(prev => prev - 1), 1000);
@@ -37,7 +38,7 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
 
   const handleVerify = useCallback(async () => {
     if (code.trim().length < 6) {
-      setError('6 haneli doğrulama kodunu gir.');
+      setError(t('verification.enterSixDigit'));
       return;
     }
     setLoading(true);
@@ -45,22 +46,21 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
     try {
       const res = await verificationService.confirmCode(email, code.trim());
       if (isVerifiedResponse(res)) {
-        // Doğrulama başarılı → kullanıcı tipine göre ilerle
         if (userType === 'landlord') {
           navigation.replace('LandlordTabs');
         } else {
           navigation.replace('Quiz');
         }
       } else {
-        setError('Kod geçersiz veya süresi dolmuş. Tekrar dene.');
+        setError(t('verification.codeInvalid'));
       }
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.response?.data?.message || 'Kod doğrulanamadı.';
+      const msg = err.response?.data?.detail || err.response?.data?.message || t('verification.verifyFailed');
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [code, email, userType, navigation]);
+  }, [code, email, userType, navigation, t]);
 
   const handleResend = useCallback(async () => {
     setResendLoading(true);
@@ -69,16 +69,15 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
       await verificationService.sendCode(email);
       setTimer(RESEND_SECONDS);
       setCode('');
-      Alert.alert('Gönderildi', 'Yeni doğrulama kodu e-posta adresinize gönderildi.');
+      Alert.alert(t('verification.codeSent'), t('verification.codeSentMsg'));
     } catch (err: any) {
-      Alert.alert('Hata', err.response?.data?.detail || 'Kod gönderilemedi. Tekrar dene.');
+      Alert.alert(t('common.error'), err.response?.data?.detail || t('verification.sendFailed'));
     } finally {
       setResendLoading(false);
     }
-  }, [email]);
+  }, [email, t]);
 
   const handleSkip = () => {
-    // Kullanıcı doğrulamayı atlamak isterse
     if (userType === 'landlord') {
       navigation.replace('LandlordTabs');
     } else {
@@ -93,7 +92,6 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={st.body}>
-          {/* İkon */}
           <LinearGradient
             colors={['#00BCD4', '#E91E63']}
             start={{ x: 0, y: 0 }}
@@ -103,13 +101,12 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
             <Text style={st.icon}>✉️</Text>
           </LinearGradient>
 
-          <Text style={st.title}>E-Posta Doğrulama</Text>
+          <Text style={st.title}>{t('verification.title')}</Text>
           <Text style={st.sub}>
             <Text style={st.email}>{email}</Text>
-            {'\n'}adresine gönderilen 6 haneli kodu gir.
+            {'\n'}{t('verification.subtitle')}
           </Text>
 
-          {/* Kod input */}
           <TextInput
             style={[st.input, error ? st.inputError : null]}
             placeholder="0  0  0  0  0  0"
@@ -124,7 +121,6 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
 
           {error ? <Text style={st.error}>⚠ {error}</Text> : null}
 
-          {/* Doğrula butonu */}
           <LinearGradient
             colors={loading || code.length < 6 ? ['#ccc', '#ccc'] : ['#00BCD4', '#E91E63']}
             start={{ x: 0, y: 0 }}
@@ -138,11 +134,10 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
             >
               {loading
                 ? <ActivityIndicator color="#fff" />
-                : <Text style={st.btnTxt}>Doğrula</Text>}
+                : <Text style={st.btnTxt}>{t('verification.verify')}</Text>}
             </Pressable>
           </LinearGradient>
 
-          {/* Yeniden gönder */}
           <Pressable
             onPress={handleResend}
             disabled={timer > 0 || resendLoading}
@@ -151,13 +146,14 @@ export default function EmailVerificationScreen({ navigation, route }: Props) {
             {resendLoading
               ? <ActivityIndicator color="#00BCD4" size="small" />
               : <Text style={[st.resendTxt, (timer > 0) && st.resendTxtDisabled]}>
-                  {timer > 0 ? `Yeniden Gönder (${timer}s)` : 'Kodu Yeniden Gönder'}
+                  {timer > 0
+                    ? t('verification.resendTimer').replace('{seconds}', String(timer))
+                    : t('verification.resend')}
                 </Text>}
           </Pressable>
 
-          {/* Atla */}
           <Pressable onPress={handleSkip} style={st.skipBtn}>
-            <Text style={st.skipTxt}>Şimdilik atla →</Text>
+            <Text style={st.skipTxt}>{t('verification.skipForNow')}</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

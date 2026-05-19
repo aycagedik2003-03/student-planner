@@ -29,20 +29,20 @@ const C = {
   brandB: '#FF9ACD', pinkBg: '#FFF0F7', pinkTx: '#F06EB1',
 };
 
-const CITIES = ['Tümü', 'Kraków', 'Warszawa', 'Poznań', 'Wrocław', 'Gdańsk', 'Łódź'];
-const PRICE_FILTERS = [
-  { label: 'Tümü',          min: 0,    max: Infinity },
-  { label: '< 1500 PLN',    min: 0,    max: 1500     },
-  { label: '1500–2500 PLN', min: 1500, max: 2500     },
-  { label: '> 2500 PLN',    min: 2500, max: Infinity },
+const CITY_NAMES = ['Kraków', 'Warszawa', 'Poznań', 'Wrocław', 'Gdańsk', 'Łódź'];
+const PRICE_RANGES = [
+  { min: 0,    max: Infinity },
+  { min: 0,    max: 1500     },
+  { min: 1500, max: 2500     },
+  { min: 2500, max: Infinity },
 ];
 
 function isUrl(s: string) { return s.startsWith('http') || s.startsWith('/'); }
 
 // ── Listing card — 2-kolon grid ──────────────────────────────────────────────
 const ListingCard = React.memo(function ListingCard({
-  item, onPress,
-}: { item: Listing; onPress: () => void }) {
+  item, onPress, furnishedLabel, roomsLabel,
+}: { item: Listing; onPress: () => void; furnishedLabel: string; roomsLabel: (n: number) => string }) {
   const photo = item.photos[0];
   return (
     <TouchableOpacity style={[st.card, { width: CARD_W }]} onPress={onPress} activeOpacity={0.8}>
@@ -57,7 +57,7 @@ const ListingCard = React.memo(function ListingCard({
         )}
         {item.furnished && (
           <View style={st.furnishedBadge}>
-            <Text style={st.furnishedTxt}>Mobilyalı</Text>
+            <Text style={st.furnishedTxt}>{furnishedLabel}</Text>
           </View>
         )}
         <View style={st.priceBadge}>
@@ -72,7 +72,7 @@ const ListingCard = React.memo(function ListingCard({
           📍 {[item.district, item.city].filter(Boolean).join(', ') || '—'}
         </Text>
         <View style={st.cardMeta}>
-          <View style={st.metaChip}><Text style={st.metaChipTxt}>{item.rooms} oda</Text></View>
+          <View style={st.metaChip}><Text style={st.metaChipTxt}>{roomsLabel(item.rooms)}</Text></View>
           {item.wifi && <View style={st.metaChip}><Text style={st.metaChipTxt}>WiFi</Text></View>}
         </View>
       </View>
@@ -89,8 +89,17 @@ export default function ListingScreen({ navigation }: Props) {
   const [usingLocal,  setUsingLocal]  = useState(false);
 
   const [search,   setSearch]   = useState('');
-  const [city,     setCity]     = useState('Tümü');
+  const [city,     setCity]     = useState('');
   const [priceIdx, setPriceIdx] = useState(0);
+
+  const ALL_LABEL = t('listing.all');
+  const CITIES = [ALL_LABEL, ...CITY_NAMES];
+  const PRICE_FILTERS = [
+    { label: t('listing.all'),    ...PRICE_RANGES[0] },
+    { label: '< 1500 PLN',        ...PRICE_RANGES[1] },
+    { label: '1500–2500 PLN',     ...PRICE_RANGES[2] },
+    { label: '> 2500 PLN',        ...PRICE_RANGES[3] },
+  ];
 
   const fetchListings = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -113,7 +122,7 @@ export default function ListingScreen({ navigation }: Props) {
     const p = PRICE_FILTERS[priceIdx];
     const q = search.toLowerCase();
     return allListings.filter(l =>
-      (city === 'Tümü' || l.city === city) &&
+      (!city || city === ALL_LABEL || l.city === city) &&
       l.price >= p.min && l.price <= p.max &&
       (!q || l.address.toLowerCase().includes(q) || l.city.toLowerCase().includes(q))
     );
@@ -123,9 +132,17 @@ export default function ListingScreen({ navigation }: Props) {
     navigation.navigate('ListingDetail', { listingId: id });
   }, [navigation]);
 
+  const furnishedLabel = t('listing.furnished');
+  const roomsLabel = (n: number) => t('listing.rooms').replace('{0}', String(n));
+
   const renderItem = useCallback(({ item }: { item: Listing }) => (
-    <ListingCard item={item} onPress={() => handleCardPress(item.id)} />
-  ), [handleCardPress]);
+    <ListingCard
+      item={item}
+      onPress={() => handleCardPress(item.id)}
+      furnishedLabel={furnishedLabel}
+      roomsLabel={roomsLabel}
+    />
+  ), [handleCardPress, furnishedLabel]);
 
   return (
     <SafeAreaView style={st.root} edges={['top']}>
@@ -189,10 +206,10 @@ export default function ListingScreen({ navigation }: Props) {
       </ScrollView>
 
       <View style={st.resultRow}>
-        <Text style={st.resultTxt}>{filtered.length} ilan bulundu</Text>
+        <Text style={st.resultTxt}>{t('listing.found').replace('{0}', String(filtered.length))}</Text>
         {usingLocal && (
           <View style={st.offlinePill}>
-            <Text style={st.offlineTxt}>● Çevrimdışı</Text>
+            <Text style={st.offlineTxt}>{t('listing.offline')}</Text>
           </View>
         )}
       </View>

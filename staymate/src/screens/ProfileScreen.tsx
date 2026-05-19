@@ -192,7 +192,7 @@ export default function ProfileScreen({ navigation }: Props) {
           setQuizCompleted(true);
         }
       } catch (error: any) {
-        const msg = error?.response?.data?.message || error?.response?.data?.error || 'Profil yüklenemedi.';
+        const msg = error?.response?.data?.message || error?.response?.data?.error || t('profile.loading');
         setFetchErr(Array.isArray(msg) ? msg[0] : msg);
       } finally {
         setLoading(false);
@@ -255,7 +255,7 @@ export default function ProfileScreen({ navigation }: Props) {
           style={st.hBtn}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
-          accessibilityLabel="Geri"
+          accessibilityLabel={t('common.goBack')}
         >
           <Text style={st.hBtnTxt}>←</Text>
         </TouchableOpacity>
@@ -301,7 +301,7 @@ export default function ProfileScreen({ navigation }: Props) {
               </View>
             </View>
             {isVerified && (
-              <View style={st.verifiedDot} accessibilityLabel="Doğrulanmış">
+              <View style={st.verifiedDot} accessibilityLabel={t('settings.verified')}>
                 <Text style={st.verifiedDotTxt}>✓</Text>
               </View>
             )}
@@ -337,7 +337,7 @@ export default function ProfileScreen({ navigation }: Props) {
             </View>
             <View style={st.chipSep} />
             <View style={[st.chip, st.chipTeal]}>
-              <Text style={[st.chipTxt, st.chipTealTxt]}>{traitCount} özellik</Text>
+              <Text style={[st.chipTxt, st.chipTealTxt]}>{t('profile.features').replace('{0}', String(traitCount))}</Text>
             </View>
           </View>
 

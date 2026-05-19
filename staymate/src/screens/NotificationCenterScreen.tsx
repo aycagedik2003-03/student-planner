@@ -18,27 +18,27 @@ export default function NotificationCenterScreen() {
     {
       key:   'newMatch'   as const,
       icon:  '❤️',
-      label: t('settings.notifMatches')   || 'Yeni Eşleşme',
-      sub:   t('settings.notifMatchesSub')|| 'Birisi seni favori aldığında',
+      label: t('settings.notifMatches'),
+      sub:   t('settings.notifMatchesSub'),
     },
     {
       key:   'newMessage' as const,
       icon:  '💬',
-      label: t('settings.notifMessages')   || 'Yeni Mesaj',
-      sub:   t('settings.notifMessagesSub')|| 'Birisi sana yazdığında',
+      label: t('settings.notifMessages'),
+      sub:   t('settings.notifMessagesSub'),
     },
     {
       key:   'system'     as const,
       icon:  '🔔',
-      label: 'Sistem',
-      sub:   'Güncellemeler ve duyurular',
+      label: t('notifications.system'),
+      sub:   t('notifications.systemDesc'),
     },
   ];
 
   return (
     <SafeAreaView style={st.root} edges={['top']}>
       <View style={st.header}>
-        <Text style={st.headerTitle}>🔔 Bildirimler</Text>
+        <Text style={st.headerTitle}>🔔 {t('notifications.title')}</Text>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={st.body}>
@@ -63,9 +63,7 @@ export default function NotificationCenterScreen() {
           ))}
         </View>
 
-        <Text style={st.hint}>
-          Bildirimleri kapatmak uygulamanın bildirim iznini etkilemez.
-        </Text>
+        <Text style={st.hint}>{t('notifications.hintText')}</Text>
       </ScrollView>
     </SafeAreaView>
   );

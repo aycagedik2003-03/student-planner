@@ -113,11 +113,11 @@ export default function AuthScreen({ navigation, route }: Props) {
       if (err.response?.status === 409) {
         setError(t('errors.emailAlreadyExists'));
         Alert.alert(
-          'Email Zaten Kayıtlı',
-          'Bu email ile bir hesap var. Giriş yapmayı deneyin.',
+          t('errors.emailAlreadyExists'),
+          t('auth.alreadyHaveAccount'),
           [
-            { text: 'Giriş Yap', onPress: () => setMode('login') },
-            { text: 'İptal' },
+            { text: t('auth.login'), onPress: () => setMode('login') },
+            { text: t('common.cancel') },
           ],
         );
         return;
@@ -292,7 +292,7 @@ export default function AuthScreen({ navigation, route }: Props) {
           )}
           {!isLogin && password && validatePassword(password).valid && (
             <Text style={{ marginTop: 8, fontSize: 11, color: '#00BCD4', fontWeight: 'bold' }}>
-              ✅ Şifre güçlü
+              ✅ {t('auth.passwordStrong')}
             </Text>
           )}
         </View>
