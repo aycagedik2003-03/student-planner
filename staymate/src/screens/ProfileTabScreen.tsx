@@ -177,7 +177,7 @@ export default function ProfileTabScreen({ navigation }: Props) {
             {([
               { code: 'pl' as const, short: 'PL', flag: '🇵🇱' },
               { code: 'tr' as const, short: 'TR', flag: '🇹🇷' },
-              { code: 'en' as const, short: 'EN', flag: '🇺🇸' },
+              { code: 'en' as const, short: 'EN', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
             ]).map(lang => (
               <Pressable
                 key={lang.code}
