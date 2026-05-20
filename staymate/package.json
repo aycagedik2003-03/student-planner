@@ -10,6 +10,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.15.13",
     "@react-navigation/native": "^7.2.3",
@@ -17,6 +18,7 @@
     "axios": "^1.16.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.33",
+    "expo-blur": "~15.0.8",
     "expo-checkbox": "~5.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
@@ -31,6 +33,7 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^3.4.19",

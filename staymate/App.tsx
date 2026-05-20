@@ -41,6 +41,8 @@ import { useAppStore }                   from './src/store';
 import { useTranslation }                from './src/i18n/useTranslation';
 import { registerForPushNotifications }  from './src/services/NotificationService';
 import { navigationRef }                 from './src/utils/navigationRef';
+import { AuthProvider }                  from './src/context/AuthContext';
+import BottomTabNavigator                from './src/navigation/BottomTabNavigator';
 
 // ── Student tab param list ─────────────────────────────────────────────────────
 export type TabParamList = {
@@ -112,40 +114,7 @@ const LANDLORD_ICONS: Record<string, string> = {
   LandlordProfile:    '◉',
 };
 
-// ── Student tabs ───────────────────────────────────────────────────────────────
-const StudentTab = createBottomTabNavigator<TabParamList>();
-
-function StudentTabs() {
-  const { t, language } = useTranslation();
-  return (
-    <StudentTab.Navigator
-      key={language}
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor:   '#E91E63',
-        tabBarInactiveTintColor: '#00BCD4',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(31,41,55,0.08)',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 4,
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2 },
-        tabBarIcon: ({ color }) => (
-          <Text style={{ color, fontSize: 18 }}>{STUDENT_ICONS[route.name]}</Text>
-        ),
-      })}
-    >
-      <StudentTab.Screen name="Match"          component={MatchScreen}               options={{ tabBarLabel: () => t('tabs.discover')      }} />
-      <StudentTab.Screen name="BrowseListings" component={BrowseListingsScreen}      options={{ tabBarLabel: () => t('tabs.listings')      }} />
-      <StudentTab.Screen name="ChatListTab"    component={ChatListScreen}            options={{ tabBarLabel: () => t('tabs.messages')      }} />
-      <StudentTab.Screen name="Notifications"  component={NotificationCenterScreen}  options={{ tabBarLabel: () => t('tabs.notifications') }} />
-      <StudentTab.Screen name="ProfileTab"     component={ProfileTabScreen}          options={{ tabBarLabel: () => t('tabs.profile')       }} />
-    </StudentTab.Navigator>
-  );
-}
+// StudentTabs replaced by BottomTabNavigator (imported above)
 
 // ── Landlord tabs ──────────────────────────────────────────────────────────────
 const LandlordTab = createBottomTabNavigator<LandlordTabParamList>();
@@ -274,6 +243,7 @@ export default function App() {
   }
 
   const nav = (
+    <AuthProvider>
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName={initialRoute}
@@ -288,7 +258,7 @@ export default function App() {
         <Stack.Screen name="Profile"    component={ProfileScreen} />
 
         {/* Tab containers */}
-        <Stack.Screen name="MainTabs"     component={StudentTabs}  />
+        <Stack.Screen name="MainTabs"     component={BottomTabNavigator}  />
         <Stack.Screen name="LandlordTabs" component={LandlordTabs} />
 
         {/* Ortak stack ekranları */}
@@ -312,6 +282,7 @@ export default function App() {
         <Stack.Screen name="EmailVerification"  component={EmailVerificationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </AuthProvider>
   );
 
   if (Platform.OS === 'web') {
