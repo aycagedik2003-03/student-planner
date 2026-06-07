@@ -11,6 +11,7 @@ import { RootStackParamList, LandlordTabParamList } from '../../App';
 import { listingService } from '../api/ListingService';
 import { landlordService } from '../api/LandlordService';
 import { useAppStore } from '../store';
+import { useTranslation } from '../i18n/translations';
 import type { Listing } from '../data/listings';
 
 type Props = {
@@ -47,6 +48,7 @@ function colorFromId(id: string): string {
 }
 
 export default function InterestedStudentsScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const user = useAppStore((s) => s.user);
 
   const [myListings,      setMyListings]      = useState<Listing[]>([]);
@@ -68,7 +70,7 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
         setSelectedListing(data[0]);
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'İlanlar yüklenemedi.');
+      setError(err.response?.data?.detail || t('listing.errorLoad'));
     } finally {
       setLoadingListings(false);
     }
@@ -83,7 +85,7 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
       const data = await listingService.getInterestedStudents(listingId);
       setStudents(data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Öğrenciler yüklenemedi.');
+      setError(err.response?.data?.detail || t('common.error'));
       setStudents([]);
     } finally {
       setLoadingStudents(false);
@@ -126,11 +128,11 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
           <View style={st.footer}>
             {score > 0 && (
               <View style={st.matchBadge}>
-                <Text style={st.matchTxt}>✦ {score}% uyum</Text>
+                <Text style={st.matchTxt}>✦ {score}%</Text>
               </View>
             )}
             <Pressable style={st.msgBtn} onPress={() => handleOpenChat(item)}>
-              <Text style={st.msgBtnTxt}>💬 Mesaj</Text>
+              <Text style={st.msgBtnTxt}>💬 {t('tabs.messages')}</Text>
             </Pressable>
           </View>
         </View>
@@ -142,9 +144,9 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
     <SafeAreaView style={st.root}>
       {/* Header */}
       <View style={st.header}>
-        <Text style={st.title}>İlgilenen Öğrenciler</Text>
+        <Text style={st.title}>{t('tabs.students')}</Text>
         {students.length > 0 && (
-          <Text style={st.count}>{students.length} kişi</Text>
+          <Text style={st.count}>{students.length}</Text>
         )}
       </View>
 
@@ -154,10 +156,10 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
       ) : myListings.length === 0 ? (
         <View style={st.center}>
           <Text style={st.emptyIcon}>🏠</Text>
-          <Text style={st.emptyTitle}>Henüz ilan yok</Text>
-          <Text style={st.emptySub}>İlan yayınlayarak öğrencilerden ilgi alabilirsin.</Text>
+          <Text style={st.emptyTitle}>{t('listing.noListings')}</Text>
+          <Text style={st.emptySub}>{t('listing.noListingsDesc')}</Text>
           <Pressable style={st.ctaBtn} onPress={() => navigation.navigate('CreateListing')}>
-            <Text style={st.ctaBtnTxt}>+ İlan Oluştur</Text>
+            <Text style={st.ctaBtnTxt}>{t('listing.createListing')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -195,14 +197,14 @@ export default function InterestedStudentsScreen({ navigation }: Props) {
               <Text style={st.errorIcon}>⚠</Text>
               <Text style={st.errorTxt}>{error}</Text>
               <Pressable style={st.retryBtn} onPress={() => selectedListing && loadStudents(selectedListing.id)}>
-                <Text style={st.retryTxt}>Tekrar Dene</Text>
+                <Text style={st.retryTxt}>{t('listing.retry')}</Text>
               </Pressable>
             </View>
           ) : students.length === 0 ? (
             <View style={st.center}>
               <Text style={st.emptyIcon}>🎓</Text>
-              <Text style={st.emptyTitle}>Henüz ilgilenen yok</Text>
-              <Text style={st.emptySub}>Bu ilana henüz kimse ilgi göstermedi.</Text>
+              <Text style={st.emptyTitle}>{t('listing.noMessages')}</Text>
+              <Text style={st.emptySub}>{t('listing.noMessagesDesc')}</Text>
             </View>
           ) : (
             <FlatList

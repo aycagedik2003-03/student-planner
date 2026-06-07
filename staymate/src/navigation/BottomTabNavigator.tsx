@@ -6,10 +6,13 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Feather } from '@expo/vector-icons';
-import { COLORS, GRADIENT, SHADOW } from '../utils/constants';
+import { COLORS, SHADOW } from '../utils/constants';
 import { useT, TKey } from '../i18n/translations';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,8 +20,26 @@ import { useAuth } from '../context/AuthContext';
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import MatchesScreen from '../screens/MatchesScreen';
-import ChatScreen from '../screens/ChatScreen';
+import ChatListScreen from '../screens/ChatListScreen';
+import ChatDetailScreen from '../screens/ChatDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+
+// ─── Messages stack types ─────────────────────────────────────────────────────
+export type ChatStackParamList = {
+  ChatList:   undefined;
+  ChatDetail: { chatId: string; name: string; avatar_url: string | null };
+};
+
+const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+
+function MessagesStack() {
+  return (
+    <ChatStack.Navigator initialRouteName="ChatList" screenOptions={{ headerShown: false }}>
+      <ChatStack.Screen name="ChatList"   component={ChatListScreen} />
+      <ChatStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </ChatStack.Navigator>
+  );
+}
 
 const Tab = createBottomTabNavigator();
 
@@ -47,10 +68,17 @@ const TABS: {
 ];
 
 // ─── Custom tab bar ───────────────────────────────────────────────────────────
-function GlassTabBar({ state, navigation }: BottomTabBarProps) {
+function GlassTabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const { t } = useT();
+  const { bottom } = useSafeAreaInsets();
+  const pb = Math.max(bottom, 12);
+
+  // Let any screen opt-out of the tab bar by setting tabBarStyle: { display: 'none' }
+  const focusedOptions = descriptors[state.routes[state.index].key].options as any;
+  if (focusedOptions?.tabBarStyle?.display === 'none') return null;
+
   return (
-    <View style={s.wrap} pointerEvents="box-none">
+    <View style={[s.wrap, { paddingBottom: pb }]} pointerEvents="box-none">
       <View style={s.bar}>
         {Platform.OS === 'ios' && (
           <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
@@ -63,20 +91,12 @@ function GlassTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => navigation.navigate(tab.route)}
               style={s.item}
               hitSlop={8}>
-              {focused ? (
-                <LinearGradient
-                  colors={GRADIENT.brand as any}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={s.activePill}>
-                  <Feather name={tab.icon} size={20} color="#fff" />
-                  <Text style={s.activeLabel}>{t(tab.labelKey)}</Text>
-                </LinearGradient>
-              ) : (
-                <View style={s.idleItem}>
-                  <Feather name={tab.icon} size={22} color={COLORS.muted} />
-                </View>
-              )}
+              <Feather
+                name={tab.icon}
+                size={24}
+                color={focused ? COLORS.primary : COLORS.muted}
+              />
+              {focused && <View style={s.activeDot} />}
             </Pressable>
           );
         })}
@@ -96,7 +116,16 @@ export default function BottomTabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Matches" component={MatchesScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen
+        name="Chat"
+        component={MessagesStack}
+        options={({ route }) => {
+          const focused = getFocusedRouteNameFromRoute(route) ?? 'ChatList';
+          return focused === 'ChatDetail'
+            ? { tabBarStyle: { display: 'none' } }
+            : {};
+        }}
+      />
       <Tab.Screen
         name="Me"
         options={{ lazy: false }}>
@@ -119,7 +148,7 @@ const s = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingBottom: 22,
+    // paddingBottom is set dynamically via useSafeAreaInsets
   },
   bar: {
     height: 64,
@@ -142,27 +171,13 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
     height: 48,
   },
-  idleItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    ...SHADOW.glow,
-  },
-  activeLabel: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 12.5,
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
   },
 });

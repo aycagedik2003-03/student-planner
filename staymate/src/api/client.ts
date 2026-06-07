@@ -1,94 +1,149 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { storage } from '../utils/storage';
+import { useAppStore } from '../store';
+import { navigationRef } from '../utils/navigationRef';
+
+interface RetryableConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-console.log('API Configuration:');
-console.log('  URL:', API_URL);
-console.log('  Environment:', __DEV__ ? 'development' : 'production');
-
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept':       'application/json',
+  },
 });
 
-// ── Request interceptor ───────────────────────────────────────────────────────
-api.interceptors.request.use(
-  async (config) => {
-    console.log(`[${config.method?.toUpperCase()}] ${config.url}`);
-    if (config.data) console.log('  Body:', config.data);
+// ── Request: attach access token ──────────────────────────────────────────────
 
-    const token = await storage.getItem('userToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('  Token: attached');
-    }
-    return config;
-  },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  },
-);
+api.interceptors.request.use(async (config) => {
+  const token = await storage.getItem('userToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// ── Response interceptor ──────────────────────────────────────────────────────
+// ── Token refresh state ───────────────────────────────────────────────────────
+
+let isRefreshing = false;
+const refreshQueue: Array<(token: string | null) => void> = [];
+
+function drainQueue(token: string | null) {
+  refreshQueue.splice(0).forEach(resolve => resolve(token));
+}
+
+// Auth endpoints that must never be retried on 401
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/signup', '/auth/register', '/auth/refresh', '/auth/logout'];
+
+async function attemptTokenRefresh(): Promise<string | null> {
+  const refreshToken = await storage.getItem('refreshToken');
+  if (!refreshToken) return null;
+
+  // Use a plain axios instance — bypasses our interceptor to avoid loops
+  // Backend uses camelCase: { refreshToken } — same as logout endpoint
+  const res = await axios.post(
+    `${API_URL}/auth/refresh`,
+    { refreshToken },
+    { headers: { 'Content-Type': 'application/json' }, timeout: 10000 },
+  );
+
+  const newAccess: string  = res.data.accessToken  ?? res.data.access_token;
+  const newRefresh: string = res.data.refreshToken ?? res.data.refresh_token ?? refreshToken;
+  const expiresIn: number  = res.data.expires_in   ?? 3600;
+
+  await storage.setItem('userToken',     newAccess);
+  await storage.setItem('refreshToken',  newRefresh);
+  await storage.setItem('tokenExpiresAt', String(Date.now() + expiresIn * 1000));
+
+  useAppStore.getState().setToken(newAccess);
+  return newAccess;
+}
+
+async function clearSession() {
+  await storage.deleteItem('userToken');
+  await storage.deleteItem('refreshToken');
+  await storage.deleteItem('userId');
+  await storage.deleteItem('userType');
+  await storage.deleteItem('tokenExpiresAt');
+  useAppStore.getState().clearUser();
+}
+
+function navigateToAuth() {
+  // Small delay so the store clears before navigation fires
+  setTimeout(() => {
+    try {
+      navigationRef.current?.reset({ index: 0, routes: [{ name: 'Auth' }] });
+    } catch { /* navigation not ready */ }
+  }, 150);
+}
+
+// ── Response: auto-refresh on 401 ─────────────────────────────────────────────
+
 api.interceptors.response.use(
-  (response) => {
-    console.log(`[${response.status}] ${response.config.url}`);
-    return response;
-  },
+  response => response,
   async (error: AxiosError) => {
-    console.error('Response error:', {
-      message:    error.message,
-      status:     error.response?.status,
-      data:       error.response?.data,
-      url:        error.config?.url,
-      method:     error.config?.method,
-    });
+    const config = error.config as RetryableConfig | undefined;
 
-    if (error.response?.status === 401) {
-      console.log('401 — attempting token refresh...');
-      try {
-        const refreshToken = await storage.getItem('refreshToken');
-        if (refreshToken) {
-          // TODO: call refresh endpoint and update tokens
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-      }
+    if (__DEV__) {
+      console.warn(`[API] ${config?.method?.toUpperCase() ?? '?'} ${config?.url} → ${error.response?.status ?? error.message}`);
     }
 
-    return Promise.reject(error);
+    const status = error.response?.status;
+
+    // 403 Forbidden — this endpoint is not accessible for this user role.
+    // Return an empty payload silently to prevent crashes.
+    if (status === 403) {
+      if (__DEV__) console.warn(`[API] 403 Forbidden: ${config?.url} — returning empty data`);
+      return Promise.resolve({ data: [] });
+    }
+
+    // Skip refresh for non-401, already-retried, or auth endpoints
+    if (
+      status !== 401 ||
+      config?._retry ||
+      !config ||
+      AUTH_ENDPOINTS.some(ep => config.url?.includes(ep))
+    ) {
+      return Promise.reject(error);
+    }
+
+    config._retry = true;
+
+    // Another refresh already in flight — queue this request
+    if (isRefreshing) {
+      return new Promise<string | null>(resolve => {
+        refreshQueue.push(resolve);
+      }).then(token => {
+        if (!token) return Promise.reject(error);
+        config.headers.Authorization = `Bearer ${token}`;
+        return api(config);
+      });
+    }
+
+    isRefreshing = true;
+    try {
+      const newToken = await attemptTokenRefresh();
+      drainQueue(newToken);
+      if (!newToken) {
+        await clearSession();
+        navigateToAuth();
+        return Promise.reject(error);
+      }
+      config.headers.Authorization = `Bearer ${newToken}`;
+      return api(config);
+    } catch (refreshErr) {
+      drainQueue(null);
+      await clearSession();
+      navigateToAuth();
+      if (__DEV__) console.warn('[API] Token refresh failed — session cleared:', refreshErr);
+      return Promise.reject(error);
+    } finally {
+      isRefreshing = false;
+    }
   },
 );
 
 export default api;
-
-// ── Kept for backward compatibility (ProfileEditScreen) ───────────────────────
-export function parseApiError(err: unknown): string {
-  if (!err) return 'Bilinmeyen hata.';
-
-  const axiosErr = err as AxiosError<{ message?: unknown; error?: unknown; detail?: unknown }>;
-  const status   = axiosErr.response?.status;
-  const data     = axiosErr.response?.data;
-
-  if (status === 400) {
-    const raw = data?.message ?? data?.error ?? data?.detail;
-    if (Array.isArray(raw))      return raw[0];
-    if (typeof raw === 'string') return raw;
-    return 'Girilen bilgileri kontrol edin.';
-  }
-
-  if (status === 401) return 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.';
-  if (status === 403) return 'Bu işlem için yetkiniz yok.';
-  if (status === 404) return 'İstenen kaynak bulunamadı.';
-  if (status === 409) return 'Bu kayıt zaten mevcut.';
-  if (status && status >= 500) return 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
-
-  if ((err as any)?.code === 'ECONNABORTED') return 'Bağlantı zaman aşımına uğradı.';
-  if ((err as any)?.message === 'Network Error') return 'İnternet bağlantınızı kontrol edin.';
-
-  const msg = (err as any)?.message;
-  return typeof msg === 'string' ? msg : 'Bir hata oluştu.';
-}

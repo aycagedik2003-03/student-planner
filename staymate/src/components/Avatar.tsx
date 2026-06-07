@@ -26,7 +26,7 @@ export function Avatar({ size = 48, label = '?', hue = 0 }: AvatarProps) {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[s.root, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Text style={[s.label, { fontSize }]}>{label.charAt(0).toUpperCase()}</Text>
+      <Text style={[s.label, { fontSize }]}>{(label ?? '?').charAt(0).toUpperCase()}</Text>
     </LinearGradient>
   );
 }

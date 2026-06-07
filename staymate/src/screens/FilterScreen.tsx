@@ -210,7 +210,7 @@ export default function FilterScreen({ navigation }: Props) {
         {/* ── Bütçe ── */}
         <Section label="Bütçe / Kira (PLN/ay)">
           <RangeSlider
-            minVal={500} maxVal={3000} step={50}
+            minVal={500} maxVal={5000} step={100}
             low={local.budgetMin} high={local.budgetMax}
             onLowChange={v => upd('budgetMin', v)}
             onHighChange={v => upd('budgetMax', v)}
@@ -502,8 +502,9 @@ const s = StyleSheet.create({
   applyTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(10,18,30,0.55)', justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(10,18,30,0.55)', justifyContent: 'flex-end', alignItems: 'center' },
   modalCard: {
+    width: '100%', maxWidth: 480,
     backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
     paddingTop: 20, paddingBottom: 28, maxHeight: '80%',
     shadowColor: '#000', shadowOffset: { width: 0, height: -6 },

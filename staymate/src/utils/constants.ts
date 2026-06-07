@@ -1,7 +1,7 @@
 export const COLORS = {
   // Design system brand
-  primary:   '#1FBFCC', // Teal
-  secondary: '#8E5CD9', // Violet
+  primary:   '#00C9A7', // Teal
+  secondary: '#7C3AED', // Violet
   accent:    '#D93B8B', // Magenta
 
   // Legacy brand (used by existing screens)
@@ -19,6 +19,7 @@ export const COLORS = {
   lightGray: '#F5F5F5',
   bg:        '#FFFFFF',
   bgSoft:    '#F9FAFB',
+  tealLight: '#E8F9F6',
   line:      'rgba(31,41,55,0.08)',
 
   // States
@@ -54,6 +55,7 @@ export const SHADOW = {
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    boxShadow: '0 2px 8px rgba(31,41,55,0.06)',
   },
   float: {
     shadowColor: '#1F2937',
@@ -61,20 +63,22 @@ export const SHADOW = {
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
+    boxShadow: '0 8px 24px rgba(31,41,55,0.12)',
   },
   glow: {
-    shadowColor: '#1FBFCC',
+    shadowColor: '#00C9A7',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
+    boxShadow: '0 4px 12px rgba(0,201,167,0.15)',
   },
 };
 
 export const GRADIENT = {
   // New design system: direct color arrays (use `as unknown as string[]`)
-  brand: ['#1FBFCC', '#8E5CD9', '#D93B8B'] as const,
-  teal:  ['#1FBFCC', '#00E5D5'] as const,
+  brand: ['#00C9A7', '#7C3AED', '#D93B8B'] as const,
+  teal:  ['#00C9A7', '#00E5D5'] as const,
   warm:  ['#D93B8B', '#FF9ACD'] as const,
 
   // Legacy objects (used by existing screens)

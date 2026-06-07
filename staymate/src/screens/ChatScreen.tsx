@@ -1,10 +1,6 @@
 // src/screens/ChatScreen.tsx — Chat List & Chat Detail
-//
-// Dual-tab interface
-// Tab 1: Chat list (all conversations)
-// Tab 2: Chat detail (single conversation with messages)
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,12 +13,12 @@ import {
   Platform,
   FlatList,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { COLORS, GRADIENT, SHADOW, SPACING, RADII } from '../utils/constants';
 import { Avatar } from '../components/Avatar';
-import { Pill } from '../components/Pill';
 
 type ChatTab = 'list' | 'detail';
 
@@ -44,7 +40,6 @@ interface Chat {
   messages: ChatMessage[];
 }
 
-// Mock data
 const MOCK_CHATS: Chat[] = [
   {
     id: '1',
@@ -55,19 +50,9 @@ const MOCK_CHATS: Chat[] = [
     isRead: false,
     avatar: 'M',
     messages: [
-      {
-        id: '1',
-        sender: 'them',
-        text: 'Hi! I saw your profile',
-        time: '10:30',
-      },
-      { id: '2', sender: 'me', text: 'Hi Marta! Nice to meet you', time: '10:32' },
-      {
-        id: '3',
-        sender: 'them',
-        text: 'Sounds great! When can we meet?',
-        time: '2 min ago',
-      },
+      { id: '1', sender: 'them', text: 'Hi! I saw your profile', time: '10:30' },
+      { id: '2', sender: 'me',   text: 'Hi Marta! Nice to meet you', time: '10:32' },
+      { id: '3', sender: 'them', text: 'Sounds great! When can we meet?', time: '2 min ago' },
     ],
   },
   {
@@ -79,12 +64,7 @@ const MOCK_CHATS: Chat[] = [
     isRead: true,
     avatar: 'A',
     messages: [
-      {
-        id: '1',
-        sender: 'them',
-        text: "I'm interested in the apartment",
-        time: '1 hour ago',
-      },
+      { id: '1', sender: 'them', text: "I'm interested in the apartment", time: '1 hour ago' },
     ],
   },
   {
@@ -96,12 +76,7 @@ const MOCK_CHATS: Chat[] = [
     isRead: false,
     avatar: 'J',
     messages: [
-      {
-        id: '1',
-        sender: 'them',
-        text: 'Thanks for liking my profile!',
-        time: '3 hours ago',
-      },
+      { id: '1', sender: 'them', text: 'Thanks for liking my profile!', time: '3 hours ago' },
     ],
   },
 ];
@@ -115,33 +90,20 @@ function ChatListTab({ onChatPress }: { onChatPress: (id: string) => void }) {
       renderItem={({ item }) => (
         <Pressable
           onPress={() => onChatPress(item.id)}
-          style={({ pressed }) => [
-            s.chatListItem,
-            pressed && { opacity: 0.8 },
-          ]}>
+          style={({ pressed }) => [s.chatListItem, pressed && { opacity: 0.8 }]}>
           <View style={{ position: 'relative' }}>
             <Avatar size={56} hue={0} label={item.avatar} />
             {!item.isRead && <View style={s.unreadBadge} />}
           </View>
-
           <View style={{ flex: 1, marginLeft: 12 }}>
             <View style={s.chatListHeader}>
-              <Text style={s.chatListName}>
-                {item.name}, {item.age}
-              </Text>
-              <Text
-                style={[
-                  s.chatListTime,
-                  !item.isRead && s.chatListTimeUnread,
-                ]}>
+              <Text style={s.chatListName}>{item.name}, {item.age}</Text>
+              <Text style={[s.chatListTime, !item.isRead && s.chatListTimeUnread]}>
                 {item.lastMessageTime}
               </Text>
             </View>
             <Text
-              style={[
-                s.chatListMessage,
-                !item.isRead && s.chatListMessageUnread,
-              ]}
+              style={[s.chatListMessage, !item.isRead && s.chatListMessageUnread]}
               numberOfLines={1}>
               {item.lastMessage}
             </Text>
@@ -153,50 +115,82 @@ function ChatListTab({ onChatPress }: { onChatPress: (id: string) => void }) {
 }
 
 // ─── Chat Detail Tab ──────────────────────────────────────────────────────────
-function ChatDetailTab({
-  chat,
-  onBack,
-}: {
-  chat: Chat | null;
-  onBack: () => void;
-}) {
-  const [message, setMessage] = useState('');
+function ChatDetailTab({ chat, onBack, safeBottom }: { chat: Chat | null; onBack: () => void; safeBottom: number }) {
+  const [messages, setMessages]   = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+  const inputRef  = useRef<TextInput>(null);
+
+  // Reset messages whenever we open a different chat
+  useEffect(() => {
+    if (chat) {
+      setMessages(chat.messages);
+      setInputText('');
+    }
+  }, [chat?.id]);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    }
+  }, [messages.length]);
+
+  const handleSend = useCallback(() => {
+    const text = inputText.trim();
+    if (!text) return;
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const newMsg: ChatMessage = {
+      id: String(Date.now()),
+      sender: 'me',
+      text,
+      time,
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+    setInputText('');
+    // Re-focus so the keyboard stays open after sending
+    inputRef.current?.focus();
+  }, [inputText]);
 
   if (!chat) return null;
+
+  const canSend = inputText.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={s.chatDetailContainer}>
+      style={s.chatDetailContainer}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+
       {/* Header */}
       <View style={s.chatDetailHeader}>
-        <Pressable onPress={onBack}>
+        <Pressable onPress={onBack} hitSlop={12}>
           <Feather name="arrow-left" size={24} color={COLORS.ink} />
         </Pressable>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={s.chatDetailName}>
-            {chat.name}, {chat.age}
-          </Text>
+          <Text style={s.chatDetailName}>{chat.name}, {chat.age}</Text>
         </View>
         <Feather name="more-vertical" size={24} color={COLORS.muted} />
       </View>
 
       {/* Messages */}
       <ScrollView
+        ref={scrollRef}
         style={s.messagesContainer}
-        showsVerticalScrollIndicator={false}>
-        {chat.messages.map((msg) => (
-          <View
-            key={msg.id}
-            style={[
-              s.messageRow,
-              msg.sender === 'me' && s.messageRowMe,
-            ]}>
-            <View
-              style={[
-                s.messageBubble,
-                msg.sender === 'me' && s.messageBubbleMe,
-              ]}>
+        contentContainerStyle={s.messagesContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
+        {messages.map((msg) => (
+          <View key={msg.id} style={[s.messageRow, msg.sender === 'me' && s.messageRowMe]}>
+            <View style={[s.messageBubble, msg.sender === 'me' && s.messageBubbleMe]}>
               {msg.sender === 'me' ? (
                 <LinearGradient
                   colors={GRADIENT.brand as any}
@@ -209,26 +203,37 @@ function ChatDetailTab({
                 <Text style={s.messageText}>{msg.text}</Text>
               )}
             </View>
-            <Text style={s.messageTime}>{msg.time}</Text>
+            <Text style={[s.messageTime, msg.sender === 'me' && s.messageTimeMe]}>
+              {msg.time}
+            </Text>
           </View>
         ))}
       </ScrollView>
 
-      {/* Input */}
-      <View style={s.inputContainer}>
+      {/* Input bar — paddingBottom uses device safe area since tab bar is hidden */}
+      <View style={[s.inputContainer, { paddingBottom: Math.max(safeBottom, SPACING.md) }]}>
         <TextInput
+          ref={inputRef}
           placeholder="Type a message..."
           placeholderTextColor={COLORS.muted}
-          value={message}
-          onChangeText={setMessage}
+          value={inputText}
+          onChangeText={setInputText}
+          onSubmitEditing={handleSend}
           style={s.messageInput}
           multiline
+          autoFocus
+          editable
+          keyboardType="default"
+          returnKeyType="send"
+          blurOnSubmit={false}
+          maxLength={1000}
         />
         <Pressable
-          disabled={!message.trim()}
+          onPress={handleSend}
+          disabled={!canSend}
           style={({ pressed }) => [
             s.sendBtn,
-            !message.trim() && s.sendBtnDisabled,
+            !canSend && s.sendBtnDisabled,
             pressed && { opacity: 0.8 },
           ]}>
           <LinearGradient
@@ -246,12 +251,21 @@ function ChatDetailTab({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ChatScreen() {
-  const [activeTab, setActiveTab] = useState<ChatTab>('list');
+  const navigation                      = useNavigation();
+  const { bottom: safeBottom }          = useSafeAreaInsets();
+  const [activeTab, setActiveTab]       = useState<ChatTab>('list');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
 
+  // Hide the floating tab bar when the chat detail is open
+  useEffect(() => {
+    navigation.setOptions({
+      tabBarStyle: activeTab === 'detail' ? { display: 'none' } : undefined,
+    });
+  }, [activeTab, navigation]);
+
   const handleChatPress = (id: string) => {
-    const chat = MOCK_CHATS.find((c) => c.id === id);
-    setSelectedChat(chat || null);
+    const chat = MOCK_CHATS.find((c) => c.id === id) ?? null;
+    setSelectedChat(chat);
     setActiveTab('detail');
   };
 
@@ -261,12 +275,11 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={activeTab === 'detail' ? ['top'] : undefined}>
       <StatusBar barStyle="dark-content" />
 
       {activeTab === 'list' ? (
         <>
-          {/* Header */}
           <View style={s.header}>
             <Text style={s.headerTitle}>Messages</Text>
             <Pressable style={s.headerBtn}>
@@ -274,26 +287,20 @@ export default function ChatScreen() {
             </Pressable>
           </View>
 
-          {/* Search */}
           <View style={s.searchContainer}>
-            <Feather
-              name="search"
-              size={18}
-              color={COLORS.muted}
-              style={{ marginRight: SPACING.sm }}
-            />
+            <Feather name="search" size={18} color={COLORS.muted} style={{ marginRight: SPACING.sm }} />
             <TextInput
               placeholder="Search chats..."
               placeholderTextColor={COLORS.muted}
               style={s.searchInput}
+              keyboardType="default"
             />
           </View>
 
-          {/* Chat list */}
           <ChatListTab onChatPress={handleChatPress} />
         </>
       ) : (
-        <ChatDetailTab chat={selectedChat} onBack={handleBack} />
+        <ChatDetailTab chat={selectedChat} onBack={handleBack} safeBottom={safeBottom} />
       )}
     </SafeAreaView>
   );
@@ -351,7 +358,6 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.line,
   },
-
   unreadBadge: {
     position: 'absolute',
     top: -2,
@@ -363,39 +369,19 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
-
   chatListHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  chatListName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.ink,
-    flex: 1,
-  },
-  chatListTime: {
-    fontSize: 12,
-    color: COLORS.muted,
-  },
-  chatListTimeUnread: {
-    fontWeight: '700',
-    color: COLORS.secondary,
-  },
-  chatListMessage: {
-    fontSize: 13,
-    color: COLORS.soft,
-  },
-  chatListMessageUnread: {
-    fontWeight: '600',
-    color: COLORS.ink,
-  },
+  chatListName: { fontSize: 15, fontWeight: '700', color: COLORS.ink, flex: 1 },
+  chatListTime: { fontSize: 12, color: COLORS.muted },
+  chatListTimeUnread: { fontWeight: '700', color: COLORS.secondary },
+  chatListMessage: { fontSize: 13, color: COLORS.soft },
+  chatListMessageUnread: { fontWeight: '600', color: COLORS.ink },
 
-  chatDetailContainer: {
-    flex: 1,
-  },
+  chatDetailContainer: { flex: 1 },
   chatDetailHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -404,75 +390,59 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.line,
   },
-  chatDetailName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.ink,
-  },
+  chatDetailName: { fontSize: 16, fontWeight: '700', color: COLORS.ink },
 
-  messagesContainer: {
-    flex: 1,
+  messagesContainer: { flex: 1 },
+  messagesContent: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
 
   messageRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     marginBottom: SPACING.md,
-    justifyContent: 'flex-start',
   },
-  messageRowMe: {
-    justifyContent: 'flex-end',
-  },
+  messageRowMe: { alignItems: 'flex-end' },
 
   messageBubble: {
     maxWidth: '75%',
     backgroundColor: COLORS.bgSoft,
     borderRadius: RADII.lg,
-    borderBottomLeftRadius: RADII.md,
+    borderBottomLeftRadius: RADII.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
   messageBubbleMe: {
     backgroundColor: 'transparent',
-    borderRadius: RADII.lg,
-    borderBottomRightRadius: RADII.md,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   messageBubbleGradient: {
     borderRadius: RADII.lg,
-    borderBottomRightRadius: RADII.md,
+    borderBottomRightRadius: RADII.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     ...SHADOW.glow,
   },
-
-  messageText: {
-    color: COLORS.ink,
-    fontSize: 14,
-  },
-  messageTextMe: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  messageTime: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginTop: 4,
-    marginHorizontal: 8,
-  },
+  messageText:   { color: COLORS.ink, fontSize: 14, lineHeight: 20 },
+  messageTextMe: { color: '#fff', fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  messageTime:   { fontSize: 11, color: COLORS.muted, marginTop: 4 },
+  messageTimeMe: { alignSelf: 'flex-end' },
 
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
+    paddingBottom: Platform.OS === 'ios' ? SPACING.md : SPACING.md,
     gap: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.line,
+    backgroundColor: COLORS.bg,
   },
-
   messageInput: {
     flex: 1,
     backgroundColor: COLORS.bgSoft,
@@ -482,21 +452,18 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: COLORS.ink,
     maxHeight: 100,
+    lineHeight: 20,
   },
-
   sendBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
     overflow: 'hidden',
   },
-  sendBtnDisabled: {
-    opacity: 0.5,
-  },
+  sendBtnDisabled: { opacity: 0.4 },
   sendBtnGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOW.glow,

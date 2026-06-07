@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet,
-  ActivityIndicator, TextInput, Alert,
+  ActivityIndicator, TextInput, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
+import { useTranslation } from '../i18n/translations';
+import { useAuth } from '../context/AuthContext';
+import LanguageSelector from '../components/LanguageSelector';
 import { landlordService } from '../api/LandlordService';
 import type { Listing } from '../data/listings';
 
@@ -21,8 +24,28 @@ const C = {
 };
 
 export default function LandlordProfileScreen({ navigation }: Props) {
+  const { t } = useTranslation();
+  const { signOut } = useAuth();
   const user    = useAppStore((s) => s.user);
   const profile = useAppStore((s) => s.profile);
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      // Alert.alert is a no-op on React Native Web — use window.confirm instead
+      if ((window as any).confirm(t('settings.logoutConfirm'))) {
+        signOut();
+      }
+    } else {
+      Alert.alert(
+        t('settings.logout'),
+        t('settings.logoutConfirm'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('settings.logout'), style: 'destructive', onPress: signOut },
+        ],
+      );
+    }
+  };
 
   const [listings,  setListings]  = useState<Listing[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -57,12 +80,12 @@ export default function LandlordProfileScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View style={st.header}>
-          <Text style={st.pageTitle}>Profilim</Text>
+          <Text style={st.pageTitle}>{t('profile.title')}</Text>
           <Pressable
             style={st.editBtn}
             onPress={() => navigation.navigate('ProfileEdit')}
           >
-            <Text style={st.editBtnTxt}>Düzenle</Text>
+            <Text style={st.editBtnTxt}>{t('profile.editProfile')}</Text>
           </Pressable>
         </View>
 
@@ -73,24 +96,23 @@ export default function LandlordProfileScreen({ navigation }: Props) {
           </View>
           <Text style={st.name}>{user?.name ?? '—'}</Text>
           <View style={st.roleBadge}>
-            <Text style={st.roleTxt}>🏠 Ev Sahibi</Text>
+            <Text style={st.roleTxt}>🏠 {t('auth.landlord')}</Text>
           </View>
         </View>
 
         {/* Bilgiler */}
         <View style={st.section}>
-          <Text style={st.sectionTitle}>Kişisel Bilgiler</Text>
-          <InfoRow label="E-posta"  value={user?.email} />
-          <InfoRow label="Şehir"    value={profile?.city} />
-          <InfoRow label="Telefon"  value={(profile as any)?.phone} />
+          <Text style={st.sectionTitle}>{t('settings.sectionProfile')}</Text>
+          <InfoRow label={t('auth.email')}  value={user?.email} />
+          <InfoRow label={t('quiz.catLife')} value={profile?.city} />
         </View>
 
         {/* İlanlar özeti */}
         <View style={st.section}>
           <View style={st.sectionHeader}>
-            <Text style={st.sectionTitle}>İlanlarım</Text>
+            <Text style={st.sectionTitle}>{t('listing.myListings')}</Text>
             <Pressable onPress={() => navigation.navigate('MyListings')}>
-              <Text style={st.seeAll}>Tümü →</Text>
+              <Text style={st.seeAll}>{t('profile.myListings')}</Text>
             </Pressable>
           </View>
 
@@ -98,12 +120,12 @@ export default function LandlordProfileScreen({ navigation }: Props) {
             <ActivityIndicator color={C.brand} style={{ marginTop: 16 }} />
           ) : listings.length === 0 ? (
             <View style={st.emptyListings}>
-              <Text style={st.emptyTxt}>Henüz ilan yok.</Text>
+              <Text style={st.emptyTxt}>{t('listing.noListings')}</Text>
               <Pressable
                 style={st.createBtn}
                 onPress={() => navigation.navigate('CreateListing')}
               >
-                <Text style={st.createBtnTxt}>+ İlan Oluştur</Text>
+                <Text style={st.createBtnTxt}>{t('listing.createListing')}</Text>
               </Pressable>
             </View>
           ) : (
@@ -122,6 +144,13 @@ export default function LandlordProfileScreen({ navigation }: Props) {
             ))
           )}
         </View>
+        {/* Language selector */}
+        <LanguageSelector />
+
+        {/* Logout */}
+        <Pressable style={st.logoutBtn} onPress={handleLogout}>
+          <Text style={st.logoutTxt}>🚪 {t('settings.logout')}</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -155,4 +184,11 @@ const st = StyleSheet.create({
   listingBody: { flex: 1, padding: 14 },
   listingTitle:{ fontSize: 14, fontWeight: '700', color: C.ink },
   listingSub:  { fontSize: 12, color: C.mute, marginTop: 4 },
+  logoutBtn: {
+    marginHorizontal: 20, marginTop: 32, marginBottom: 8,
+    paddingVertical: 14, borderRadius: 12,
+    backgroundColor: '#fff', borderWidth: 1, borderColor: '#FF4444',
+    alignItems: 'center',
+  },
+  logoutTxt: { color: '#FF4444', fontSize: 15, fontWeight: '700' },
 });

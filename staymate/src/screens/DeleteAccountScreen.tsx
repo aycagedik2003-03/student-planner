@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator,
@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
 import api from '../api/client';
@@ -26,8 +26,8 @@ export default function DeleteAccountScreen({ navigation }: Props) {
 
   const handleDelete = () => {
     if (!password) { setError(t('errors.emptyPassword')); return; }
-    if (confirm.toLowerCase() !== 'sil') {
-      setError('Onaylamak için "SİL" yazın.'); return;
+    if (confirm.toLowerCase() !== t('deleteAccount.confirmWord')) {
+      setError(t('deleteAccount.confirmError')); return;
     }
 
     Alert.alert(
@@ -75,8 +75,8 @@ export default function DeleteAccountScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={st.body}>
         <View style={st.warnCard}>
           <Text style={st.warnIcon}>⚠️</Text>
-          <Text style={st.warnTitle}>Bu işlem geri alınamaz</Text>
-          <Text style={st.warnDesc}>{t('settings.deleteConfirm')}</Text>
+          <Text style={st.warnTitle}>{t('deleteAccount.warning')}</Text>
+          <Text style={st.warnDesc}>{t('deleteAccount.desc')}</Text>
         </View>
 
         <Text style={st.label}>{t('auth.password')}</Text>
@@ -90,12 +90,12 @@ export default function DeleteAccountScreen({ navigation }: Props) {
           autoCapitalize="none"
         />
 
-        <Text style={st.label}>Onaylamak için "SİL" yazın</Text>
+        <Text style={st.label}>{t('deleteAccount.confirmLabel')}</Text>
         <TextInput
           style={st.input}
           value={confirm}
           onChangeText={v => { setConfirm(v); setError(''); }}
-          placeholder="SİL"
+          placeholder={t('deleteAccount.confirmPlaceholder')}
           placeholderTextColor={C.mute}
           autoCapitalize="characters"
         />
@@ -105,7 +105,7 @@ export default function DeleteAccountScreen({ navigation }: Props) {
         <Pressable style={[st.btn, loading && st.btnDisabled]} onPress={handleDelete} disabled={loading}>
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={st.btnTxt}>🗑 {t('settings.deleteAccount')}</Text>}
+            : <Text style={st.btnTxt}>{t('deleteAccount.deleteBtn')}</Text>}
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -130,3 +130,4 @@ const st = StyleSheet.create({
   btnDisabled:{ backgroundColor: '#9CA3AF' },
   btnTxt:     { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
+

@@ -4,17 +4,15 @@ import { NavigationContainer, NavigatorScreenParams } from '@react-navigation/na
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 
 import AuthScreen                from './src/screens/AuthScreen';
 import OnboardingScreen          from './src/screens/OnboardingScreen';
 import QuizScreen                from './src/screens/QuizScreen';
 import ProfileScreen             from './src/screens/ProfileScreen';
-import ProfileTabScreen          from './src/screens/ProfileTabScreen';
-import MatchScreen               from './src/screens/MatchScreen';
 import ChatScreen                from './src/screens/ChatScreen';
 import ChatListScreen            from './src/screens/ChatListScreen';
 import FilterScreen              from './src/screens/FilterScreen';
-import ListingScreen             from './src/screens/ListingScreen';
 import ListingDetailScreen       from './src/screens/ListingDetailScreen';
 import CreateListingScreen       from './src/screens/CreateListingScreen';
 import CompatibilityReportScreen from './src/screens/CompatibilityReportScreen';
@@ -34,11 +32,15 @@ import DeleteAccountScreen       from './src/screens/DeleteAccountScreen';
 import AboutScreen               from './src/screens/AboutScreen';
 import NotificationCenterScreen  from './src/screens/NotificationCenterScreen';
 import EmailVerificationScreen   from './src/screens/EmailVerificationScreen';
+import PasswordResetScreen        from './src/screens/PasswordResetScreen';
 
 import { authService }                   from './src/api/AuthService';
 import { profileService }                from './src/api/ProfileService';
+import { storage }                       from './src/utils/storage';
+
+const IS_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { useAppStore }                   from './src/store';
-import { useTranslation }                from './src/i18n/useTranslation';
+import { useTranslation }                from './src/i18n/translations';
 import { registerForPushNotifications }  from './src/services/NotificationService';
 import { navigationRef }                 from './src/utils/navigationRef';
 import { AuthProvider }                  from './src/context/AuthContext';
@@ -55,11 +57,10 @@ export type TabParamList = {
 
 // ── Landlord tab param list ────────────────────────────────────────────────────
 export type LandlordTabParamList = {
-  MyListings:         undefined;
-  InterestedStudents: undefined;
-  ChatListTab:        undefined;
-  Notifications:      undefined;
-  LandlordProfile:    undefined;
+  MyListings:      undefined;
+  ChatListTab:     undefined;
+  Notifications:   undefined;
+  LandlordProfile: undefined;
 };
 
 // ── Root stack param list ──────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ export type RootStackParamList = {
   About:             undefined;
   Settings:          undefined;
   EmailVerification: { email: string };
+  PasswordReset:     undefined;
   Verification:    undefined;
   ProfileEdit:     undefined;
   PrivacyPolicy:   undefined;
@@ -98,26 +100,18 @@ export type RootStackParamList = {
   };
 };
 
-// ── Tab icon maps ──────────────────────────────────────────────────────────────
-const STUDENT_ICONS: Record<string, string> = {
-  Match:         '✦',
-  BrowseListings:'🏠',
-  ChatListTab:   '💬',
-  Notifications: '🔔',
-  ProfileTab:    '◉',
-};
-const LANDLORD_ICONS: Record<string, string> = {
-  MyListings:         '🏠',
-  InterestedStudents: '🎓',
-  ChatListTab:        '💬',
-  Notifications:      '🔔',
-  LandlordProfile:    '◉',
-};
-
 // StudentTabs replaced by BottomTabNavigator (imported above)
 
 // ── Landlord tabs ──────────────────────────────────────────────────────────────
 const LandlordTab = createBottomTabNavigator<LandlordTabParamList>();
+
+type LandlordIcon = keyof typeof Feather.glyphMap;
+const LANDLORD_FEATHER: Record<string, LandlordIcon> = {
+  MyListings:      'home',
+  ChatListTab:     'message-circle',
+  Notifications:   'bell',
+  LandlordProfile: 'user',
+};
 
 function LandlordTabs() {
   const { t, language } = useTranslation();
@@ -126,27 +120,35 @@ function LandlordTabs() {
       key={language}
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor:   '#E91E63',
-        tabBarInactiveTintColor: '#00BCD4',
+        tabBarActiveTintColor:   '#1FBFCC',
+        tabBarInactiveTintColor: '#aaaaaa',
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(31,41,55,0.08)',
-          height: 60,
+          backgroundColor: '#ffffff',
+          borderTopWidth: 0,
+          height: 64,
           paddingBottom: 8,
-          paddingTop: 4,
+          paddingTop: 8,
+          elevation: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2 },
-        tabBarIcon: ({ color }) => (
-          <Text style={{ color, fontSize: 18 }}>{LANDLORD_ICONS[route.name]}</Text>
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+        tabBarIcon: ({ color, size }) => (
+          <Feather name={LANDLORD_FEATHER[route.name] ?? 'circle'} size={22} color={color} />
         ),
       })}
     >
-      <LandlordTab.Screen name="MyListings"         component={MyListingsScreen}           options={{ tabBarLabel: () => t('tabs.myListings')    }} />
-      <LandlordTab.Screen name="InterestedStudents" component={InterestedStudentsScreen}   options={{ tabBarLabel: () => t('tabs.students')       }} />
-      <LandlordTab.Screen name="ChatListTab"        component={ChatListScreen}             options={{ tabBarLabel: () => t('tabs.messages')       }} />
-      <LandlordTab.Screen name="Notifications"      component={NotificationCenterScreen}   options={{ tabBarLabel: () => t('tabs.notifications')  }} />
-      <LandlordTab.Screen name="LandlordProfile"    component={LandlordProfileScreen}      options={{ tabBarLabel: () => t('tabs.profile')        }} />
+      <LandlordTab.Screen name="MyListings"      component={MyListingsScreen}         options={{ tabBarLabel: () => t('tabs.myListings')   }} />
+      <LandlordTab.Screen name="ChatListTab"     component={ChatListScreen}           options={{ tabBarLabel: () => t('tabs.messages')      }} />
+      <LandlordTab.Screen name="Notifications"   component={NotificationCenterScreen} options={{ tabBarLabel: () => t('tabs.notifications') }} />
+      <LandlordTab.Screen name="LandlordProfile" component={LandlordProfileScreen}   options={{ tabBarLabel: () => t('tabs.profile')       }} />
     </LandlordTab.Navigator>
   );
 }
@@ -187,7 +189,7 @@ const splash = StyleSheet.create({
 
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const { setToken, setUserType, setProfile, setQuizCompleted } = useAppStore();
+  const { setToken, setUserType, setProfile, setQuizCompleted, loadLanguage } = useAppStore();
 
   const [isReady,      setIsReady]      = useState(false);
   const [initialRoute, setInitialRoute] =
@@ -196,6 +198,25 @@ export default function App() {
   useEffect(() => {
     const bootstrap = async () => {
       try {
+        // Restore persisted language before anything renders
+        await loadLanguage();
+
+        // Evict stale mock sessions.
+        // A mock session has userId like "mock_1748..." or token like "mock_access_...".
+        // Sending these to the backend causes 422 UUID validation errors.
+        const storedUserId    = await storage.getItem('userId');
+        const storedUserToken = await storage.getItem('userToken');
+        const isMockSession =
+          (storedUserId    && !IS_UUID.test(storedUserId)       ) ||
+          (storedUserToken && storedUserToken.startsWith('mock_'));
+        if (isMockSession) {
+          if (__DEV__) console.log('[Boot] Stale mock session detected — clearing');
+          await authService.logout(); // clears SecureStore; API call is best-effort
+          setInitialRoute('Auth');
+          setIsReady(true);
+          return;
+        }
+
         registerForPushNotifications().catch(() => {});
 
         const token = await authService.getToken();
@@ -214,8 +235,16 @@ export default function App() {
               const done = !!(profile.quizCompleted || (profile.traits && profile.traits.length > 0));
               setQuizCompleted(done);
               setInitialRoute(done ? 'MainTabs' : 'Onboarding');
-            } catch {
-              setInitialRoute('Onboarding');
+            } catch (err: any) {
+              // 401/403 → token expired or invalid. interceptor already cleared storage;
+              // route to Auth so the user logs in with fresh credentials.
+              const status = err?.response?.status;
+              if (!status || status === 401 || status === 403) {
+                setInitialRoute('Auth');
+              } else {
+                // Network error / 5xx — let the user try from Onboarding
+                setInitialRoute('Onboarding');
+              }
             }
           }
         } else {
@@ -229,7 +258,7 @@ export default function App() {
     };
 
     bootstrap();
-  }, [setToken, setUserType, setProfile, setQuizCompleted]);
+  }, [setToken, setUserType, setProfile, setQuizCompleted, loadLanguage]);
 
   if (!isReady) {
     if (Platform.OS === 'web') {
@@ -280,6 +309,7 @@ export default function App() {
         <Stack.Screen name="About"            component={AboutScreen} />
         <Stack.Screen name="Settings"           component={SettingsScreen} />
         <Stack.Screen name="EmailVerification"  component={EmailVerificationScreen} />
+        <Stack.Screen name="PasswordReset"      component={PasswordResetScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </AuthProvider>

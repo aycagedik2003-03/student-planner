@@ -1,447 +1,181 @@
-// src/screens/OnboardingScreen.tsx — roomski splash
-//
-// Layout: two diagonal gradient panels (SVG), white chat bubbles with
-// timestamps + read ticks, Kraków/Wrocław location pills, gradient
-// medallion on the split line, "roomski" wordmark, gradient CTA,
-// PL/TR/EN pill language switcher.
-
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, StatusBar, Dimensions, ScrollView,
+  View, Text, Image, StyleSheet,
+  Dimensions, StatusBar, Pressable, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, {
-  Polygon, Defs,
-  LinearGradient as SvgGrad, Stop,
-} from 'react-native-svg';
-import { COLORS, GRADIENT, SHADOW } from '../utils/constants';
-import { Logo }  from '../components/Logo';
-import { Pill }  from '../components/Pill';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { COLORS, SHADOW, RADII } from '../utils/constants';
 import { useT, setLanguage, Lang } from '../i18n/translations';
 
-const { width: W, height: H } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
+const DISPLAY_W = Platform.OS === 'web' ? 390 : W;
+const HERO_H    = DISPLAY_W * (1080 / 718); // composite image aspect ratio
 
-// Diagonal split: wider at top, narrower at bottom
-const HERO_H       = H * 0.50;
-const SPLIT_TOP    = W * 0.54;
-const SPLIT_BOTTOM = W * 0.46;
+const ONBOARDED_KEY = '@roomski/onboarded';
+const TIMEOUT_MS    = 30_000;
 
-// ─── Two diagonal gradient panels ────────────────────────────────────────────
-function HeroPanels() {
-  return (
-    <Svg
-      width={W}
-      height={HERO_H}
-      style={StyleSheet.absoluteFillObject}>
-      <Defs>
-        {/* Left: teal → violet */}
-        <SvgGrad
-          id="lg"
-          x1={0}
-          y1={0}
-          x2={SPLIT_TOP}
-          y2={HERO_H}
-          gradientUnits="userSpaceOnUse">
-          <Stop offset="0"   stopColor="#1FBFCC" />
-          <Stop offset="1"   stopColor="#8E5CD9" />
-        </SvgGrad>
-        {/* Right: violet → magenta */}
-        <SvgGrad
-          id="rg"
-          x1={W}
-          y1={0}
-          x2={SPLIT_BOTTOM}
-          y2={HERO_H}
-          gradientUnits="userSpaceOnUse">
-          <Stop offset="0"   stopColor="#8E5CD9" />
-          <Stop offset="1"   stopColor="#D93B8B" />
-        </SvgGrad>
-        {/* Bottom fade to white */}
-        <SvgGrad
-          id="fo"
-          x1={0}
-          y1={HERO_H * 0.55}
-          x2={0}
-          y2={HERO_H}
-          gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <Stop offset="1" stopColor="#fff" stopOpacity="1"  />
-        </SvgGrad>
-      </Defs>
-
-      {/* Left panel */}
-      <Polygon
-        points={`0,0 ${SPLIT_TOP},0 ${SPLIT_BOTTOM},${HERO_H} 0,${HERO_H}`}
-        fill="url(#lg)"
-      />
-      {/* Right panel */}
-      <Polygon
-        points={`${SPLIT_TOP},0 ${W},0 ${W},${HERO_H} ${SPLIT_BOTTOM},${HERO_H}`}
-        fill="url(#rg)"
-      />
-      {/* Fade overlay */}
-      <Polygon
-        points={`0,${HERO_H * 0.5} ${W},${HERO_H * 0.5} ${W},${HERO_H} 0,${HERO_H}`}
-        fill="url(#fo)"
-      />
-    </Svg>
-  );
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms),
+    ),
+  ]);
 }
 
-// ─── White chat bubble with timestamp + read ticks ───────────────────────────
-function WhiteBubble({
-  text, time, x, y, rotate = 0, tail = 'l',
-}: {
-  text: string; time: string;
-  x: number; y: number;
-  rotate?: number; tail?: 'l' | 'r';
-}) {
-  return (
-    <View
-      style={[
-        b.wrap,
-        {
-          left: x,
-          top:  y,
-          transform: [{ rotate: `${rotate}deg` }],
-        },
-      ]}>
-      <View
-        style={[
-          b.bubble,
-          {
-            borderBottomLeftRadius:  tail === 'l' ? 4 : 18,
-            borderBottomRightRadius: tail === 'r' ? 4 : 18,
-          },
-        ]}>
-        <Text style={b.text}>{text}</Text>
-        <View style={b.footer}>
-          <Text style={b.time}>{time}</Text>
-          <Text style={b.ticks}>✓✓</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-const b = StyleSheet.create({
-  wrap:   {
-    position: 'absolute',
-    ...SHADOW.card,
-  },
-  bubble: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 8,
-    borderRadius: 18,
-    minWidth: 150,
-    maxWidth: W * 0.52,
-  },
-  text: {
-    color: COLORS.ink,
-    fontWeight: '600',
-    fontSize: 13,
-    letterSpacing: -0.2,
-    lineHeight: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 4,
-  },
-  time:  { color: COLORS.muted, fontSize: 10 },
-  ticks: { color: '#1FBFCC', fontSize: 10, fontWeight: '800' },
-});
-
-// ─── Location pill ────────────────────────────────────────────────────────────
-function LocationPill({
-  city, color, x, y,
-}: {
-  city: string; color: string;
-  x: number;    y: number;
-}) {
-  return (
-    <View
-      style={[
-        lp.wrap,
-        { left: x, top: y, borderColor: color + '55' },
-      ]}>
-      <Text style={lp.pin}>📍</Text>
-      <Text style={[lp.city, { color }]}>{city}</Text>
-    </View>
-  );
-}
-
-const lp = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    ...SHADOW.card,
-  },
-  pin:  { fontSize: 12 },
-  city: { fontWeight: '700', fontSize: 13, letterSpacing: -0.2 },
-});
-
-// ─── Language switcher ────────────────────────────────────────────────────────
-function LangSwitcher({
-  lang, onChange,
-}: {
-  lang: Lang;
-  onChange: (l: Lang) => void;
-}) {
-  const opts: { code: Lang; flag: string; name: string }[] = [
-    { code: 'tr', flag: '🇹🇷', name: 'TR' },
-    { code: 'pl', flag: '🇵🇱', name: 'PL' },
-    { code: 'en', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'EN' },
-  ];
-
-  return (
-    <View style={s.langRow}>
-      {opts.map((o) => {
-        const on = o.code === lang;
-        return (
-          <Pressable
-            key={o.code}
-            onPress={() => onChange(o.code)}
-            style={[s.langPill, on && s.langPillOn]}
-            hitSlop={6}>
-            <Text style={{ fontSize: 14 }}>{o.flag}</Text>
-            <Text style={[s.langTxt, on && { color: '#fff' }]}>
-              {o.name}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-interface Props {
-  onGetStarted?: () => void;
-  onSignIn?:     () => void;
-  onOnboarded?:  () => void;
-}
-
-export default function OnboardingScreen({
-  onGetStarted,
-  onSignIn,
-  onOnboarded,
-}: Props) {
+export default function OnboardingScreen() {
   const { t, lang } = useT();
+  const navigation  = useNavigation<any>();
+  const [error, setError] = React.useState<string | null>(null);
+  const guard = useRef(false);
 
-  const handleGetStarted = () => { onOnboarded?.(); onGetStarted?.(); };
-  const handleSignIn     = () => { onOnboarded?.(); onSignIn?.(); };
+  const mark = () =>
+    withTimeout(AsyncStorage.setItem(ONBOARDED_KEY, '1'), TIMEOUT_MS);
+
+  const go = useCallback(
+    async (mode: 'register' | 'login') => {
+      if (guard.current) return;
+      guard.current = true;
+      setError(null);
+      try {
+        await mark();
+        navigation.replace('Auth', { mode });
+      } catch (e: any) {
+        setError(e?.message === 'timeout' ? 'Connection timed out.' : 'Connection error.');
+        guard.current = false;
+      }
+    },
+    [navigation],
+  );
+
+  const OPTS: Lang[] = ['pl', 'tr', 'en'];
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar translucent barStyle="light-content" backgroundColor="transparent" />
+      <View style={s.heroWrap}>
+        <Image
+          source={require('../../assets/hero_composite.png')}
+          style={s.hero}
+          resizeMode="contain"
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.85)', '#ffffff']}
+          style={s.heroFade}
+        />
+      </View>
+      <SafeAreaView style={s.bottom} edges={['bottom']}>
 
-      {/* Soft full-screen pastel background */}
-      <LinearGradient
-        colors={['#E6F8FA', '#F0EAFB', '#FBE7F1', '#FFFFFF']}
-        locations={[0, 0.35, 0.7, 1]}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-
-        {/* ── Hero zone ─────────────────────────────────────────────────────── */}
-        <View style={{ height: HERO_H, overflow: 'hidden' }}>
-          <HeroPanels />
-
-          {/* Bubble A — left, top */}
-          <WhiteBubble
-            text={t('splash_chat_a_l1')}
-            time="09:41"
-            x={20}
-            y={72}
-            rotate={-3}
-            tail="l"
-          />
-
-          {/* Bubble B — right, middle */}
-          <WhiteBubble
-            text={t('splash_chat_b_l1')}
-            time="09:42"
-            x={W - 188}
-            y={152}
-            rotate={3}
-            tail="r"
-          />
-
-          {/* Location pills */}
-          <LocationPill
-            city="Kraków"
-            color="#1FBFCC"
-            x={24}
-            y={HERO_H * 0.60}
-          />
-          <LocationPill
-            city="Wrocław"
-            color="#D93B8B"
-            x={W - 128}
-            y={HERO_H * 0.70}
-          />
-
-          {/* Medallion — centred on the split line */}
-          <View style={[s.medallion, { top: HERO_H - 56 }]}>
-            <LinearGradient
-              colors={GRADIENT.brand as any}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.ring}>
-              <View style={s.ringInner}>
-                <Logo size={52} />
-              </View>
-            </LinearGradient>
-          </View>
+        <View style={s.logoRow}>
+          <Text style={s.logoText}>roomski</Text>
         </View>
 
-        {/* ── Bottom content ─────────────────────────────────────────────────── */}
-        <ScrollView
-          contentContainerStyle={s.bottom}
-          showsVerticalScrollIndicator={false}>
+        <View style={s.spacerTop} />
 
-          <Text style={s.wordmark}>roomski</Text>
-          <Text style={s.tagline}>{t('splash_tagline')}</Text>
-          <Text style={s.subtitle}>{t('splash_subtitle')}</Text>
-
-          <View style={{ height: 28 }} />
-
-          <Pill variant="grad" size="lg" block glow onPress={handleGetStarted}>
-            {t('splash_cta')}
-          </Pill>
-
-          <View style={{ height: 10 }} />
-
-          <Pressable onPress={handleSignIn} style={s.signinBtn}>
-            <Text style={s.signinTxt}>{t('splash_signin')}</Text>
+        <LinearGradient
+          colors={['#1FBFCC', '#8E5CD9', '#D93B8B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={s.btn}>
+          <Pressable style={s.btnInner} onPress={() => go('register')}>
+            <Text style={s.btnText}>{t('splash_cta')}</Text>
           </Pressable>
+        </LinearGradient>
 
-          <View style={{ height: 28 }} />
+        {error ? (
+          <Pressable style={s.signinBtn} onPress={() => { setError(null); go('register'); }}>
+            <Text style={[s.signinText, { color: COLORS.error }]}>{error} Tap to retry.</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={s.signinBtn} onPress={() => go('login')}>
+            <Text style={s.signinText}>{t('splash_signin')}</Text>
+          </Pressable>
+        )}
 
-          <LangSwitcher lang={lang} onChange={setLanguage} />
+        <View style={s.spacerBottom} />
 
-          <Text style={s.terms}>{t('splash_terms')}</Text>
+        <View style={s.langWrap}>
+          {OPTS.map((l) => {
+            const active = l === lang;
+            return (
+              <Pressable
+                key={l}
+                onPress={() => setLanguage(l)}
+                style={[s.langPill, active && s.langPillOn]}>
+                <Text style={[s.langText, active && s.langTextOn]}>
+                  {l.toUpperCase()}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-        </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fff' },
 
-  medallion: {
+  heroWrap: {
+    width: DISPLAY_W,
+    height: HERO_H,
+    marginTop: -52,
+  },
+  hero: {
+    width: DISPLAY_W,
+    height: HERO_H,
+  },
+  heroFade: {
     position: 'absolute',
-    left: W / 2 - 54,
-  },
-  ring: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOW.float,
-  },
-  ringInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
   },
 
   bottom: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 68,
-    paddingBottom: 32,
-    alignItems: 'center',
-  },
-
-  wordmark: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: COLORS.ink,
-    letterSpacing: -1.5,
-  },
-  tagline: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.ink,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.soft,
-    marginTop: 8,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    lineHeight: 20,
-  },
-
-  signinBtn: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  signinTxt: {
-    color: COLORS.soft,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-
-  langRow: {
-    flexDirection: 'row',
+    flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 999,
-    padding: 4,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    ...SHADOW.card,
-  },
-  langPill: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  langPillOn: { backgroundColor: COLORS.ink },
-  langTxt: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: COLORS.soft,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
 
-  terms: {
-    color: COLORS.muted,
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 12,
-    paddingHorizontal: 24,
-    lineHeight: 16,
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
   },
+  logoText:    { fontSize: 22, fontWeight: '800', color: COLORS.ink, letterSpacing: -0.8 },
+
+  spacerTop:    { flex: 1 },
+  spacerBottom: { flex: 1 },
+
+  btn:     { alignSelf: 'stretch', borderRadius: RADII.pill, overflow: 'hidden', ...SHADOW.glow },
+  btnInner:{ height: 56, alignItems: 'center', justifyContent: 'center' },
+  btnText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
+
+  signinBtn:  { paddingVertical: 14, alignItems: 'center' },
+  signinText: { color: COLORS.muted, fontWeight: '500', fontSize: 14 },
+
+  langWrap: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: RADII.pill,
+    padding: 3,
+    gap: 2,
+    marginBottom: 8,
+  },
+  langPill:    { paddingHorizontal: 16, paddingVertical: 7, borderRadius: RADII.pill, minWidth: 48, alignItems: 'center' },
+  langPillOn:  { backgroundColor: COLORS.primary },
+  langText:    { fontSize: 11, fontWeight: '700', color: COLORS.soft, letterSpacing: 0.5 },
+  langTextOn:  { color: '#fff' },
 });

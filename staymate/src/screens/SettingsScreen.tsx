@@ -1,21 +1,16 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View, Text, TouchableOpacity, Pressable, StyleSheet, StatusBar,
   ScrollView, Switch, Alert, Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CompositeNavigationProp } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { TabParamList, RootStackParamList } from '../../App';
+import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 
-type NavProp = CompositeNavigationProp<
-  BottomTabNavigationProp<TabParamList, 'Settings'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type Props = { navigation: NavProp };
 
 const C = {
@@ -302,3 +297,4 @@ const st = StyleSheet.create({
   logoutTxt:  { color: C.red, fontSize: 15, fontWeight: '700' },
 
 });
+

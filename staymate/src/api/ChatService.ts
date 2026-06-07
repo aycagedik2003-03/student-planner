@@ -1,85 +1,101 @@
-import { io, Socket } from 'socket.io-client';
-
-// Socket.io base URL — /api/v1 path'ini çıkar, sadece origin kullan
-const SOCKET_URL = (process.env.EXPO_PUBLIC_API_URL ?? '')
-  .replace(/\/api\/v1\/?$/, '');
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type IncomingMessage = {
+export type ChatPreview = {
   id: string;
-  matchId: string;
-  content: string;
-  senderId: string;
-  createdAt: string;
+  match_id: string;
+  name: string;
+  avatar_url: string | null;
+  lastMessage: string;
+  lastMessageTime: Date;
+  unreadCount: number;
 };
 
-export type MessageCallback = (msg: IncomingMessage) => void;
-
-// ── Singleton socket instance ─────────────────────────────────────────────────
-
-let socket: Socket | null = null;
+export type ChatMessage = {
+  id: string;
+  sender: 'me' | 'other';
+  text: string;
+  timestamp: Date;
+};
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
-export const chatService = {
-  /**
-   * Socket.io bağlantısı kurar.
-   * connect_error olursa resolve eder (uygulamayı bloke etmez).
-   */
-  connect: (token: string): Promise<void> =>
-    new Promise(resolve => {
-      if (socket?.connected) { resolve(); return; }
+export class ChatService {
+  private API_URL = 'https://web-production-63097.up.railway.app/api/v1';
+  private token: string | null = null;
 
-      socket = io(SOCKET_URL, {
-        auth:          { token },
-        transports:    ['websocket'],
-        reconnection:  true,
-        timeout:       8000,
-      });
+  async getToken(): Promise<string | null> {
+    if (!this.token) {
+      this.token = await AsyncStorage.getItem('userToken');
+    }
+    return this.token;
+  }
 
-      socket.on('connect', () => {
-        console.log('[Chat] Socket bağlandı:', socket?.id);
-        resolve();
-      });
+  // MOCK: Matches'den eşleşmiş kişileri al (gerçekte: GET /matches/active)
+  async getChats(): Promise<ChatPreview[]> {
+    return [
+      {
+        id: '1',
+        match_id: 'match_001',
+        name: 'Tuana Gedik',
+        avatar_url: null,
+        lastMessage: 'Merhaba! Nasılsın?',
+        lastMessageTime: new Date(Date.now() - 3600000),
+        unreadCount: 2,
+      },
+      {
+        id: '2',
+        match_id: 'match_002',
+        name: 'Ada Eren',
+        avatar_url: null,
+        lastMessage: 'Cumartesi görüşebilir misin?',
+        lastMessageTime: new Date(Date.now() - 7200000),
+        unreadCount: 0,
+      },
+      {
+        id: '3',
+        match_id: 'match_003',
+        name: 'Zeynep Koç',
+        avatar_url: null,
+        lastMessage: 'Fotoğraf attım bakar mısın?',
+        lastMessageTime: new Date(Date.now() - 86400000),
+        unreadCount: 1,
+      },
+    ];
+  }
 
-      socket.on('disconnect', (reason) => {
-        console.log('[Chat] Socket bağlantısı kesildi:', reason);
-      });
+  // MOCK: Belirli bir chat'in mesajlarını al (gerçekte: GET /messages/{matchId})
+  async getMessages(matchId: string): Promise<ChatMessage[]> {
+    const mockMessages: Record<string, ChatMessage[]> = {
+      match_001: [
+        { id: '1', sender: 'me',    text: 'Merhaba!',         timestamp: new Date(Date.now() - 7200000) },
+        { id: '2', sender: 'other', text: 'Merhaba! Nasılsın?', timestamp: new Date(Date.now() - 3600000) },
+        { id: '3', sender: 'me',    text: 'İyiyim, sen?',     timestamp: new Date(Date.now() - 1800000) },
+      ],
+      match_002: [
+        { id: '1', sender: 'other', text: 'Cumartesi görüşebilir misin?', timestamp: new Date(Date.now() - 7200000) },
+        { id: '2', sender: 'me',    text: 'Tabii, saati söyler misin?',   timestamp: new Date(Date.now() - 3600000) },
+      ],
+    };
+    return mockMessages[matchId] ?? [];
+  }
 
-      socket.on('connect_error', (err) => {
-        console.warn('[Chat] Bağlantı hatası:', err.message);
-        resolve(); // Hata olsa bile uygulamayı bloke etme
-      });
-    }),
+  // Mesaj gönder (mock — gerçekte: POST /messages/send)
+  async sendMessage(matchId: string, text: string): Promise<ChatMessage> {
+    console.log('[ChatService] Mesaj gönderiliyor:', matchId, text);
+    return {
+      id: Date.now().toString(),
+      sender: 'me',
+      text,
+      timestamp: new Date(),
+    };
+  }
 
-  /** Belirtilen eşleşme odasına katıl */
-  joinRoom: (matchId: string): void => {
-    socket?.emit('join_room', { match_id: matchId });
-  },
+  // Oku olarak işaretle (mock — gerçekte: PATCH /messages/{matchId}/read)
+  async markAsRead(matchId: string): Promise<void> {
+    console.log('[ChatService] Okundu işaretlendi:', matchId);
+  }
+}
 
-  /** Mesaj gönder */
-  sendMessage: (matchId: string, content: string): void => {
-    socket?.emit('send_message', { match_id: matchId, content });
-  },
-
-  /** Gelen mesajları dinle */
-  onMessageReceived: (callback: MessageCallback): void => {
-    socket?.off('message_received');   // önceki listener'ı temizle
-    socket?.on('message_received', callback);
-  },
-
-  /** Odadan ayrıl (ChatScreen unmount'ta) */
-  leaveRoom: (matchId: string): void => {
-    socket?.emit('leave_room', { match_id: matchId });
-    socket?.off('message_received');
-  },
-
-  /** Bağlantıyı tamamen kes */
-  disconnect: (): void => {
-    socket?.disconnect();
-    socket = null;
-  },
-
-  isConnected: (): boolean => socket?.connected ?? false,
-};
+export const chatService = new ChatService();

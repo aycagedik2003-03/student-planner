@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../App';
+import { useT } from '../i18n/translations';
+import { TRAITS, traitLabel } from '../../traits';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'CompatibilityReport'>;
@@ -133,6 +135,7 @@ function fakeStream(
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function CompatibilityReportScreen({ navigation, route }: Props) {
+  const { lang } = useT();
   const {
     userId,
     userName,
@@ -298,11 +301,15 @@ export default function CompatibilityReportScreen({ navigation, route }: Props) 
           {/* Kısa özellik özeti */}
           {traits.length > 0 && (
             <View style={st.traitRow}>
-              {traits.slice(0, 3).map((t, i) => (
-                <View key={i} style={st.traitPill}>
-                  <Text style={st.traitPillTxt}>{t}</Text>
-                </View>
-              ))}
+              {traits.slice(0, 3).map((traitKey, i) => {
+                const emoji = (TRAITS as any)[traitKey]?.emoji ?? '✦';
+                const label = traitLabel(traitKey as any, lang);
+                return (
+                  <View key={i} style={st.traitPill}>
+                    <Text style={st.traitPillTxt}>{emoji} {label}</Text>
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
@@ -384,16 +391,8 @@ export default function CompatibilityReportScreen({ navigation, route }: Props) 
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* ── Sabit aksiyon butonları ── */}
+      {/* ── Sabit aksiyon butonu ── */}
       <View style={st.footer}>
-        <TouchableOpacity
-          style={st.likeBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.85}
-        >
-          <Text style={st.likeBtnTxt}>♥ Eşleş</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={st.chatBtn}
           onPress={() => navigation.navigate('Chat', { matchId: userId })}
@@ -532,16 +531,11 @@ const st = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.bg,
     gap: 10,
   },
-  likeBtn: {
+  chatBtn: {
     backgroundColor: C.brandA, borderRadius: 999, paddingVertical: 17,
     alignItems: 'center',
     shadowColor: C.brandA, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 14, elevation: 6,
   },
-  likeBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  chatBtn: {
-    backgroundColor: C.tealBg, borderRadius: 999, paddingVertical: 15,
-    alignItems: 'center', borderWidth: 1.5, borderColor: C.brandA,
-  },
-  chatBtnTxt: { color: C.tealTx, fontSize: 15, fontWeight: '700' },
+  chatBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

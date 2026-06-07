@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserProfile }   from '../api/ProfileService';
 import type { ApiSuggestion, ActiveMatch } from '../api/MatchService';
+
+const LANG_KEY = '@roomski/language';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
 
@@ -39,7 +42,7 @@ export type Filters = {
 export const DEFAULT_FILTERS: Filters = {
   city: null,
   budgetMin: 500,
-  budgetMax: 3000,
+  budgetMax: 5000,
   ageMin: 18,
   ageMax: 35,
   gender: 'Fark etmez',
@@ -151,6 +154,7 @@ type AppStore = {
   updateSetting: (key: keyof AppSettings, val: boolean) => void;
   language: 'tr' | 'pl' | 'en';
   setLanguage: (lang: 'tr' | 'pl' | 'en') => void;
+  loadLanguage: () => Promise<void>;
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -214,7 +218,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isVerified: false,
   setVerified: (isVerified) => set({ isVerified }),
   language: 'pl',
-  setLanguage: (language) => set({ language }),
+  setLanguage: (language) => {
+    set({ language });
+    AsyncStorage.setItem(LANG_KEY, language).catch(() => {});
+  },
+  loadLanguage: async () => {
+    try {
+      const saved = await AsyncStorage.getItem(LANG_KEY);
+      if (saved === 'tr' || saved === 'pl' || saved === 'en') {
+        set({ language: saved });
+      }
+    } catch {}
+  },
   notificationPreferences: { matches: true, messages: true, listings: false },
   notificationSettings: { newMatch: true, newMessage: true, system: true },
   updateNotificationSetting: (key, val) =>

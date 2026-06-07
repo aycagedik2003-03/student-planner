@@ -1,82 +1,82 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, Image, ScrollView, Pressable, Linking, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
 
 const content = {
   pl: {
-    title:    'Roomski',
-    version:  'v2026.1.0',
-    subtitle: "Poland's First AI Roommate Matching Platform",
+    subtitle: 'Pierwsza polska platforma do dopasowywania współlokatorów oparta na sztucznej inteligencji',
     sections: [
       {
-        title: 'O Nas',
-        text:  'Roomski zmienia sposób, w jaki studenci znajdują wspólników. Zamiast losowych meczy na Facebooku, używamy AI, aby znaleźć idealną osobę dla Ciebie.',
+        title: 'O Roomski',
+        text:  'Znalezienie odpowiedniego współlokatora może być równie ważne co znalezienie odpowiedniego mieszkania.\n\nRoomski wykorzystuje inteligentną technologię dopasowywania do połączenia osób o zgodnych preferencjach mieszkaniowych, zmniejszając konflikty i tworząc lepsze doświadczenia wspólnego zamieszkania.',
       },
       {
-        title: 'Jak to działa?',
-        text:  '1. Stwórz profil\n2. Odpowiedz na Quiz o osobowości\n3. Otrzymaj inteligentne rekomendacje\n4. Czatuj i poznaj\n5. Znajdź swój dom',
+        title: 'Jak To Działa?',
+        text:  '1. Utwórz Profil — Opowiedz nam o sobie i swoich preferencjach.\n2. Wypełnij Quiz — Krótka anketa kompatybilności.\n3. Otrzymaj Dopasowania — AI sugeruje najlepszych współlokatorów.\n4. Połącz się i Czatuj — Bezpieczna komunikacja na platformie.\n5. Znajdź Swój Dom — Zacznij nowy rozdział z pewnością.',
       },
       {
         title: 'Dlaczego Roomski?',
-        text:  '✓ Algorytm AI opracowany dla polskich studentów\n✓ Szybkie dopasowanie\n✓ Bezpieczna komunikacja\n✓ Ochrona prywatności\n✓ Darmowe użytkowanie',
+        text:  '✓ Dopasowywanie oparte na AI\n✓ Zaprojektowane dla studentów i młodych profesjonalistów\n✓ Bezpieczna i prywatna komunikacja\n✓ Spersonalizowane rekomendacje\n✓ Całkowicie bezpłatne użytkowanie',
       },
-      { title: 'Kontakt', text: 'roomski.app@gmail.com' },
+      {
+        title: 'Kontakt',
+        text:  'roomski.app@gmail.com\n\nBudowanie lepszych doświadczeń wspólnego zamieszkania w całej Polsce.',
+      },
     ],
+    contactLabel: 'Skontaktuj się z naszym zespołem',
   },
   tr: {
-    title:    'Roomski',
-    version:  'v2026.1.0',
-    subtitle: "Polonya'nın İlk AI Oda Arkadaşı Platformu",
+    subtitle: "Polonya'nın İlk Yapay Zeka Tabanlı Oda Arkadaşı Eşleştirme Platformu",
     sections: [
       {
-        title: 'Hakkımızda',
-        text:  'Roomski, öğrencilerin oda arkadaşı bulma şeklini değiştiriyor. Rasgele Facebook aramaları yerine, AI ile mükemmel kişiyi bulursun.',
+        title: 'Roomski Hakkında',
+        text:  'Doğru oda arkadaşı bulmak, doğru daireyi bulmak kadar önemlidir.\n\nRoomski, yaşam tercihlerine uyumlu kişileri bağlayan akıllı eşleştirme teknolojisini kullanarak anlaşmazlıkları azaltır ve daha iyi paylaşımlı yaşam deneyimleri yaratır.',
       },
       {
         title: 'Nasıl Çalışır?',
-        text:  '1. Profil oluştur\n2. Kişilik Quizi cevapla\n3. Akıllı eşleşmeleri gör\n4. Sohbet et ve tanı\n5. Evin bulunmuş',
+        text:  '1. Profil Oluştur — Kendin ve yaşam tarzın hakkında anlat.\n2. Uyumluluk Testini Tamamla — Kısa bir anket.\n3. Akıllı Eşleşmeler Al — AI en uygun oda arkadaşlarını önerir.\n4. Bağlan ve Sohbet Et — Platform içinde güvenli iletişim.\n5. Yeni Evini Bul — Doğru kişiyle yeni bölümüne başla.',
       },
       {
         title: 'Neden Roomski?',
-        text:  '✓ Polonyalı öğrenciler için AI\n✓ Hızlı sonuç\n✓ Güvenli iletişim\n✓ Gizlilik koruması\n✓ Tamamen ücretsiz',
+        text:  '✓ Yapay zeka ile uyumluluk eşleştirmesi\n✓ Öğrenciler ve genç profesyoneller için tasarlandı\n✓ Güvenli ve özel iletişim\n✓ Kişiselleştirilmiş öneriler\n✓ Tamamen ücretsiz',
       },
-      { title: 'İletişim', text: 'roomski.app@gmail.com' },
+      {
+        title: 'İletişim',
+        text:  'roomski.app@gmail.com\n\nPolonye genelinde daha iyi oda arkadaşı deneyimleri yaratıyoruz.',
+      },
     ],
+    contactLabel: 'Ekibimizle iletişime geçin',
   },
   en: {
-    title:    'Roomski',
-    version:  'v2026.1.0',
-    subtitle: "Poland's First AI Roommate Matching Platform",
+    subtitle: "Poland's First AI-Powered Roommate Matching Platform",
     sections: [
       {
-        title: 'About Us',
-        text:  'Roomski changes how Polish students find roommates. Instead of random Facebook searches, we use AI to match you with your perfect fit.',
+        title: 'About Roomski',
+        text:  'Finding the right roommate can be as important as finding the right apartment.\n\nRoomski uses intelligent matching technology to connect people with compatible living preferences, reducing conflicts and creating better shared living experiences.',
       },
       {
         title: 'How It Works',
-        text:  '1. Create your profile\n2. Answer personality quiz\n3. Get smart matches\n4. Chat and connect\n5. Find your home',
+        text:  '1. Create Your Profile — Tell us about yourself and your preferences.\n2. Complete the Quiz — A short compatibility assessment.\n3. Receive Smart Matches — AI suggests the most suitable roommates.\n4. Connect & Chat — Secure communication within the platform.\n5. Find Your Home — Begin your next chapter with confidence.',
       },
       {
         title: 'Why Roomski?',
-        text:  '✓ AI built for Polish students\n✓ Fast matching\n✓ Secure messaging\n✓ Privacy protected\n✓ Completely free',
+        text:  '✓ AI-powered compatibility matching\n✓ Designed for students and young professionals\n✓ Secure and private communication\n✓ Personalized recommendations\n✓ Completely free to use',
       },
-      { title: 'Contact', text: 'roomski.app@gmail.com' },
+      {
+        title: 'Contact',
+        text:  'roomski.app@gmail.com\n\nBuilding better roommate experiences across Poland.',
+      },
     ],
+    contactLabel: 'Get in touch with our team',
   },
 } as const;
 
 type Lang = keyof typeof content;
-
-const CONTACT_LABEL: Record<Lang, string> = {
-  pl: 'Skontaktuj się z nami',
-  tr: 'Bize Ulaş',
-  en: 'Contact Us',
-};
 
 export default function AboutScreen({ navigation }: Props) {
   const { language } = useTranslation();
@@ -100,22 +100,22 @@ export default function AboutScreen({ navigation }: Props) {
             style={{ width: 80, height: 80, marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>
-            {current.title}
+          <Text style={{ fontSize: 32, fontWeight: '800', color: '#1F2937', marginBottom: 4 }}>
+            Roomski
           </Text>
-          <Text style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
-            {current.version}
+          <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 16, letterSpacing: 0.5 }}>
+            v2026.1.0
           </Text>
-          <Text style={{ fontSize: 16, color: '#00BCD4', fontWeight: '600', textAlign: 'center', marginBottom: 32 }}>
+          <Text style={{ fontSize: 15, color: '#00BCD4', fontWeight: '600', textAlign: 'center', marginBottom: 32, lineHeight: 22 }}>
             {current.subtitle}
           </Text>
 
           {current.sections.map((section, idx) => (
             <View key={idx} style={{ width: '100%', marginBottom: 24 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000', marginBottom: 8 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#1F2937', marginBottom: 10 }}>
                 {section.title}
               </Text>
-              <Text style={{ fontSize: 14, color: '#666', lineHeight: 22 }}>
+              <Text style={{ fontSize: 14, color: '#4B5563', lineHeight: 24 }}>
                 {section.text}
               </Text>
             </View>
@@ -123,14 +123,14 @@ export default function AboutScreen({ navigation }: Props) {
 
           <Pressable
             onPress={() => Linking.openURL('mailto:roomski.app@gmail.com')}
-            style={{ marginTop: 32, padding: 12, backgroundColor: '#00BCD4', borderRadius: 8, width: '100%' }}
+            style={{ marginTop: 8, padding: 15, backgroundColor: '#00BCD4', borderRadius: 999, width: '100%', alignItems: 'center' }}
           >
-            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>
-              {CONTACT_LABEL[lang]}
+            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '700', fontSize: 15 }}>
+              {current.contactLabel}
             </Text>
           </Pressable>
 
-          <Text style={{ fontSize: 12, color: '#ccc', marginTop: 32, textAlign: 'center' }}>
+          <Text style={{ fontSize: 12, color: '#D1D5DB', marginTop: 32, marginBottom: 8, textAlign: 'center' }}>
             © 2026 Roomski. All rights reserved.
           </Text>
         </View>
@@ -146,3 +146,4 @@ const st = StyleSheet.create({
   backTxt:     { fontSize: 18, color: '#1F2937' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
 });
+

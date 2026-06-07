@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { verificationService, isVerifiedResponse } from '../api/VerificationService';
+import { useTranslation } from '../i18n/translations';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Verification'> };
 
@@ -58,6 +59,7 @@ type Phase = 'email' | 'code' | 'success';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function VerificationScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const setVerified  = useAppStore(s => s.setVerified);
   const storeProfile = useAppStore(s => s.profile);
 
@@ -134,7 +136,7 @@ export default function VerificationScreen({ navigation }: Props) {
         err?.response?.data?.message ??
         err?.response?.data?.detail  ??
         err?.message ??
-        'Kod gönderilemedi. Lütfen tekrar dene.';
+        t('verification.sendFailed');
       setError(Array.isArray(msg) ? msg[0] : msg);
     } finally {
       setSendingCode(false);
@@ -151,7 +153,7 @@ export default function VerificationScreen({ navigation }: Props) {
         if (timerRef.current) clearInterval(timerRef.current);
         crossFade('success');
       } else {
-        setError('Kod hatalı veya süresi dolmuş. Tekrar dene.');
+        setError(t('verification.codeInvalid'));
         setCode('');
       }
     } catch (err: any) {
@@ -159,7 +161,7 @@ export default function VerificationScreen({ navigation }: Props) {
         err?.response?.data?.message ??
         err?.response?.data?.detail  ??
         err?.message ??
-        'Doğrulama başarısız. Kodu kontrol et.';
+        t('verification.verifyFailed');
       setError(Array.isArray(msg) ? msg[0] : msg);
       setCode('');
     } finally {
@@ -176,7 +178,7 @@ export default function VerificationScreen({ navigation }: Props) {
       await verificationService.sendCode(email);
       startTimer();
     } catch {
-      setError('Kod tekrar gönderilemedi.');
+      setError(t('verification.sendFailed'));
     } finally {
       setSendingCode(false);
     }
@@ -193,9 +195,9 @@ export default function VerificationScreen({ navigation }: Props) {
           <Text style={st.hBtnTxt}>←</Text>
         </TouchableOpacity>
         <Text style={st.hTitle}>
-          {phase === 'email' ? 'Öğrenci Doğrulaması'
-          : phase === 'code'  ? 'Kodu Gir'
-          : 'Doğrulama'}
+          {phase === 'email' ? t('verification.studentTitle')
+          : phase === 'code'  ? t('verification.enterCodeTitle')
+          : t('verification.title')}
         </Text>
         <View style={st.hBtn} />
       </View>
@@ -215,12 +217,8 @@ export default function VerificationScreen({ navigation }: Props) {
                   <Text style={st.iconEmoji}>🎓</Text>
                 </View>
 
-                <Text style={st.heading}>Üniversite E-postanı Doğrula</Text>
-                <Text style={st.subtext}>
-                  Güvenilir profil için{' '}
-                  <Text style={st.subtextBold}>.edu veya üniversite uzantılı</Text>
-                  {' '}e-postanı onayla.{'\n'}Diğer öğrenciler doğrulanmış profillere öncelik tanır.
-                </Text>
+                <Text style={st.heading}>{t('verification.emailHeading')}</Text>
+                <Text style={st.subtext}>{t('verification.emailDesc')}</Text>
 
                 <View style={[
                   st.inputWrap,
@@ -246,12 +244,12 @@ export default function VerificationScreen({ navigation }: Props) {
 
                 {emailInvalid && (
                   <View style={st.errorBanner}>
-                    <Text style={st.errorTxt}>Geçerli üniversite e-postası gerekli (örn. .edu, .ac.pl, .edu.pl)</Text>
+                    <Text style={st.errorTxt}>{t('verification.emailInvalidHint')}</Text>
                   </View>
                 )}
                 {emailValid && (
                   <View style={st.successBanner}>
-                    <Text style={st.successBannerTxt}>✓ Geçerli üniversite e-postası</Text>
+                    <Text style={st.successBannerTxt}>✓ {t('verification.emailValidMsg')}</Text>
                   </View>
                 )}
                 {error ? (
@@ -261,7 +259,7 @@ export default function VerificationScreen({ navigation }: Props) {
                 ) : null}
 
                 <View style={st.domainHint}>
-                  <Text style={st.domainHintLabel}>Kabul edilen uzantılar:</Text>
+                  <Text style={st.domainHintLabel}>{t('verification.acceptedDomains')}</Text>
                   <View style={st.domainChips}>
                     {['.edu', '.ac.pl', '.edu.pl', 'uj.edu.pl', 'put.poznan.pl', '...'].map(d => (
                       <View key={d} style={st.domainChip}>
@@ -280,10 +278,10 @@ export default function VerificationScreen({ navigation }: Props) {
                   <Text style={st.iconEmoji}>📬</Text>
                 </View>
 
-                <Text style={st.heading}>E-postanı Kontrol Et</Text>
+                <Text style={st.heading}>{t('verification.checkEmailTitle')}</Text>
                 <Text style={st.subtext}>
                   <Text style={st.subtextBold}>{maskEmail(email)}</Text>
-                  {' '}adresine 6 haneli doğrulama kodu gönderdik.
+                  {' '}{t('verification.codeSentTo')}
                 </Text>
 
                 {/* Code boxes */}
@@ -327,7 +325,7 @@ export default function VerificationScreen({ navigation }: Props) {
                 <View style={st.resendRow}>
                   {timeLeft > 0 ? (
                     <>
-                      <Text style={st.timerLabel}>Kodun süresi: </Text>
+                      <Text style={st.timerLabel}>{t('verification.codeExpiry')} </Text>
                       <View style={[st.timerPill, timeLeft < 60 && st.timerPillWarn]}>
                         <Text style={[st.timerTxt, timeLeft < 60 && st.timerTxtWarn]}>
                           {formatTime(timeLeft)}
@@ -343,7 +341,7 @@ export default function VerificationScreen({ navigation }: Props) {
                     >
                       {sendingCode
                         ? <ActivityIndicator size="small" color={C.brandA} />
-                        : <Text style={st.resendTxt}>Kodu tekrar gönder →</Text>}
+                        : <Text style={st.resendTxt}>{t('verification.resend')} →</Text>}
                     </TouchableOpacity>
                   )}
                 </View>
@@ -356,10 +354,8 @@ export default function VerificationScreen({ navigation }: Props) {
                 <Animated.View style={[st.successCircle, { transform: [{ scale: successScale }] }]}>
                   <Text style={st.successIcon}>✓</Text>
                 </Animated.View>
-                <Text style={st.successTitle}>Doğrulama Başarılı!</Text>
-                <Text style={st.successSub}>
-                  Öğrenci kimliğin onaylandı.{'\n'}Profilin artık yeşil rozetli görünecek.
-                </Text>
+                <Text style={st.successTitle}>{t('verification.successTitle')}</Text>
+                <Text style={st.successSub}>{t('verification.successDesc')}</Text>
                 <View style={st.successBadgePreview}>
                   <View style={st.badgePreviewCircle}>
                     <Text style={st.badgePreviewTxt}>
@@ -370,9 +366,9 @@ export default function VerificationScreen({ navigation }: Props) {
                     </View>
                   </View>
                   <View>
-                    <Text style={st.badgePreviewName}>{storeProfile?.name ?? 'Profilim'}</Text>
+                    <Text style={st.badgePreviewName}>{storeProfile?.name ?? t('profile.title')}</Text>
                     <View style={st.verifiedChipSmall}>
-                      <Text style={st.verifiedChipTxt}>✓ Doğrulanmış Öğrenci</Text>
+                      <Text style={st.verifiedChipTxt}>✓ {t('verification.verifiedStudent')}</Text>
                     </View>
                   </View>
                 </View>
@@ -395,7 +391,7 @@ export default function VerificationScreen({ navigation }: Props) {
                 {sendingCode
                   ? <ActivityIndicator color="#fff" />
                   : <Text style={[st.ctaTxt, !emailValid && st.ctaTxtOff]}>
-                      {emailValid ? 'Kod Gönder →' : 'Geçerli e-posta gir'}
+                      {emailValid ? t('verification.sendCode') + ' →' : t('errors.invalidEmail')}
                     </Text>}
               </TouchableOpacity>
             )}
@@ -409,7 +405,7 @@ export default function VerificationScreen({ navigation }: Props) {
                 {verifyingCode
                   ? <ActivityIndicator color="#fff" />
                   : <Text style={[st.ctaTxt, code.length < 6 && st.ctaTxtOff]}>
-                      {code.length < 6 ? `${6 - code.length} hane daha` : 'Doğrula ✓'}
+                      {code.length < 6 ? t('verification.digitsRemaining').replace('{count}', String(6 - code.length)) : t('verification.verify') + ' ✓'}
                     </Text>}
               </TouchableOpacity>
             )}

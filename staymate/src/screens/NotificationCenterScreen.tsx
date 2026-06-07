@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, ScrollView, Switch, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 import { useAppStore } from '../store';
 
 const C = {
@@ -83,3 +83,4 @@ const st = StyleSheet.create({
   divider:    { height: 1, backgroundColor: C.line, marginLeft: 58 },
   hint:       { fontSize: 12, color: '#AAAAAA', textAlign: 'center', marginTop: 8, lineHeight: 18, paddingHorizontal: 16 },
 });
+

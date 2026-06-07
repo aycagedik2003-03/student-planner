@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator,
@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 import api from '../api/client';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
@@ -29,7 +29,7 @@ export default function ChangeEmailScreen({ navigation }: Props) {
     setError('');
     try {
       await api.put('/auth/change-email', { new_email: newEmail.trim(), password });
-      Alert.alert(t('common.success'), 'E-posta başarıyla güncellendi.', [
+      Alert.alert(t('common.success'), t('settings.emailUpdated'), [
         { text: t('common.close'), onPress: () => navigation.goBack() },
       ]);
     } catch (err: any) {
@@ -50,7 +50,7 @@ export default function ChangeEmailScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={st.body}>
-        <Text style={st.desc}>Yeni e-posta adresinizi ve mevcut şifrenizi girin.</Text>
+        <Text style={st.desc}>{t('settings.changeEmailDesc')}</Text>
 
         <Text style={st.label}>{t('auth.email')}</Text>
         <TextInput
@@ -102,3 +102,4 @@ const st = StyleSheet.create({
   btnDisabled:{ backgroundColor: '#9CA3AF' },
   btnTxt:    { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
+

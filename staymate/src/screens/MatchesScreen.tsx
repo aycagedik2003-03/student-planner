@@ -4,7 +4,7 @@
 // Shows last message, avatar, name, and match score
 // Tap to open chat
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,15 +13,22 @@ import {
   StatusBar,
   FlatList,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { COLORS, GRADIENT, SHADOW, SPACING, RADII } from '../utils/constants';
 import { Avatar } from '../components/Avatar';
+import { matchService, type ActiveMatch } from '../api/MatchService';
+import { useAppStore } from '../store';
 
 interface Match {
-  id: string;
+  id: string;         // match ID (used for navigation)
+  userId: string;     // matched user's ID (used for Chat navigation)
   name: string;
   age: number;
   lastMessage: string;
@@ -31,59 +38,23 @@ interface Match {
   avatar: string;
 }
 
-// Mock data
-const MOCK_MATCHES: Match[] = [
-  {
-    id: '1',
-    name: 'Marta',
-    age: 22,
-    lastMessage: 'Sounds great! When can we meet?',
-    lastMessageTime: '2 min ago',
-    matchScore: 92,
-    isNew: true,
-    avatar: 'M',
-  },
-  {
-    id: '2',
-    name: 'Alex',
-    age: 23,
-    lastMessage: "I'm interested in the apartment",
-    lastMessageTime: '1 hour ago',
-    matchScore: 87,
-    isNew: false,
-    avatar: 'A',
-  },
-  {
-    id: '3',
-    name: 'Jana',
-    age: 21,
-    lastMessage: 'Thanks for liking my profile!',
-    lastMessageTime: '3 hours ago',
-    matchScore: 78,
-    isNew: true,
-    avatar: 'J',
-  },
-  {
-    id: '4',
-    name: 'Kasia',
-    age: 20,
-    lastMessage: 'See you next week!',
-    lastMessageTime: 'Yesterday',
-    matchScore: 85,
-    isNew: false,
-    avatar: 'K',
-  },
-  {
-    id: '5',
-    name: 'Tomek',
-    age: 24,
-    lastMessage: 'The room is still available',
-    lastMessageTime: '2 days ago',
-    matchScore: 82,
-    isNew: false,
-    avatar: 'T',
-  },
-];
+function toMatch(m: ActiveMatch): Match {
+  const user  = (m as any).matchedUser ?? (m as any).user ?? {};
+  const name  = m.name ?? user.name ?? user.full_name ?? 'User';
+  return {
+    id:              m.id,
+    userId:          user.id ?? m.id,
+    name,
+    age:             user.age ?? 0,
+    avatar:          (name as string).charAt(0).toUpperCase(),
+    lastMessage:     m.lastMessage ?? '—',
+    lastMessageTime: m.lastMessageAt
+      ? new Date(m.lastMessageAt).toLocaleDateString()
+      : '',
+    matchScore:      0,
+    isNew:           (m.unreadCount ?? 0) > 0,
+  };
+}
 
 // ─── Match Item ───────────────────────────────────────────────────────────────
 function MatchItem({
@@ -141,22 +112,55 @@ function MatchItem({
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-interface Props {
-  onMatchPress?: (id: string) => void;
-}
+type FilterTab = 'All' | 'Unread';
 
-export default function MatchesScreen({ onMatchPress }: Props) {
+export default function MatchesScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [matches,     setMatches]     = useState<Match[]>([]);
+  const [loading,     setLoading]     = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('All');
 
-  const filteredMatches = MOCK_MATCHES.filter((m) =>
-    m.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const load = useCallback(async () => {
+    const token = useAppStore.getState().token ?? localStorage.getItem('userToken');
+    if (!token) {
+      console.log('[MatchesScreen] No token, skipping load');
+      return;
+    }
+    setLoading(true);
+    try {
+      const raw = await matchService.getActive();
+      setMatches(raw.map(toMatch));
+    } catch (err: any) {
+      if (__DEV__) console.warn('[MatchesScreen] getActive failed:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filteredMatches = matches.filter((m) => {
+    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === 'All' || m.isNew;
+    return matchesSearch && matchesFilter;
+  });
 
   const handleMatchPress = (id: string) => {
-    onMatchPress?.(id);
+    const match = matches.find((m) => m.id === id);
+    if (!match) return;
+    // Navigate to ChatList first so the back stack is populated,
+    // then push ChatDetail on top — goBack() will return to ChatList.
+    (navigation as any).navigate('Chat', { screen: 'ChatList' });
+    setTimeout(() => {
+      (navigation as any).navigate('Chat', {
+        screen: 'ChatDetail',
+        params: { chatId: match.userId, name: match.name, avatar_url: null },
+      });
+    }, 50);
   };
 
-  const newCount = MOCK_MATCHES.filter((m) => m.isNew).length;
+  const newCount = matches.filter((m) => m.isNew).length;
 
   return (
     <SafeAreaView style={s.safe}>
@@ -193,22 +197,39 @@ export default function MatchesScreen({ onMatchPress }: Props) {
 
       {/* Filter tabs */}
       <View style={s.filterTabs}>
-        {['All', 'Unread'].map((filter) => (
-          <Pressable key={filter} style={s.filterTab}>
-            <Text style={s.filterTabText}>{filter}</Text>
-          </Pressable>
-        ))}
+        {(['All', 'Unread'] as FilterTab[]).map((filter) => {
+          const isActive = activeFilter === filter;
+          return (
+            <Pressable
+              key={filter}
+              onPress={() => setActiveFilter(filter)}
+              style={[s.filterTab, isActive && s.filterTabActive]}>
+              <Text style={[s.filterTabText, isActive && s.filterTabTextActive]}>
+                {filter}{filter === 'Unread' && newCount > 0 ? ` (${newCount})` : ''}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
+      {/* Loading */}
+      {loading && (
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+          style={{ marginTop: 40 }}
+        />
+      )}
+
       {/* Matches list */}
-      <FlatList
+      {!loading && <FlatList
         data={filteredMatches}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <MatchItem match={item} onPress={handleMatchPress} />
         )}
-        scrollEnabled={true}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={
           <View style={s.emptyContainer}>
             <Text style={s.emptyTitle}>No matches found</Text>
@@ -217,7 +238,7 @@ export default function MatchesScreen({ onMatchPress }: Props) {
             </Text>
           </View>
         }
-      />
+      />}
     </SafeAreaView>
   );
 }
@@ -279,10 +300,17 @@ const s = StyleSheet.create({
     borderColor: COLORS.line,
     backgroundColor: '#fff',
   },
+  filterTabActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
   filterTabText: {
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.soft,
+  },
+  filterTabTextActive: {
+    color: '#fff',
   },
 
   matchItem: {

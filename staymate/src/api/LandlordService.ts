@@ -57,9 +57,27 @@ function normalizeStudent(raw: ApiInterestedStudent): InterestedStudent {
 export const landlordService = {
   /** Ev sahibinin kendi ilanlarını getirir */
   getMyListings: async (): Promise<Listing[]> => {
-    const res = await api.get<ApiListing[]>('/listings/my');
-    const raw = Array.isArray(res.data) ? res.data : [];
-    return raw.map(normalizeApiListing);
+    if (__DEV__) console.log('[Landlord] GET /listings/my →');
+    try {
+      const res = await api.get<ApiListing[]>('/listings/mine');
+      if (__DEV__) {
+        console.log('[Landlord] /listings/my status:', res.status);
+        console.log('[Landlord] /listings/my data:', JSON.stringify(res.data).slice(0, 200));
+      }
+      const raw = Array.isArray(res.data) ? res.data : [];
+      return raw.map(normalizeApiListing);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 422 || status === 403) {
+        // Backend validation error or forbidden — return empty, don't retry
+        if (__DEV__) {
+          console.warn(`[Landlord] ${status} on /listings/my — returning []`);
+          console.warn('[Landlord] detail:', JSON.stringify(err.response?.data?.detail));
+        }
+        return [];
+      }
+      throw err; // re-throw 401, 5xx, network errors to the caller
+    }
   },
 
   /** İlana ilgi gösteren / eşleşen öğrencileri getirir */

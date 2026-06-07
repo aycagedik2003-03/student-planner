@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   ScrollView, Alert, ActivityIndicator,
@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 import api from '../api/client';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList> };
@@ -24,8 +24,8 @@ export default function ChangePasswordScreen({ navigation }: Props) {
   const validate = () => {
     if (!current)                         { setError(t('errors.emptyPassword')); return false; }
     if (newPass.length < 8)               { setError(t('errors.weakPassword'));  return false; }
-    if (!/[A-Z]/.test(newPass))           { setError('Şifre büyük harf içermeli (A-Z).'); return false; }
-    if (!/[0-9]/.test(newPass))           { setError('Şifre rakam içermeli.'); return false; }
+    if (!/[A-Z]/.test(newPass))           { setError(t('auth.pwErrUppercase')); return false; }
+    if (!/[0-9]/.test(newPass))           { setError(t('auth.pwErrDigit')); return false; }
     if (newPass !== confirm)              { setError(t('errors.passwordMismatch')); return false; }
     return true;
   };
@@ -36,7 +36,7 @@ export default function ChangePasswordScreen({ navigation }: Props) {
     setError('');
     try {
       await api.put('/auth/change-password', { current_password: current, new_password: newPass });
-      Alert.alert(t('common.success'), 'Şifre başarıyla güncellendi.', [
+      Alert.alert(t('common.success'), t('settings.passwordUpdated'), [
         { text: t('common.close'), onPress: () => navigation.goBack() },
       ]);
     } catch (err: any) {
@@ -57,9 +57,9 @@ export default function ChangePasswordScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={st.body}>
-        <Text style={st.desc}>Mevcut şifrenizi ve yeni şifrenizi girin.</Text>
+        <Text style={st.desc}>{t('settings.changePasswordDesc')}</Text>
 
-        {(['Mevcut Şifre', 'Yeni Şifre', 'Yeni Şifre (tekrar)'] as const).map((label, i) => {
+        {([t('settings.currentPassword'), t('settings.newPassword'), t('settings.confirmPassword')] as const).map((label, i) => {
           const vals   = [current,  newPass,  confirm];
           const setters = [setCurrent, setNewPass, setConfirm];
           return (
@@ -81,9 +81,9 @@ export default function ChangePasswordScreen({ navigation }: Props) {
         {newPass.length > 0 && (
           <View style={st.strength}>
             {[
-              { ok: newPass.length >= 8,   txt: 'En az 8 karakter' },
-              { ok: /[A-Z]/.test(newPass), txt: 'Büyük harf (A-Z)' },
-              { ok: /[0-9]/.test(newPass), txt: 'Rakam (0-9)' },
+              { ok: newPass.length >= 8,   txt: t('auth.pwErrMin') },
+              { ok: /[A-Z]/.test(newPass), txt: t('auth.pwErrUppercase') },
+              { ok: /[0-9]/.test(newPass), txt: t('auth.pwErrDigit') },
             ].map(r => (
               <Text key={r.txt} style={[st.strengthItem, r.ok ? st.strengthOk : st.strengthFail]}>
                 {r.ok ? '✓' : '✗'} {r.txt}
@@ -123,3 +123,4 @@ const st = StyleSheet.create({
   btnDisabled:{ backgroundColor: '#9CA3AF' },
   btnTxt:     { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
+

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,15 +16,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { POLISH_CITIES } from '../constants/cities';
-import { quizService, normalizeQuestion, type NormalizedQuestion } from '../api/QuizService';
+import { quizService, type NormalizedQuestion } from '../api/QuizService';
 import { profileService } from '../api/ProfileService';
-import { useTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '../i18n/translations';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Quiz'>;
 };
-
-// ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
   bg:     '#FFFFFF',
   bgSoft: '#FAFAFA',
@@ -35,52 +33,31 @@ const C = {
   brandA: '#00CFC8',
   brandB: '#FF9ACD',
 };
-
-// ── Kategori ikonları (label'lar artık t() ile geliyor) ───────────────────────
 const CAT_ICONS = ['🌙', '🧹', '🤝', '💻', '🌿'];
 
-// ── Kategori segmentlerini hesapla (label artık dışarıdan veriliyor) ──────────
-// Fallback sorular locale'e göre dinamik üretilir — buildFallback() ile
+function o(t: (k: string) => string, q: string, count: number): string[] {
+  return Array.from({ length: count }, (_, i) => t(`quiz.${q}o${i}`));
+}
 
-// ── Fallback sorular — locale'e göre dinamik ──────────────────────────────────
 function buildFallback(t: (k: string) => string): NormalizedQuestion[] {
   return [
-    { id: 'f0',  catIndex: 0, question: t('quiz.q0'),  opts: [t('quiz.q0o0'), t('quiz.q0o1'), t('quiz.q0o2'), t('quiz.q0o3')] },
-    { id: 'f1',  catIndex: 0, question: t('quiz.q1'),  opts: [t('quiz.q1o0'), t('quiz.q1o1'), t('quiz.q1o2'), t('quiz.q1o3')] },
-    { id: 'f2',  catIndex: 0, question: t('quiz.q2'),  opts: [t('quiz.q2o0'), t('quiz.q2o1'), t('quiz.q2o2'), t('quiz.q2o3')] },
-    { id: 'f3',  catIndex: 1, question: t('quiz.q3'),  opts: [t('quiz.q3o0'), t('quiz.q3o1'), t('quiz.q3o2'), t('quiz.q3o3')] },
-    { id: 'f4',  catIndex: 1, question: t('quiz.q4'),  opts: [t('quiz.q4o0'), t('quiz.q4o1'), t('quiz.q4o2'), t('quiz.q4o3')] },
-    { id: 'f5',  catIndex: 1, question: t('quiz.q5'),  opts: [t('quiz.q5o0'), t('quiz.q5o1'), t('quiz.q5o2'), t('quiz.q5o3')] },
-    { id: 'f6',  catIndex: 2, question: t('quiz.q6'),  opts: [t('quiz.q6o0'), t('quiz.q6o1'), t('quiz.q6o2'), t('quiz.q6o3')] },
-    { id: 'f7',  catIndex: 2, question: t('quiz.q7'),  opts: [t('quiz.q7o0'), t('quiz.q7o1'), t('quiz.q7o2'), t('quiz.q7o3')] },
-    { id: 'f8',  catIndex: 2, question: t('quiz.q8'),  opts: [t('quiz.q8o0'), t('quiz.q8o1'), t('quiz.q8o2'), t('quiz.q8o3')] },
-    { id: 'f9',  catIndex: 3, question: t('quiz.q9'),  opts: [t('quiz.q9o0'), t('quiz.q9o1'), t('quiz.q9o2'), t('quiz.q9o3')] },
-    { id: 'f10', catIndex: 3, question: t('quiz.q10'), opts: [t('quiz.q10o0'), t('quiz.q10o1'), t('quiz.q10o2'), t('quiz.q10o3')] },
-    { id: 'f11', catIndex: 3, question: t('quiz.q11'), opts: [t('quiz.q11o0'), t('quiz.q11o1'), t('quiz.q11o2'), t('quiz.q11o3')] },
-    { id: 'f12', catIndex: 4, question: t('quiz.q12'), opts: [t('quiz.q12o0'), t('quiz.q12o1'), t('quiz.q12o2'), t('quiz.q12o3')] },
-    { id: 'f13', catIndex: 4, question: t('quiz.q13'), opts: [t('quiz.q13o0'), t('quiz.q13o1'), t('quiz.q13o2'), t('quiz.q13o3')] },
-    { id: 'f14', catIndex: 4, question: t('quiz.q14'), opts: [t('quiz.q14o0'), t('quiz.q14o1'), t('quiz.q14o2'), t('quiz.q14o3')] },
-    { id: 'f15', catIndex: 4, question: t('quiz.q15'), opts: [t('quiz.q15o0'), t('quiz.q15o1'), t('quiz.q15o2'), t('quiz.q15o3')] },
+    { id: 'f0',  catIndex: 0, question: t('quiz.q0'),  opts: o(t, 'q0',  3) },
+    { id: 'f1',  catIndex: 0, question: t('quiz.q1'),  opts: o(t, 'q1',  2) },
+    { id: 'f2',  catIndex: 1, question: t('quiz.q2'),  opts: o(t, 'q2',  5) },
+    { id: 'f3',  catIndex: 1, question: t('quiz.q3'),  opts: o(t, 'q3',  4) },
+    { id: 'f4',  catIndex: 2, question: t('quiz.q4'),  opts: o(t, 'q4',  3) },
+    { id: 'f5',  catIndex: 2, question: t('quiz.q5'),  opts: o(t, 'q5',  3) },
+    { id: 'f6',  catIndex: 3, question: t('quiz.q6'),  opts: o(t, 'q6',  3) },
+    { id: 'f7',  catIndex: 3, question: t('quiz.q7'),  opts: o(t, 'q7',  3) },
+    { id: 'f8',  catIndex: 4, question: t('quiz.q8'),  opts: o(t, 'q8',  3) },
+    { id: 'f9',  catIndex: 4, question: t('quiz.q9'),  opts: o(t, 'q9',  3) },
+    { id: 'f10', catIndex: 4, question: t('quiz.q10'), opts: o(t, 'q10', 4) },
+    { id: 'f11', catIndex: 4, question: t('quiz.q11'), opts: o(t, 'q11', 4) },
+    { id: 'f12', catIndex: 4, question: t('quiz.q12'), opts: o(t, 'q12', 3) },
+    { id: 'f13', catIndex: 4, question: t('quiz.q13'), opts: o(t, 'q13', 3) },
+    { id: 'f14', catIndex: 4, question: t('quiz.q14'), opts: o(t, 'q14', 3) },
   ];
 }
-
-// ── Kategori segmentlerini hesapla ────────────────────────────────────────────
-function buildSegments(questions: NormalizedQuestion[], catLabels: string[]) {
-  const segs: { label: string; icon: string; from: number; to: number }[] = [];
-  questions.forEach((q, i) => {
-    const label = catLabels[q.catIndex] ?? `Cat ${q.catIndex + 1}`;
-    const icon  = CAT_ICONS[q.catIndex] ?? '❓';
-    const last  = segs[segs.length - 1];
-    if (last && last.label === label) {
-      last.to = i;
-    } else {
-      segs.push({ label, icon, from: i, to: i });
-    }
-  });
-  return segs;
-}
-
-// ── Ana bileşen ────────────────────────────────────────────────────────────────
 export default function QuizScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const setQuizAnswers   = useAppStore(s => s.setQuizAnswers);
@@ -92,28 +69,20 @@ export default function QuizScreen({ navigation }: Props) {
   const catLabels = [
     t('quiz.catSleep'), t('quiz.catClean'), t('quiz.catSocial'), t('quiz.catWork'), t('quiz.catLife'),
   ];
-
-  // ── Soru yükleme state'i ───────────────────────────────────────────────────
   const [questions,   setQuestions]   = useState<NormalizedQuestion[]>(() => buildFallback(t));
   const [questionsLoading, setQLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
-
-  // ── City pre-step state ────────────────────────────────────────────────────
   const [phase, setPhase]               = useState<'city' | 'quiz'>(savedCity ? 'quiz' : 'city');
   const [selectedCity, setSelectedCity] = useState<string | null>(savedCity);
   const [citySearch, setCitySearch]     = useState('');
-
-  // ── Quiz state ─────────────────────────────────────────────────────────────
   const [idx, setIdx]         = useState(0);
-  const [answers, setAnswers] = useState<(number | null)[]>(Array(16).fill(null));
+  const [answers, setAnswers] = useState<(number | null)[]>(Array(15).fill(null));
   const [picked, setPicked]   = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr]   = useState<string | null>(null);
 
   const fade  = useRef(new Animated.Value(1)).current;
   const slide = useRef(new Animated.Value(0)).current;
-
-  // ── Soruları backend'den çek ───────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -124,13 +93,17 @@ export default function QuizScreen({ navigation }: Props) {
           if (!cancelled) setUsingFallback(true);
           return;
         }
-
-        // Her backend sorusunu normalize et; eksik alanlar için locale fallback kullan
+        // Always use locale text — backend only confirms question count and IDs.
+        // This ensures questions display in the active language regardless of
+        // what language the backend stores them in.
         const localFb = buildFallback(t);
-        const normalized = rawQuestions.map((raw, i) => {
-          const fb = localFb[i] ?? localFb[0];
-          return normalizeQuestion(raw, fb.question, fb.opts, fb.catIndex, i);
-        });
+        const count = Math.min(rawQuestions.length, localFb.length);
+        const normalized: NormalizedQuestion[] = localFb.slice(0, count).map((fb, i) => ({
+          id:       String(rawQuestions[i]?.id ?? i),
+          catIndex: fb.catIndex,
+          question: fb.question,
+          opts:     fb.opts,
+        }));
 
         if (!cancelled) {
           setQuestions(normalized);
@@ -139,15 +112,12 @@ export default function QuizScreen({ navigation }: Props) {
         }
       })
       .catch(() => {
-        // API erişilemez → hardcoded sorularla devam et
         if (!cancelled) setUsingFallback(true);
       })
       .finally(() => { if (!cancelled) setQLoading(false); });
 
     return () => { cancelled = true; };
   }, []);
-
-  const segments = buildSegments(questions, catLabels);
   const shownCities = POLISH_CITIES.filter(c =>
     c.toLowerCase().includes(citySearch.toLowerCase()),
   );
@@ -163,9 +133,6 @@ export default function QuizScreen({ navigation }: Props) {
     ? { label: catLabels[q.catIndex] ?? 'Genel', icon: CAT_ICONS[q.catIndex] ?? '❓' }
     : { label: catLabels[0], icon: CAT_ICONS[0] };
   const isLast = idx === questions.length - 1;
-  const pct    = phase === 'city' ? 0 : (idx + 1) / questions.length;
-
-  // ── Animasyon ──────────────────────────────────────────────────────────────
   const transition = (dir: 1 | -1, next: () => void) => {
     Animated.parallel([
       Animated.timing(fade,  { toValue: 0, duration: 140, useNativeDriver: true }),
@@ -184,8 +151,6 @@ export default function QuizScreen({ navigation }: Props) {
     const a = [...answers]; a[idx] = opt;
     setAnswers(a); setPicked(opt);
   };
-
-  // ── Son soruda: submit → Profile ────────────────────────────────────────────
   const goNext = async () => {
     if (picked === null) return;
     const finalAnswers = [...answers];
@@ -195,8 +160,6 @@ export default function QuizScreen({ navigation }: Props) {
       transition(1, () => { setIdx(i => i + 1); setPicked(answers[idx + 1]); });
       return;
     }
-
-    // ── Validation ─────────────────────────────────────────────────────────────
     const incompleteIdx = finalAnswers.findIndex(ans => ans === null || ans === undefined);
     if (incompleteIdx !== -1) {
       Alert.alert(
@@ -218,16 +181,15 @@ export default function QuizScreen({ navigation }: Props) {
       Alert.alert(t('common.error'), t('quiz.submitError'));
       return;
     }
-
-    // ── Submit ─────────────────────────────────────────────────────────────────
     setQuizAnswers(validAnswers);
     setSubmitErr(null);
     setSubmitting(true);
 
     try {
-      console.log('Submitting quiz answers:', validAnswers);
-      await quizService.submitAnswers(validAnswers);
-      console.log('Quiz submitted successfully');
+      await quizService.submitOnboarding({
+        answers: validAnswers,
+        city:    selectedCity,
+      });
 
       // Store'a quiz tamamlandı olarak kaydet
       setQuizCompleted(true);
@@ -261,8 +223,6 @@ export default function QuizScreen({ navigation }: Props) {
     if (idx === 0)        { setPhase('city'); return; }
     transition(-1, () => { setIdx(i => i - 1); setPicked(answers[idx - 1]); });
   };
-
-  // ── Sorular yüklenirken splash ─────────────────────────────────────────────
   if (questionsLoading) {
     return (
       <SafeAreaView style={st.root}>
@@ -274,17 +234,15 @@ export default function QuizScreen({ navigation }: Props) {
       </SafeAreaView>
     );
   }
-
-  // ── Ortak header + progress bar bileşenleri ────────────────────────────────
   const Header = (
     <View style={st.header}>
       <TouchableOpacity style={st.backBtn} onPress={goBack} activeOpacity={0.7}>
         <Text style={st.backIco}>←</Text>
       </TouchableOpacity>
       <View style={st.counterRow}>
-        <Text style={st.counterNum}>{phase === 'city' ? 0 : idx + 1}</Text>
+        <Text style={st.counterNum}>{phase === 'city' ? 1 : idx + 2}</Text>
         <Text style={st.counterSep}> / </Text>
-        <Text style={st.counterTotal}>{questions.length}</Text>
+        <Text style={st.counterTotal}>{questions.length + 1}</Text>
       </View>
       {/* Fallback badge */}
       {usingFallback
@@ -294,30 +252,11 @@ export default function QuizScreen({ navigation }: Props) {
     </View>
   );
 
-  const ProgressBar = (
-    <View style={st.progressWrap}>
-      <View style={st.barBg}>
-        <View style={[st.barFill, { width: `${pct * 100}%` as any }]} />
-      </View>
-      <View style={st.segRow}>
-        {segments.map((seg, i) => {
-          const done   = idx > seg.to  && phase === 'quiz';
-          const active = idx >= seg.from && idx <= seg.to && phase === 'quiz';
-          return (
-            <View key={i} style={[st.seg, active && st.segActive, done && st.segDone]} />
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  // ── City phase ─────────────────────────────────────────────────────────────
   if (phase === 'city') {
     return (
       <SafeAreaView style={st.root}>
         <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
         {Header}
-        {ProgressBar}
 
         <View style={st.body}>
           <View style={st.catChip}>
@@ -379,13 +318,10 @@ export default function QuizScreen({ navigation }: Props) {
       </SafeAreaView>
     );
   }
-
-  // ── Quiz phase ─────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={st.root}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       {Header}
-      {ProgressBar}
 
       <Animated.View style={[st.body, { opacity: fade, transform: [{ translateY: slide }] }]}>
         <View style={st.catChip}>
@@ -393,8 +329,7 @@ export default function QuizScreen({ navigation }: Props) {
           <Text style={st.catLabel}>{cat.label}</Text>
         </View>
 
-        <Text style={st.eyebrow}>vibe quiz · {idx + 1} / {questions.length}</Text>
-        <Text style={st.question}>{q.question}</Text>
+                <Text style={st.question}>{q.question}</Text>
 
         {/* Submit hatası (son soruda) */}
         {submitErr && (
@@ -452,8 +387,6 @@ export default function QuizScreen({ navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
 
@@ -473,14 +406,6 @@ const st = StyleSheet.create({
 
   fallbackBadge: { backgroundColor: '#FFF7E6', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, borderWidth: 1, borderColor: '#F59E0B' },
   fallbackTxt:   { color: '#B45309', fontSize: 10, fontWeight: '700', letterSpacing: 0.6 },
-
-  progressWrap: { paddingHorizontal: 18, marginBottom: 22, gap: 8 },
-  barBg:  { height: 4, backgroundColor: C.bgSoft, borderRadius: 999, borderWidth: 1, borderColor: C.line, overflow: 'hidden' },
-  barFill:{ height: '100%', backgroundColor: C.brandA, borderRadius: 999 },
-  segRow: { flexDirection: 'row', gap: 5 },
-  seg:       { flex: 1, height: 3, borderRadius: 999, backgroundColor: C.bgSoft, borderWidth: 1, borderColor: C.line },
-  segActive: { backgroundColor: C.bgSoft, borderColor: C.brandA + '66' },
-  segDone:   { backgroundColor: C.brandA, borderColor: 'transparent' },
 
   body: { flex: 1, paddingHorizontal: 18 },
 
@@ -524,3 +449,4 @@ const st = StyleSheet.create({
   ctaTxtOff: { color: C.mute },
   ctaArrow:  { color: '#fff', fontSize: 17, fontWeight: '700' },
 });
+

@@ -10,13 +10,19 @@ import {
   Text,
   ScrollView,
   Pressable,
+  TouchableOpacity,
   StyleSheet,
   StatusBar,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
+import { useAuth } from '../context/AuthContext';
 import { COLORS, GRADIENT, RADII, SPACING, SHADOW } from '../utils/constants';
 import { Card } from '../components/Card';
 import { Pill } from '../components/Pill';
@@ -135,6 +141,31 @@ export default function ProfileScreen({
   onSeeAllTraits,
 }: Props) {
   const { t, lang } = useT();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { signOut } = useAuth();
+
+  const handleEdit         = onEdit          ?? (() => navigation.navigate('ProfileEdit'));
+  const handleVerify       = onVerifyStudent ?? (() => navigation.navigate('Verification'));
+  const handleSettings     = onSettings      ?? (() => navigation.navigate('Settings'));
+  const handlePrivacy      = onPrivacy       ?? (() => navigation.navigate('PrivacyPolicy'));
+  const handleHelp         = onHelp          ?? (() => navigation.navigate('Help'));
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      // Alert.alert is a no-op on React Native Web — use window.confirm instead
+      if ((window as any).confirm(t('settings.logoutConfirm'))) {
+        signOut();
+      }
+    } else {
+      Alert.alert(
+        t('profile_logout'),
+        t('settings.logoutConfirm'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('profile_logout'), style: 'destructive', onPress: signOut },
+        ],
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -149,7 +180,7 @@ export default function ProfileScreen({
           <Pill
             variant="ghost"
             size="sm"
-            onPress={onEdit}
+            onPress={handleEdit}
             leading={<Feather name="edit-2" size={12} color={COLORS.ink} />}>
             {t('profile_edit')}
           </Pill>
@@ -182,30 +213,19 @@ export default function ProfileScreen({
               style={[s.blob, { right: -60, top: -20 }]}
             />
 
-            {/* Avatar + Name + Bio */}
+            {/* Avatar + Name + Bio — tap avatar to open profile edit */}
             <View style={s.heroRow}>
-              <View>
+              <Pressable onPress={handleEdit} hitSlop={6}>
                 <Avatar size={72} hue={0} label={user.name[0]} />
                 <View style={s.avatarBadge}>
-                  <Feather
-                    name="edit-2"
-                    size={11}
-                    color={COLORS.secondary}
-                  />
+                  <Feather name="edit-2" size={11} color={COLORS.secondary} />
                 </View>
-              </View>
+              </Pressable>
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={s.userName}>{user.name}</Text>
-                <View style={s.bioChip}>
-                  <Feather
-                    name="edit-2"
-                    size={11}
-                    color={COLORS.muted}
-                  />
-                  <Text style={s.bioChipText}>
-                    {user.bio ?? t('profile_add_bio')}
-                  </Text>
-                </View>
+                {!!user.bio && (
+                  <Text style={s.bioText}>{user.bio}</Text>
+                )}
               </View>
             </View>
 
@@ -230,7 +250,7 @@ export default function ProfileScreen({
         {/* Student verify card */}
         <View style={{ paddingHorizontal: SPACING.lg, marginTop: SPACING.md }}>
           <Pressable
-            onPress={onVerifyStudent}
+            onPress={handleVerify}
             style={s.verifyCard}>
             <LinearGradient
               colors={['#FFF4E5', '#FFE5EC']}
@@ -275,21 +295,9 @@ export default function ProfileScreen({
           </View>
           <View style={s.langGroup}>
             {([
-              {
-                code: 'pl' as Lang,
-                flag: '🇵🇱',
-                name: 'Polski',
-              },
-              {
-                code: 'tr' as Lang,
-                flag: '🇹🇷',
-                name: 'Türkçe',
-              },
-              {
-                code: 'en' as Lang,
-                flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-                name: 'English',
-              },
+              { code: 'pl' as Lang, short: 'PL', name: 'Polski'  },
+              { code: 'tr' as Lang, short: 'TR', name: 'Türkçe'  },
+              { code: 'en' as Lang, short: 'EN', name: 'English' },
             ]).map((it) => {
               const on = it.code === lang;
               if (on) {
@@ -302,20 +310,9 @@ export default function ProfileScreen({
                     style={[s.langItem, s.langItemOn]}>
                     <Pressable
                       onPress={() => setLanguage(it.code)}
-                      style={{
-                        alignItems: 'center',
-                        gap: 2,
-                      }}>
-                      <Text style={{ fontSize: 20 }}>
-                        {it.flag}
-                      </Text>
-                      <Text
-                        style={[
-                          s.langText,
-                          { color: '#fff' },
-                        ]}>
-                        {it.name}
-                      </Text>
+                      style={{ alignItems: 'center', gap: 2 }}>
+                      <Text style={[s.langShort, { color: '#fff' }]}>{it.short}</Text>
+                      <Text style={[s.langText,  { color: '#fff' }]}>{it.name}</Text>
                     </Pressable>
                   </LinearGradient>
                 );
@@ -325,12 +322,8 @@ export default function ProfileScreen({
                   key={it.code}
                   onPress={() => setLanguage(it.code)}
                   style={s.langItem}>
-                  <Text style={{ fontSize: 20 }}>
-                    {it.flag}
-                  </Text>
-                  <Text style={s.langText}>
-                    {it.name}
-                  </Text>
+                  <Text style={s.langShort}>{it.short}</Text>
+                  <Text style={s.langText}>{it.name}</Text>
                 </Pressable>
               );
             })}
@@ -367,55 +360,30 @@ export default function ProfileScreen({
           </Text>
           <View style={s.group}>
             <Row
-              icon={
-                <Ionicons
-                  name="settings-outline"
-                  size={20}
-                  color={COLORS.secondary}
-                />
-              }
+              icon={<Ionicons name="settings-outline" size={20} color={COLORS.secondary} />}
               label={t('profile_settings')}
-              onPress={onSettings}
+              onPress={handleSettings}
             />
             <Row
-              icon={
-                <Feather
-                  name="lock"
-                  size={20}
-                  color={COLORS.secondary}
-                />
-              }
+              icon={<Feather name="lock" size={20} color={COLORS.secondary} />}
               label={t('profile_privacy')}
-              onPress={onPrivacy}
+              onPress={handlePrivacy}
             />
             <Row
-              icon={
-                <Feather
-                  name="help-circle"
-                  size={20}
-                  color={COLORS.secondary}
-                />
-              }
+              icon={<Feather name="help-circle" size={20} color={COLORS.secondary} />}
               label={t('profile_help')}
-              onPress={onHelp}
+              onPress={handleHelp}
               last
             />
           </View>
-          <View style={[s.group, { marginTop: 10 }]}>
-            <Row
-              icon={
-                <Feather
-                  name="log-out"
-                  size={20}
-                  color={COLORS.error}
-                />
-              }
-              label={t('profile_logout')}
-              onPress={onLogout}
-              danger
-              last
-            />
-          </View>
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.7}
+            style={s.logoutBtn}
+          >
+            <Feather name="log-out" size={18} color="#FF4444" />
+            <Text style={s.logoutBtnTxt}>{t('profile_logout')}</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -478,24 +446,12 @@ const s = StyleSheet.create({
     color: COLORS.ink,
     letterSpacing: -0.3,
   },
-  bioChip: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: COLORS.bgSoft,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: COLORS.line,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  bioChipText: {
+  bioText: {
     color: COLORS.soft,
     fontSize: 13,
     fontWeight: '500',
+    marginTop: 6,
+    lineHeight: 18,
   },
 
   statRow: {
@@ -589,8 +545,14 @@ const s = StyleSheet.create({
   langItemOn: {
     ...SHADOW.glow,
   },
+  langShort: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.ink,
+    letterSpacing: 0.5,
+  },
   langText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.soft,
   },
@@ -678,5 +640,24 @@ const s = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     color: COLORS.ink,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginHorizontal: SPACING.lg,
+    marginTop: 10,
+    marginBottom: 40,
+    paddingVertical: 15,
+    borderRadius: RADII.lg,
+    borderWidth: 1.5,
+    borderColor: '#FF4444',
+    backgroundColor: '#fff',
+  },
+  logoutBtnTxt: {
+    color: '#FF4444',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

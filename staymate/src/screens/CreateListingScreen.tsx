@@ -1,495 +1,521 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, StatusBar,
-  ScrollView, TextInput, Alert, ActivityIndicator,
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
-import { POLISH_CITIES } from '../constants/cities';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { listingService } from '../api/ListingService';
+import { useT } from '../i18n/translations';
+import { RootStackParamList } from '../../App';
 
-type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'CreateListing'> };
-
-const C = {
-  bg: '#FFFFFF', bgSoft: '#FAFAFA', ink: '#1F2937', soft: '#4B5563',
-  mute: '#9CA3AF', line: 'rgba(31,41,55,0.08)',
-  brandA: '#00CFC8', tealBg: '#E6FBFA', tealTx: '#00A8A2',
-  brandB: '#FF9ACD', pinkBg: '#FFF0F7',
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'CreateListing'>;
 };
 
-type FeatureKey = 'furnished' | 'wifi' | 'ac' | 'parking' | 'elevator' | 'pets';
-const FEATURES: { key: FeatureKey; icon: string; label: string }[] = [
-  { key: 'furnished', icon: '🪑', label: 'Mobilyalı'    },
-  { key: 'wifi',      icon: '📶', label: 'WiFi'          },
-  { key: 'ac',        icon: '❄️', label: 'Klima'         },
-  { key: 'parking',   icon: '🚗', label: 'Otopark'       },
-  { key: 'elevator',  icon: '🛗', label: 'Asansör'       },
-  { key: 'pets',      icon: '🐾', label: 'Evcil Hayvan'  },
-];
+const ROOM_TYPES = ['single', 'double', 'shared', 'apartment'] as const;
+type RoomType = typeof ROOM_TYPES[number];
 
-// expo-image-picker loaded lazily to gracefully handle unavailability
-let ImagePicker: typeof import('expo-image-picker') | null = null;
-try { ImagePicker = require('expo-image-picker'); } catch {}
+const CITIES     = ['Poznań', 'Kraków', 'Warszawa', 'Wrocław', 'Gdańsk'];
+const AMENITIES  = ['WiFi', 'Kitchen', 'Laundry', 'Parking', 'Garden', 'Balcony'];
+const RULES_LIST = ['No smoking', 'No pets', 'Quiet hours 22:00-08:00'];
 
 export default function CreateListingScreen({ navigation }: Props) {
-  const [photos,      setPhotos]      = useState<string[]>([]);
+  const { t } = useT();
+  const insets = useSafeAreaInsets();
+
+  // Form state
   const [title,       setTitle]       = useState('');
-  const [city,        setCity]        = useState('');
-  const [cityOpen,    setCityOpen]    = useState(false);
-  const [cityQ,       setCityQ]       = useState('');
-  const [address,     setAddress]     = useState('');
-  const [price,       setPrice]       = useState('');
-  const [rooms,       setRooms]       = useState(1);
-  const [area,        setArea]        = useState('');
   const [description, setDescription] = useState('');
-  const [features,    setFeatures]    = useState<Record<FeatureKey, boolean>>({
-    furnished: false, wifi: false, ac: false, parking: false, elevator: false, pets: false,
-  });
-  const [submitting, setSubmitting] = useState(false);
+  const [city,        setCity]        = useState('Poznań');
+  const [address,     setAddress]     = useState('');
+  const [priceMin,    setPriceMin]    = useState('');
+  const [priceMax,    setPriceMax]    = useState('');
+  const [roomType,    setRoomType]    = useState<RoomType>('single');
+  const [bedrooms,    setBedrooms]    = useState('1');
+  const [bathrooms,   setBathrooms]   = useState('1');
+  const [amenities,   setAmenities]   = useState<string[]>([]);
+  const [rules,       setRules]       = useState<string[]>([]);
+  const [photos,      setPhotos]      = useState<string[]>([]);
+  const [moveInDate,  setMoveInDate]  = useState(new Date());
+  const [contractLen, setContractLen] = useState('12');
 
-  const shownCities = POLISH_CITIES.filter(c => c.toLowerCase().includes(cityQ.toLowerCase()));
-  const canPublish = address.trim() && city && price.trim() && Number(price) > 0 && !submitting;
+  // UI state
+  const [showDate,       setShowDate]       = useState(false);
+  const [cityModal,      setCityModal]      = useState(false);
+  const [roomTypeModal,  setRoomTypeModal]  = useState(false);
+  const [saving,         setSaving]         = useState(false);
 
-  const pickPhotos = async () => {
-    if (!ImagePicker) {
-      Alert.alert('Mevcut değil', 'Fotoğraf seçici bu ortamda kullanılamıyor.');
-      return;
-    }
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri erişimine izin verin.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      selectionLimit: 6,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setPhotos(prev => [...prev, ...result.assets.map(a => a.uri)].slice(0, 6));
+  const toggleItem = (list: string[], setList: (v: string[]) => void, item: string) =>
+    setList(list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
+
+  const pickPhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('common.error'), t('listing.permissionRequired'));
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setPhotos(prev => [...prev, result.assets[0].uri]);
+      }
+    } catch (err) {
+      console.error('[CreateListing] Photo error:', err);
+      Alert.alert(t('common.error'), t('photoError'));
     }
   };
 
-  const toggleFeature = (key: FeatureKey) =>
-    setFeatures(f => ({ ...f, [key]: !f[key] }));
+  const validate = (): boolean => {
+    if (!title.trim())        { Alert.alert(t('common.error'), t('validation.titleRequired'));       return false; }
+    if (!description.trim())  { Alert.alert(t('common.error'), t('validation.descRequired'));        return false; }
+    if (!priceMin || !priceMax) { Alert.alert(t('common.error'), t('validation.priceRequired'));     return false; }
+    if (parseInt(priceMin) > parseInt(priceMax)) {
+      Alert.alert(t('common.error'), t('validation.priceOrder'));
+      return false;
+    }
+    return true;
+  };
 
-  const publish = async () => {
-    setSubmitting(true);
+  const handleSave = async () => {
+    if (!validate()) return;
+    setSaving(true);
     try {
-      const formData = new FormData();
-      if (title.trim()) formData.append('title', title.trim());
-      formData.append('address', address.trim());
-      formData.append('city', city);
-      formData.append('price', price);
-      formData.append('rooms', String(rooms));
-      if (area) formData.append('area', area);
-      if (description.trim()) formData.append('description', description.trim());
-
-      // Boolean features
-      (Object.entries(features) as [FeatureKey, boolean][]).forEach(([key, val]) => {
-        formData.append(key, val ? '1' : '0');
+      await listingService.createListing({
+        title,
+        description,
+        city,
+        address,
+        price_min:       parseInt(priceMin),
+        price_max:       parseInt(priceMax),
+        room_type:       roomType,
+        bedrooms:        parseInt(bedrooms),
+        bathrooms:       parseInt(bathrooms),
+        photos,
+        amenities,
+        rules,
+        move_in_date:    moveInDate.toISOString().split('T')[0],
+        contract_length: parseInt(contractLen),
       });
-
-      // Photos
-      photos.forEach((uri, i) => {
-        formData.append('photos', {
-          uri,
-          type: 'image/jpeg',
-          name: `photo_${i}.jpg`,
-        } as any);
-      });
-
-      await listingService.createListing(formData);
-
-      Alert.alert(
-        'İlan Yayınlandı! 🎉',
-        `"${title || address}" ilanınız başarıyla eklendi.`,
-        [{ text: 'Tamam', onPress: () => navigation.goBack() }],
-      );
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ??
-        err?.response?.data?.error   ??
-        err?.message ??
-        'Bir hata oluştu. Lütfen tekrar deneyin.';
-      Alert.alert('Hata', Array.isArray(msg) ? msg[0] : msg);
+      Alert.alert(t('common.success'), t('listingCreated'), [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      console.error('[CreateListing] Error:', err);
+      Alert.alert(t('common.error'), t('common.tryAgain'));
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
 
   return (
-    <SafeAreaView style={st.root} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+    <View style={[s.container, { paddingTop: insets.top }]}>
 
-      {/* Header */}
-      <View style={st.header}>
-        <TouchableOpacity style={st.hBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={st.hBtnTxt}>←</Text>
+      {/* HEADER */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#1a1a2e" />
         </TouchableOpacity>
-        <Text style={st.hTitle}>İlan Ver</Text>
-        <View style={st.hBtn} />
+        <Text style={s.headerTitle}>{t('createListing')}</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView
-        style={st.scroll}
-        contentContainerStyle={st.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      {/* FORM */}
+      <ScrollView style={s.form} contentContainerStyle={s.formContent} keyboardShouldPersistTaps="handled">
 
-        {/* ── Fotoğraflar ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>FOTOĞRAFLAR</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.photoRow}>
-            {/* Existing photos */}
-            {photos.map((uri, i) => (
-              <View key={i} style={st.photoThumb}>
-                <Text style={st.photoThumbTxt}>📷</Text>
-                <TouchableOpacity
-                  style={st.photoRemove}
-                  onPress={() => setPhotos(p => p.filter((_, j) => j !== i))}
-                >
-                  <Text style={st.photoRemoveTxt}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-            {/* Add button */}
-            {photos.length < 6 && (
-              <TouchableOpacity style={st.photoAdd} onPress={pickPhotos} activeOpacity={0.7}>
-                <Text style={st.photoAddIcon}>+</Text>
-                <Text style={st.photoAddTxt}>Fotoğraf Ekle</Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
-          <Text style={st.photHint}>En fazla 6 fotoğraf yükleyebilirsiniz.</Text>
-        </View>
-
-        {/* ── İlan Başlığı ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>İLAN BAŞLIĞI — opsiyonel</Text>
+        {/* BAŞLIK */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('title')}</Text>
           <TextInput
-            style={st.input}
-            placeholder="Örn: 2+1 Mobilyalı Daire"
-            placeholderTextColor={C.mute}
+            style={s.input}
+            placeholder={t('titlePlaceholder')}
             value={title}
             onChangeText={setTitle}
-            maxLength={80}
+            maxLength={100}
+            placeholderTextColor="#aaa"
           />
+          <Text style={s.charCount}>{title.length}/100</Text>
         </View>
 
-        {/* ── Şehir ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>ŞEHİR</Text>
-          <TouchableOpacity
-            style={[st.selectPill, city && st.selectPillActive]}
-            onPress={() => setCityOpen(v => !v)}
-            activeOpacity={0.8}
-          >
-            <Text style={st.selectPillIcon}>📍</Text>
-            <Text style={[st.selectPillTxt, city && st.selectPillTxtActive]}>
-              {city || 'Şehir seçin...'}
-            </Text>
-            <Text style={st.selectChevron}>{cityOpen ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-
-          {cityOpen && (
-            <View style={st.dropdown}>
-              <TextInput
-                style={st.dropdownSearch}
-                placeholder="Şehir ara..."
-                placeholderTextColor={C.mute}
-                value={cityQ}
-                onChangeText={setCityQ}
-              />
-              <ScrollView style={st.dropdownList} nestedScrollEnabled>
-                {shownCities.map(c => (
-                  <TouchableOpacity
-                    key={c}
-                    style={[st.dropdownItem, city === c && st.dropdownItemActive]}
-                    onPress={() => { setCity(c); setCityOpen(false); setCityQ(''); }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[st.dropdownItemTxt, city === c && st.dropdownItemTxtActive]}>{c}</Text>
-                    {city === c && <Text style={st.dropdownCheck}>✓</Text>}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-
-        {/* ── Adres ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>ADRES</Text>
+        {/* AÇIKLAMA */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('description')}</Text>
           <TextInput
-            style={st.input}
-            placeholder="ul. Przykładowa 12/4"
-            placeholderTextColor={C.mute}
-            value={address}
-            onChangeText={setAddress}
-          />
-        </View>
-
-        {/* ── Fiyat ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>KİRA (PLN/AY)</Text>
-          <View style={st.inputWithSuffix}>
-            <TextInput
-              style={[st.input, st.inputFlex]}
-              placeholder="1800"
-              placeholderTextColor={C.mute}
-              value={price}
-              onChangeText={t => setPrice(t.replace(/[^0-9]/g, ''))}
-              keyboardType="numeric"
-            />
-            <View style={st.inputSuffix}>
-              <Text style={st.inputSuffixTxt}>PLN/ay</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Oda sayısı ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>ODA SAYISI</Text>
-          <View style={st.counter}>
-            <TouchableOpacity
-              style={[st.counterBtn, rooms <= 1 && st.counterBtnOff]}
-              onPress={() => setRooms(r => Math.max(1, r - 1))}
-              disabled={rooms <= 1}
-              activeOpacity={0.7}
-            >
-              <Text style={st.counterBtnTxt}>−</Text>
-            </TouchableOpacity>
-            <Text style={st.counterValue}>{rooms}</Text>
-            <TouchableOpacity
-              style={[st.counterBtn, rooms >= 6 && st.counterBtnOff]}
-              onPress={() => setRooms(r => Math.min(6, r + 1))}
-              disabled={rooms >= 6}
-              activeOpacity={0.7}
-            >
-              <Text style={st.counterBtnTxt}>+</Text>
-            </TouchableOpacity>
-            <Text style={st.counterLabel}>oda</Text>
-          </View>
-        </View>
-
-        {/* ── Metrekare ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>METREKAREi (m²) — opsiyonel</Text>
-          <View style={st.inputWithSuffix}>
-            <TextInput
-              style={[st.input, st.inputFlex]}
-              placeholder="50"
-              placeholderTextColor={C.mute}
-              value={area}
-              onChangeText={t => setArea(t.replace(/[^0-9]/g, ''))}
-              keyboardType="numeric"
-            />
-            <View style={st.inputSuffix}>
-              <Text style={st.inputSuffixTxt}>m²</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── Özellikler ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>ÖZELLİKLER</Text>
-          <View style={st.featuresGrid}>
-            {FEATURES.map(f => {
-              const on = features[f.key];
-              return (
-                <TouchableOpacity
-                  key={f.key}
-                  style={[st.featureChip, on && st.featureChipActive]}
-                  onPress={() => toggleFeature(f.key)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={st.featureIcon}>{f.icon}</Text>
-                  <Text style={[st.featureLabel, on && st.featureLabelActive]}>{f.label}</Text>
-                  {on && <Text style={st.featureCheck}>✓</Text>}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* ── Açıklama ── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>AÇIKLAMA — opsiyonel</Text>
-          <TextInput
-            style={[st.input, st.textarea]}
-            placeholder="Dairenizi kısaca tanıtın..."
-            placeholderTextColor={C.mute}
+            style={[s.input, s.textArea]}
+            placeholder={t('descriptionPlaceholder')}
             value={description}
             onChangeText={setDescription}
             multiline
-            numberOfLines={4}
-            textAlignVertical="top"
             maxLength={500}
+            placeholderTextColor="#aaa"
           />
-          <Text style={st.charCount}>{description.length}/500</Text>
+          <Text style={s.charCount}>{description.length}/500</Text>
         </View>
 
-        <View style={{ height: 80 }} />
+        {/* ŞEHİR */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('city')}</Text>
+          <TouchableOpacity style={s.picker} onPress={() => setCityModal(true)}>
+            <Text style={s.pickerText}>{city}</Text>
+            <Ionicons name="chevron-down" size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
+
+        {/* ADRES */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('address')}</Text>
+          <TextInput
+            style={s.input}
+            placeholder="ul. Poznańska 15, apt 3"
+            value={address}
+            onChangeText={setAddress}
+            placeholderTextColor="#aaa"
+          />
+        </View>
+
+        {/* FİYAT ARALIĞI */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('priceRange')}</Text>
+          <View style={s.priceRow}>
+            <TextInput
+              style={[s.input, s.priceInput]}
+              placeholder="Min"
+              value={priceMin}
+              onChangeText={setPriceMin}
+              keyboardType="number-pad"
+              placeholderTextColor="#aaa"
+            />
+            <Text style={s.priceSep}>–</Text>
+            <TextInput
+              style={[s.input, s.priceInput]}
+              placeholder="Max"
+              value={priceMax}
+              onChangeText={setPriceMax}
+              keyboardType="number-pad"
+              placeholderTextColor="#aaa"
+            />
+            <Text style={s.priceCurrency}>PLN</Text>
+          </View>
+        </View>
+
+        {/* ODA TİPİ */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('roomType')}</Text>
+          <TouchableOpacity style={s.picker} onPress={() => setRoomTypeModal(true)}>
+            <Text style={s.pickerText}>{roomType.charAt(0).toUpperCase() + roomType.slice(1)}</Text>
+            <Ionicons name="chevron-down" size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
+
+        {/* YATAK / BANYO */}
+        <View style={s.section}>
+          <View style={s.twoCol}>
+            <View style={s.twoColItem}>
+              <Text style={s.label}>{t('bedrooms')}</Text>
+              <TextInput style={s.input} value={bedrooms} onChangeText={setBedrooms} keyboardType="number-pad" />
+            </View>
+            <View style={s.twoColItem}>
+              <Text style={s.label}>{t('bathrooms')}</Text>
+              <TextInput style={s.input} value={bathrooms} onChangeText={setBathrooms} keyboardType="number-pad" />
+            </View>
+          </View>
+        </View>
+
+        {/* OLANAKLAR */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('amenities')}</Text>
+          <View style={s.chipGrid}>
+            {AMENITIES.map(a => (
+              <TouchableOpacity
+                key={a}
+                style={[s.chip, amenities.includes(a) && s.chipOn]}
+                onPress={() => toggleItem(amenities, setAmenities, a)}
+              >
+                {amenities.includes(a) && <Ionicons name="checkmark" size={16} color="#7C5CFF" />}
+                <Text style={[s.chipText, amenities.includes(a) && s.chipTextOn]}>{a}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* KURALLAR */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('rules')}</Text>
+          <View style={s.chipGrid}>
+            {RULES_LIST.map(r => (
+              <TouchableOpacity
+                key={r}
+                style={[s.chip, rules.includes(r) && s.chipOn]}
+                onPress={() => toggleItem(rules, setRules, r)}
+              >
+                {rules.includes(r) && <Ionicons name="checkmark" size={16} color="#7C5CFF" />}
+                <Text style={[s.chipText, rules.includes(r) && s.chipTextOn]}>{r}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* FOTOĞRAFLAR */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('photos')}</Text>
+          <TouchableOpacity style={s.photoBtn} onPress={pickPhoto}>
+            <Ionicons name="image-outline" size={24} color="#7C5CFF" />
+            <Text style={s.photoBtnText}>{t('addPhoto')} ({photos.length})</Text>
+          </TouchableOpacity>
+          {photos.length > 0 && (
+            <FlatList
+              data={photos}
+              horizontal
+              style={{ marginTop: 10 }}
+              renderItem={({ item, index }) => (
+                <View style={s.photoThumb}>
+                  <Image source={{ uri: item }} style={s.photoImg} />
+                  <TouchableOpacity
+                    style={s.photoRemove}
+                    onPress={() => setPhotos(photos.filter((_, i) => i !== index))}
+                  >
+                    <Ionicons name="close" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+              keyExtractor={(_, i) => i.toString()}
+            />
+          )}
+        </View>
+
+        {/* GİRİŞ TARİHİ */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('moveInDate')}</Text>
+          <TouchableOpacity style={s.picker} onPress={() => setShowDate(true)}>
+            <Text style={s.pickerText}>{moveInDate.toLocaleDateString('tr-TR')}</Text>
+            <Ionicons name="calendar-outline" size={20} color="#999" />
+          </TouchableOpacity>
+          {showDate && (
+            <DateTimePicker
+              value={moveInDate}
+              mode="date"
+              display="spinner"
+              onChange={(_, date) => {
+                setShowDate(false);
+                if (date) setMoveInDate(date);
+              }}
+            />
+          )}
+        </View>
+
+        {/* KONTRAT SÜRESİ */}
+        <View style={s.section}>
+          <Text style={s.label}>{t('contractLength')}</Text>
+          <TextInput
+            style={s.input}
+            value={contractLen}
+            onChangeText={setContractLen}
+            keyboardType="number-pad"
+          />
+        </View>
+
+        {/* KAYDET */}
+        <TouchableOpacity
+          style={[s.saveBtn, saving && s.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={s.saveBtnText}>{t('createListing')}</Text>}
+        </TouchableOpacity>
+
       </ScrollView>
 
-      {/* ── Publish button ── */}
-      <View style={st.footer}>
-        <TouchableOpacity
-          style={[st.publishBtn, (!canPublish || submitting) && st.publishBtnOff]}
-          onPress={publish}
-          disabled={!canPublish || submitting}
-          activeOpacity={0.85}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={[st.publishTxt, !canPublish && st.publishTxtOff]}>
-              {canPublish ? 'İlanı Yayınla ✓' : 'Zorunlu alanları doldurun'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      {/* ŞEHİR MODAL */}
+      <Modal visible={cityModal} transparent animationType="slide">
+        <View style={s.modalWrap}>
+          <View style={s.modalHeader}>
+            <TouchableOpacity onPress={() => setCityModal(false)}>
+              <Text style={s.modalDone}>{t('common.close')}</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={CITIES}
+            keyExtractor={item => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={s.modalItem} onPress={() => { setCity(item); setCityModal(false); }}>
+                <Text style={[s.modalItemText, city === item && s.modalItemSelected]}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
+
+      {/* ODA TİPİ MODAL */}
+      <Modal visible={roomTypeModal} transparent animationType="slide">
+        <View style={s.modalWrap}>
+          <View style={s.modalHeader}>
+            <TouchableOpacity onPress={() => setRoomTypeModal(false)}>
+              <Text style={s.modalDone}>{t('common.close')}</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={ROOM_TYPES as unknown as string[]}
+            keyExtractor={item => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={s.modalItem}
+                onPress={() => { setRoomType(item as RoomType); setRoomTypeModal(false); }}
+              >
+                <Text style={[s.modalItemText, roomType === item && s.modalItemSelected]}>
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
+
+    </View>
   );
 }
 
-const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9f9f9' },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: C.line,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  hBtn: {
-    width: 38, height: 38, borderRadius: 999,
-    backgroundColor: C.bgSoft, borderWidth: 1, borderColor: C.line,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  hBtnTxt: { color: C.ink, fontSize: 17 },
-  hTitle: { color: C.ink, fontSize: 17, fontWeight: '800' },
+  backBtn:     { padding: 4 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a2e' },
 
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 18, paddingTop: 16 },
+  form:        { flex: 1 },
+  formContent: { paddingHorizontal: 16, paddingVertical: 16, paddingBottom: 40 },
 
-  section: { marginBottom: 22 },
-  sectionLabel: {
-    color: C.mute, fontSize: 10, fontWeight: '700',
-    letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 10,
-  },
+  section:   { marginBottom: 20 },
+  label:     { fontSize: 14, fontWeight: '700', color: '#1a1a2e', marginBottom: 8 },
+  charCount: { fontSize: 11, color: '#999', marginTop: 4, textAlign: 'right' },
 
-  // Photos
-  photoRow: { gap: 10 },
-  photoThumb: {
-    width: 72, height: 72, borderRadius: 14,
-    backgroundColor: C.tealBg, borderWidth: 1.5, borderColor: C.brandA,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  photoThumbTxt: { fontSize: 28 },
-  photoRemove: {
-    position: 'absolute', top: -4, right: -4,
-    width: 18, height: 18, borderRadius: 999,
-    backgroundColor: C.brandB, alignItems: 'center', justifyContent: 'center',
-  },
-  photoRemoveTxt: { color: '#fff', fontSize: 9, fontWeight: '800' },
-  photoAdd: {
-    width: 72, height: 72, borderRadius: 14,
-    backgroundColor: C.bgSoft, borderWidth: 1.5, borderColor: C.line,
-    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4,
-  },
-  photoAddIcon: { color: C.mute, fontSize: 24, fontWeight: '300', lineHeight: 28 },
-  photoAddTxt:  { color: C.mute, fontSize: 9, textAlign: 'center' },
-  photHint:     { color: C.mute, fontSize: 11, marginTop: 6 },
-
-  // Select pill
-  selectPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: C.bgSoft, borderRadius: 14,
-    borderWidth: 1, borderColor: C.line,
-    paddingVertical: 14, paddingHorizontal: 14,
-  },
-  selectPillActive: { borderColor: C.brandA, backgroundColor: C.tealBg },
-  selectPillIcon: { fontSize: 15 },
-  selectPillTxt: { flex: 1, color: C.mute, fontSize: 15 },
-  selectPillTxtActive: { color: C.ink, fontWeight: '600' },
-  selectChevron: { color: C.mute, fontSize: 12 },
-
-  // Dropdown
-  dropdown: {
-    backgroundColor: C.bg, borderRadius: 14, borderWidth: 1, borderColor: C.line,
-    marginTop: 6, overflow: 'hidden',
-    shadowColor: '#1F2937', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
-  },
-  dropdownSearch: {
-    paddingHorizontal: 14, paddingVertical: 10,
-    color: C.ink, fontSize: 14,
-    borderBottomWidth: 1, borderBottomColor: C.line,
-  },
-  dropdownList: { maxHeight: 180 },
-  dropdownItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: C.line,
-  },
-  dropdownItemActive: { backgroundColor: C.tealBg },
-  dropdownItemTxt: { color: C.soft, fontSize: 14 },
-  dropdownItemTxtActive: { color: C.ink, fontWeight: '700' },
-  dropdownCheck: { color: C.brandA, fontWeight: '800' },
-
-  // Inputs
   input: {
-    backgroundColor: C.bgSoft, borderRadius: 14, borderWidth: 1, borderColor: C.line,
-    paddingVertical: 13, paddingHorizontal: 14,
-    color: C.ink, fontSize: 15,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    fontSize: 14,
+    color: '#1a1a2e',
   },
-  inputFlex:      { flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0 },
-  inputWithSuffix: { flexDirection: 'row', alignItems: 'stretch' },
-  inputSuffix: {
-    backgroundColor: C.tealBg, borderRadius: 14, borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
-    borderWidth: 1, borderLeftWidth: 0, borderColor: C.brandA,
-    paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center',
-  },
-  inputSuffixTxt: { color: C.tealTx, fontSize: 13, fontWeight: '700' },
-  textarea:   { minHeight: 100, paddingTop: 12 },
-  charCount:  { color: C.mute, fontSize: 10, textAlign: 'right', marginTop: 4 },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
 
-  // Rooms counter
-  counter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  counterBtn: {
-    width: 38, height: 38, borderRadius: 999,
-    backgroundColor: C.tealBg, borderWidth: 1.5, borderColor: C.brandA,
-    alignItems: 'center', justifyContent: 'center',
+  picker: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  counterBtnOff: { backgroundColor: C.bgSoft, borderColor: C.line },
-  counterBtnTxt: { color: C.brandA, fontSize: 22, fontWeight: '700', lineHeight: 26 },
-  counterValue:  { color: C.ink, fontSize: 28, fontWeight: '800', minWidth: 36, textAlign: 'center' },
-  counterLabel:  { color: C.mute, fontSize: 14 },
+  pickerText: { fontSize: 14, color: '#1a1a2e', fontWeight: '500' },
 
-  // Features
-  featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  featureChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: 9, paddingHorizontal: 14,
-    borderRadius: 999, borderWidth: 1.5,
-    backgroundColor: C.bgSoft, borderColor: C.line,
-  },
-  featureChipActive: { backgroundColor: C.tealBg, borderColor: C.brandA },
-  featureIcon:  { fontSize: 14 },
-  featureLabel: { color: C.soft, fontSize: 13, fontWeight: '500' },
-  featureLabelActive: { color: C.tealTx, fontWeight: '700' },
-  featureCheck: { color: C.brandA, fontSize: 12, fontWeight: '800' },
+  priceRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  priceInput:   { flex: 1 },
+  priceSep:     { fontSize: 16, color: '#999' },
+  priceCurrency:{ fontSize: 13, color: '#666', fontWeight: '600', width: 36 },
 
-  // Footer
-  footer: { paddingHorizontal: 18, paddingBottom: 20, paddingTop: 12, backgroundColor: C.bg },
-  publishBtn: {
-    backgroundColor: C.brandA, borderRadius: 999, paddingVertical: 18, alignItems: 'center',
-    shadowColor: C.brandA, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 14, elevation: 6,
+  twoCol:     { flexDirection: 'row', gap: 12 },
+  twoColItem: { flex: 1 },
+
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
-  publishBtnOff: { backgroundColor: C.bgSoft, borderWidth: 1, borderColor: C.line, shadowOpacity: 0, elevation: 0 },
-  publishTxt:    { color: '#fff', fontSize: 16, fontWeight: '700' },
-  publishTxtOff: { color: C.mute },
+  chipOn:      { backgroundColor: '#F5F3FF', borderColor: '#7C5CFF' },
+  chipText:    { fontSize: 13, color: '#555', fontWeight: '500' },
+  chipTextOn:  { color: '#7C5CFF', fontWeight: '700' },
+
+  photoBtn: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#7C5CFF',
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    paddingVertical: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  photoBtnText: { fontSize: 14, color: '#7C5CFF', fontWeight: '600' },
+  photoThumb:   { position: 'relative', width: 96, height: 96, marginRight: 8 },
+  photoImg:     { width: '100%', height: '100%', borderRadius: 8 },
+  photoRemove: {
+    position: 'absolute', top: -6, right: -6,
+    backgroundColor: '#FF6B6B', borderRadius: 11, padding: 3,
+  },
+
+  saveBtn: {
+    backgroundColor: '#7C5CFF',
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText:     { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  modalWrap: {
+    flex: 1,
+    backgroundColor: '#fff',
+    marginTop: '50%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    alignItems: 'flex-end',
+  },
+  modalDone:         { fontSize: 16, fontWeight: '700', color: '#7C5CFF' },
+  modalItem:         { paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  modalItemText:     { fontSize: 16, color: '#555' },
+  modalItemSelected: { color: '#7C5CFF', fontWeight: '700' },
 });

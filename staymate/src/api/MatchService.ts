@@ -67,7 +67,15 @@ export const matchService = {
    * Mevcut kullanıcıya önerilen profilleri getirir.
    * `filters` opsiyonel query param olarak iletilir.
    */
-  getSuggestions: async (filters: Record<string, any> = {}): Promise<ApiSuggestion[]> => {
+  getSuggestions: async (
+    cityOrFilters?: string | Record<string, any>,
+    extraFilters: Record<string, any> = {},
+  ): Promise<ApiSuggestion[]> => {
+    const filters: Record<string, any> =
+      typeof cityOrFilters === 'string'
+        ? { city: cityOrFilters, ...extraFilters }
+        : (cityOrFilters ?? extraFilters);
+
     const params = new URLSearchParams();
     if (filters.city)      params.append('city',       String(filters.city));
     if (filters.budgetMin) params.append('budget_min', String(filters.budgetMin));
@@ -76,10 +84,10 @@ export const matchService = {
     if (filters.smoking)   params.append('smoking',    String(filters.smoking));
     if (filters.alcohol)   params.append('alcohol',    String(filters.alcohol));
 
-    console.log('Match filters:', Object.fromEntries(params));
+    if (__DEV__) console.log('[MatchService] Fetching suggestions, params:', Object.fromEntries(params));
 
     const res = await api.get<ApiSuggestion[]>(`/matches/suggestions?${params.toString()}`);
-    return res.data;
+    return Array.isArray(res.data) ? res.data : [];
   },
 
   /**
@@ -103,6 +111,12 @@ export const matchService = {
    * ChatListScreen için kullanılır.
    */
   getActive: async (): Promise<ActiveMatch[]> => {
+    // /matches/active is a student-only endpoint.
+    // Landlords don't have matches — skip the call to avoid 401/403.
+    const { storage } = await import('../utils/storage');
+    const userType = await storage.getItem('userType');
+    if (userType === 'landlord') return [];
+
     const res = await api.get<ActiveMatch[]>('/matches/active');
     return res.data;
   },

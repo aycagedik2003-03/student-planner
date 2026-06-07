@@ -71,7 +71,7 @@ export function normalizeQuestion(
     id:       raw.id ?? String(index),
     catIndex,
     question,
-    opts:     opts.slice(0, 4), // maksimum 4 seçenek
+    opts,
   };
 }
 
@@ -94,5 +94,22 @@ export const quizService = {
    */
   submitAnswers: async (answers: (number | null)[]): Promise<void> => {
     await api.post('/quiz/answers', { answers });
+  },
+
+  submitOnboarding: async (payload: {
+    answers: (number | null)[];
+    city: string | null;
+    name?: string;
+  }): Promise<void> => {
+    // Try the dedicated onboarding endpoint first; fall back to quiz/answers
+    try {
+      await api.post('/onboarding/submit', payload);
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        await api.post('/quiz/answers', { answers: payload.answers });
+      } else {
+        throw err;
+      }
+    }
   },
 };

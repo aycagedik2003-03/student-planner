@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../store';
 import { authService } from '../api/AuthService';
 import { navigationRef } from '../utils/navigationRef';
@@ -21,7 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { token, setToken, clearUser } = useAppStore();
 
   const signOut = async () => {
-    await authService.logout();
+    // Best-effort: clear everything, then navigate — even if one step throws
+    try { await authService.logout(); } catch { /* already clears locally */ }
+    try { await AsyncStorage.removeItem('@roomski/language'); } catch {}
     clearUser();
     navigationRef.current?.reset({ index: 0, routes: [{ name: 'Auth' }] });
   };
